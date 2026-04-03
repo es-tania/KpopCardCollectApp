@@ -66,22 +66,17 @@ export default function AlbumScreen() {
     }
   }, [id, selectedMemberId, activeFilter]);
 
-  const handleSelectMember = useCallback(
-    (member: Member) => {
-      setSelectedMemberId((prev) =>
-        prev === member.id ? ALL_MEMBERS_ID : member.id,
-      );
-      setActiveFilter("all");
-      scrollToTop();
-    },
-    [scrollToTop],
-  );
+  const handleSelectMember = useCallback((member: Member) => {
+    setSelectedMemberId((prev) =>
+      prev === member.id ? ALL_MEMBERS_ID : member.id,
+    );
+    setActiveFilter("all");
+  }, []);
 
   const handleSelectAll = useCallback(() => {
     setSelectedMemberId(ALL_MEMBERS_ID);
     setActiveFilter("all");
-    scrollToTop();
-  }, [scrollToTop]);
+  }, []);
 
   const handlePressBack = useCallback(() => {
     groupId ? router.push(`/group/${groupId}`) : router.back();
@@ -106,9 +101,6 @@ export default function AlbumScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={handlePressBack}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle} numberOfLines={1}>
-          {album?.title ?? "Album"}
-        </Text>
         <TouchableOpacity
           style={styles.navBtn}
           onPress={() => console.log("export")}
@@ -206,6 +198,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
   },
   filtersRow: {
     paddingHorizontal: Theme.spacing.lg,

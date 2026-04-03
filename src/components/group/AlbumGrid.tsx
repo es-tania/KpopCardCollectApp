@@ -72,11 +72,7 @@ const AlbumCard: React.FC<{
             ? ` · ${new Date(album.releaseDate).getFullYear()}`
             : ""}
         </Text>
-        {album.eventName && (
-          <Text style={styles.eventName} numberOfLines={1}>
-            {album.eventName}
-          </Text>
-        )}
+
         <ProgressBar
           label=""
           current={album.ownedPhotocards ?? 0}

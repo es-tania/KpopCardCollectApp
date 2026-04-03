@@ -2,9 +2,9 @@ import { MembersGrid } from "@/src/components/member/MembersGrid";
 import { SectionLabel } from "@/src/components/ui/SectionLabel";
 import { MOCK_ALBUMS, MOCK_GROUPS, MOCK_MEMBERS } from "@/src/data";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumGrid } from "../../../src/components/group/AlbumGrid";
@@ -29,29 +29,47 @@ const FILTER_OPTIONS: FilterOption[] = [
 
 export default function GroupScreen() {
   const { scrollRef, scrollToTop } = useScrollToTop();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: groupId } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState<TabKey>("members");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
+  const isMounted = useRef(false);
+  const shouldScrollTop = useRef(false);
+
+  // Appelé quand on navigue vers membre ou album
+  const handlePressMember = useCallback(
+    (member: Member) => {
+      shouldScrollTop.current = true;
+      router.push(`/member/${member.id}?groupId=${groupId}`);
+    },
+    [groupId],
+  );
+
+  const handlePressAlbum = useCallback(
+    (album: Album) => {
+      shouldScrollTop.current = false;
+      router.push(`/album/${album.id}?groupId=${groupId}`);
+    },
+    [groupId],
+  );
+
+  // Scroll en haut uniquement au retour depuis une page enfant
+  useFocusEffect(
+    useCallback(() => {
+      if (!isMounted.current) {
+        isMounted.current = true;
+        return;
+      }
+      if (shouldScrollTop.current) {
+        scrollToTop();
+        shouldScrollTop.current = false;
+      }
+    }, [scrollToTop]),
+  );
+
   // Contexte d'affichage des cartes
   const showingCards = selectedMember !== null || selectedAlbum !== null;
-
-  const handlePressMember = useCallback((member: Member) => {
-    router.push(`/member/${member.id}?groupId=g1`);
-  }, []);
-
-  // const handlePressAlbum = useCallback(
-  //   (album: Album) => {
-  //     setSelectedAlbum((prev) => (prev?.id === album.id ? null : album));
-  //     scrollToTop(); // ← ici
-  //   },
-  //   [scrollToTop],
-  // );
-
-  const handlePressAlbum = useCallback((album: Album) => {
-    router.push(`/album/${album.id}?groupId=g1`);
-  }, []);
 
   const handlePressBack = useCallback(() => {
     if (selectedAlbum) {
@@ -119,11 +137,6 @@ export default function GroupScreen() {
 
         {/* Contenu onglet Membres */}
         <SectionLabel label="Membres" style={styles.sectionLabel} />
-        {/* <MembersList
-          members={MOCK_MEMBERS}
-          // selectedId={selectedMember?.id}
-          onPressMember={handlePressMember}
-        /> */}
 
         <MembersGrid
           members={MOCK_MEMBERS}

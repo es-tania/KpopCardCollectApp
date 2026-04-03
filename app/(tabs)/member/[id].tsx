@@ -3,9 +3,17 @@ import { MOCK_ALBUMS, MOCK_MEMBERS, MOCK_PHOTOCARDS } from "@/src/data";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -50,6 +58,28 @@ export default function MemberScreen() {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
+  const albumsScrollY = useRef<number>(0);
+  const isAlbumsViewActive = useRef<boolean>(true);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (isAlbumsViewActive.current) {
+        albumsScrollY.current = e.nativeEvent.contentOffset.y;
+      }
+    },
+    [selectedAlbum],
+  );
+
+  useEffect(() => {
+    if (id) {
+      setActiveMemberId(id);
+      setSelectedAlbum(null);
+      setActiveFilter("all");
+      albumsScrollY.current = 0;
+      scrollToTop();
+    }
+  }, [id]);
+
   const activeMember = useMemo(
     () => MOCK_MEMBERS.find((m) => m.id === activeMemberId) ?? MOCK_MEMBERS[0],
     [activeMemberId],
@@ -73,6 +103,26 @@ export default function MemberScreen() {
     }
   }, [activeMemberId, selectedAlbum, activeFilter]);
 
+  const handleSelectAlbum = useCallback(
+    (album: Album) => {
+      isAlbumsViewActive.current = false;
+      setSelectedAlbum((prev) => (prev?.id === album.id ? null : album));
+      scrollToTop();
+    },
+    [scrollToTop],
+  );
+
+  const handleBackToAlbums = useCallback(() => {
+    isAlbumsViewActive.current = true;
+    setSelectedAlbum(null);
+    // setTimeout pour attendre le re-render de la liste avant de scroller
+    setTimeout(() => {
+      scrollRef.current?.scrollTo({
+        y: albumsScrollY.current,
+      });
+    }, 50);
+  }, [scrollRef]);
+
   const handleSelectMember = useCallback(
     (member: Member) => {
       if (member.id === activeMemberId) return;
@@ -82,21 +132,16 @@ export default function MemberScreen() {
     [activeMemberId],
   );
 
-  const handleSelectAlbum = useCallback((album: Album) => {
-    setSelectedAlbum((prev) => (prev?.id === album.id ? null : album));
-    setActiveFilter("all");
-  }, []);
-
   const handlePressBack = useCallback(() => {
-    if (selectedAlbum) {
-      setSelectedAlbum(null);
-      scrollToTop(); // ← ici
-    } else if (groupId) {
+    if (groupId) {
       router.push(`/group/${groupId}`);
+      setSelectedAlbum(null);
+      scrollToTop();
     } else {
       router.back();
+      scrollToTop();
     }
-  }, [selectedAlbum, groupId, scrollToTop]);
+  }, [groupId, scrollToTop]);
 
   const handleToggleFavorite = useCallback((cardId: string) => {
     console.log("toggle favorite", cardId);
@@ -130,6 +175,8 @@ export default function MemberScreen() {
         ref={scrollRef}
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* ── Header membre ── */}
         <MemberHeader member={activeMember} />
@@ -167,7 +214,7 @@ export default function MemberScreen() {
             {/* Album sélectionné — bannière */}
             <TouchableOpacity
               style={styles.albumBanner}
-              onPress={() => setSelectedAlbum(null)}
+              onPress={handleBackToAlbums}
               activeOpacity={0.8}
             >
               {selectedAlbum.coverUrl && (
