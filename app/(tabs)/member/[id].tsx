@@ -1,4 +1,5 @@
 import { MemberHeader } from "@/src/components/member/MemberHeader";
+import { PhotocardMiniGrid } from "@/src/components/photocard";
 import { MOCK_ALBUMS, MOCK_MEMBERS, MOCK_PHOTOCARDS } from "@/src/data";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { router, useLocalSearchParams } from "expo-router";
@@ -22,7 +23,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumGrid } from "../../../src/components/group/AlbumGrid";
-import { PhotocardGrid } from "../../../src/components/group/PhotocardGrid";
 import { MembersList } from "../../../src/components/member/MembersList";
 import {
   FilterOption,
@@ -251,7 +251,13 @@ export default function MemberScreen() {
             />
 
             {filteredCards.length > 0 ? (
-              <PhotocardGrid
+              // <PhotocardGrid
+              //   cards={filteredCards}
+              //   onPressFavorite={handleToggleFavorite}
+              //   onPressWishlist={handleToggleWishlist}
+              //   onPressCollection={handleToggleCollection}
+              // />
+              <PhotocardMiniGrid
                 cards={filteredCards}
                 onPressFavorite={handleToggleFavorite}
                 onPressWishlist={handleToggleWishlist}

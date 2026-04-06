@@ -1,4 +1,9 @@
-import { Check, Plus, ShoppingCart, Star } from "lucide-react-native";
+import {
+  Check,
+  Plus,
+  ShoppingBasket,
+  Star
+} from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -61,29 +66,19 @@ export const PhotocardCard: React.FC<PhotocardCardProps> = ({
                 <Text style={styles.typeBadgeText}>{typeLabel}</Text>
               </View>
             )}
-            {/* {card.isLimited && (
-              <View style={[styles.typeBadge, styles.limitedBadge]}>
-                <Text style={styles.typeBadgeText}>✦ Limited</Text>
-              </View>
-            )} */}
           </View>
 
           {/* Infos principales en bas */}
           <View style={styles.infoOverlay}>
-            <Text style={styles.memberName} numberOfLines={1}>
-              {card.memberName}
-            </Text>
             <Text style={styles.albumTitle} numberOfLines={1}>
-              {card.albumTitle}
-              {card.version ? ` · Ver. ${card.version}` : ""}
+              {card.memberName}
+              {card.version ? ` · ${card.version}` : ""}
             </Text>
-            {card.shopName && (
-              <Text style={styles.eventName} numberOfLines={1}>
-                {card.shopName}
-              </Text>
-            )}
-            <Text style={styles.groupName} numberOfLines={1}>
+            <Text style={styles.memberName} numberOfLines={1}>
               {card.groupName}
+            </Text>
+            <Text style={styles.groupName} numberOfLines={1}>
+              {card.albumTitle ? `${card.albumTitle}` : ""}
             </Text>
           </View>
         </View>
@@ -111,7 +106,7 @@ export const PhotocardCard: React.FC<PhotocardCardProps> = ({
           onPress={onPressWishlist}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
-          <ShoppingCart
+          <ShoppingBasket
             size={15}
             color={card.isWishlisted ? Colors.accent : Colors.textMuted}
             fill={card.isWishlisted ? Colors.accent : "transparent"}
@@ -212,12 +207,12 @@ const styles = StyleSheet.create({
     // Faux dégradé en haut du bloc
     borderTopWidth: 0,
   },
-  memberName: {
+  albumTitle: {
     fontSize: Theme.fontSize.base,
     fontWeight: Theme.fontWeight.semibold,
     color: Colors.text,
   },
-  albumTitle: {
+  memberName: {
     fontSize: Theme.fontSize.sm + 1,
     color: Colors.textMuted,
   },

@@ -1,0 +1,234 @@
+import { Check, Plus, ShoppingBasket, Star } from "lucide-react-native";
+import React from "react";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors } from "../../constants/colors";
+import { Theme } from "../../constants/theme";
+import { PhotocardWithDetails } from "../../types";
+
+interface PhotocardMiniProps {
+  card: PhotocardWithDetails;
+  onPressFavorite?: () => void;
+  onPressWishlist?: () => void;
+  onPressCollection?: () => void;
+}
+
+const getTypeLabel = (type: PhotocardWithDetails["type"]): string => {
+  switch (type) {
+    case "pob":
+      return "POB";
+    case "lucky_draw":
+      return "Lucky Draw";
+    case "broadcast":
+      return "Broadcast";
+    case "event":
+      return "Event";
+    case "benefit":
+      return "Benefit";
+    default:
+      return "";
+  }
+};
+
+export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
+  card,
+  onPressFavorite,
+  onPressWishlist,
+  onPressCollection,
+}) => {
+  const typeLabel = getTypeLabel(card.type);
+  const isSpecialType = card.type !== "normal";
+
+  return (
+    <View style={styles.container}>
+      {/* ── Image ── */}
+      <View style={styles.imageContainer}>
+        {card.imageUrl ? (
+          <Image
+            source={card.imageUrl as any}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.placeholder}>
+            <Text style={styles.placeholderEmoji}>🧑‍🎤</Text>
+          </View>
+        )}
+
+        <View style={styles.overlay}>
+          {/* Badge type */}
+          <View style={styles.topBadges}>
+            {isSpecialType && (
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeBadgeText}>{typeLabel}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Infos bas */}
+          <View style={styles.infoOverlay}>
+            <Text style={styles.albumTitle} numberOfLines={1}>
+              {card.version ? `${card.version}` : ""}
+            </Text>
+            {card.shopName && (
+              <Text style={styles.shopName} numberOfLines={1}>
+                {card.shopName}
+              </Text>
+            )}
+            <Text style={styles.memberName} numberOfLines={1}>
+              {card.albumTitle}
+              {card.memberName ? ` · ${card.memberName}` : ""}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* ── Actions ── */}
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onPressFavorite}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <Star
+            size={12}
+            color={card.isFavorite ? "#DAA520" : Colors.textMuted}
+            fill={card.isFavorite ? "#DAA520" : "transparent"}
+            strokeWidth={1.8}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.actionBtn}
+          onPress={onPressWishlist}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          <ShoppingBasket
+            size={12}
+            color={card.isWishlisted ? Colors.accent : Colors.textMuted}
+            fill={card.isWishlisted ? Colors.accent : "transparent"}
+            strokeWidth={1.8}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.actionBtn,
+            styles.collectionBtn,
+            card.isInCollection && styles.collectionBtnActive,
+          ]}
+          onPress={onPressCollection}
+          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+        >
+          {card.isInCollection ? (
+            <Check size={10} color={Colors.bg} strokeWidth={2.5} />
+          ) : (
+            <Plus size={10} color={Colors.textMuted} strokeWidth={2} />
+          )}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    width: "31%",
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+
+  // Image
+  imageContainer: {
+    width: "100%",
+    aspectRatio: 0.68, // ratio photocard standard
+    backgroundColor: Colors.surface2,
+    position: "relative",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+  placeholder: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  placeholderEmoji: {
+    fontSize: 24,
+  },
+
+  // Overlay
+  overlay: {
+    position: "absolute",
+    inset: 0,
+    justifyContent: "space-between",
+  } as any,
+
+  // Badge type
+  topBadges: {
+    padding: 4,
+    alignItems: "flex-end",
+  },
+  typeBadge: {
+    backgroundColor: Colors.accent,
+    borderRadius: Theme.borderRadius.full,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  typeBadgeText: {
+    fontSize: Theme.fontSize.xs,
+    color: Colors.bg,
+    fontWeight: Theme.fontWeight.semibold,
+  },
+
+  // Infos bas
+  infoOverlay: {
+    backgroundColor: "rgba(9, 12, 18, 0.78)",
+    paddingHorizontal: 5,
+    paddingTop: 6,
+    paddingBottom: 5,
+    gap: 1,
+  },
+  albumTitle: {
+    fontSize: Theme.fontSize.sm + 1,
+    fontWeight: Theme.fontWeight.semibold,
+    color: Colors.text,
+  },
+  memberName: {
+    fontSize: Theme.fontSize.xs + 1,
+    color: Colors.textMuted,
+  },
+  shopName: {
+    fontSize: Theme.fontSize.xs,
+    color: Colors.accent,
+  },
+
+  // Actions
+  actions: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+  },
+  actionBtn: {
+    width: 22,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: Theme.borderRadius.sm,
+  },
+  collectionBtn: {
+    backgroundColor: Colors.surface2,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    marginLeft: "auto",
+  },
+  collectionBtnActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+});
