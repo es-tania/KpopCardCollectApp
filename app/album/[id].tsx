@@ -1,4 +1,5 @@
 import { PhotocardMiniGrid } from "@/src/components/photocard";
+import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
@@ -80,17 +81,8 @@ export default function AlbumScreen() {
     router.back();
   }, [groupId]);
 
-  const handleToggleFavorite = useCallback((cardId: string) => {
-    console.log("toggle favorite", cardId);
-  }, []);
-
-  const handleToggleWishlist = useCallback((cardId: string) => {
-    console.log("toggle wishlist", cardId);
-  }, []);
-
-  const handleToggleCollection = useCallback((cardId: string) => {
-    console.log("toggle collection", cardId);
-  }, []);
+  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
+    usePhotocardActions();
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>

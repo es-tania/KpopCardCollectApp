@@ -77,9 +77,9 @@ export default function ProfileScreen() {
         />
         <ProfileMenuRow
           icon={<Grid3x3 size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Toutes mes cartes"
+          label="Toutes mes photocards"
           badge={130}
-          onPress={() => console.log("toutes les cartes")}
+          onPress={() => router.push("/my-cards")}
         />
 
         {/* ── Listes ── */}
@@ -88,7 +88,7 @@ export default function ProfileScreen() {
           icon={<Star size={17} color="#DAA520" strokeWidth={1.6} />}
           label="Favoris"
           badge={28}
-          onPress={() => console.log("favoris")}
+          onPress={() => router.push("/my-cards?mode=favorites")}
         />
         <ProfileMenuRow
           icon={
@@ -96,7 +96,7 @@ export default function ProfileScreen() {
           }
           label="Liste de souhaits"
           badge={54}
-          onPress={() => console.log("wishlist")}
+          onPress={() => router.push("/my-cards?mode=wishlist")}
         />
         {/* <ProfileMenuRow
           icon={<List size={17} color={Colors.textMuted} strokeWidth={1.6} />}

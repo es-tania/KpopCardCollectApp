@@ -1,6 +1,7 @@
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid } from "@/src/components/photocard";
 import { MOCK_ALBUMS, MOCK_MEMBERS, MOCK_PHOTOCARDS } from "@/src/data";
+import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
@@ -134,17 +135,8 @@ export default function MemberScreen() {
     scrollToTop();
   }, [groupId, scrollToTop]);
 
-  const handleToggleFavorite = useCallback((cardId: string) => {
-    console.log("toggle favorite", cardId);
-  }, []);
-
-  const handleToggleWishlist = useCallback((cardId: string) => {
-    console.log("toggle wishlist", cardId);
-  }, []);
-
-  const handleToggleCollection = useCallback((cardId: string) => {
-    console.log("toggle collection", cardId);
-  }, []);
+  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
+    usePhotocardActions();
 
   const handleExport = useCallback(() => {
     console.log("export wishlist");

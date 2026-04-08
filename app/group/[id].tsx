@@ -3,7 +3,7 @@ import { SectionLabel } from "@/src/components/ui/SectionLabel";
 import { MOCK_ALBUMS, MOCK_GROUPS, MOCK_MEMBERS } from "@/src/data";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Share2 } from "lucide-react-native";
+import { ChevronLeft, Download, Heart } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   NativeScrollEvent,
@@ -111,24 +111,13 @@ export default function GroupScreen() {
     }
   }, [selectedAlbum, selectedMember, scrollToTop]);
 
-  const handleToggleFavorite = useCallback((cardId: string) => {
-    // TODO: appel API
-    console.log("toggle favorite", cardId);
-  }, []);
-
-  const handleToggleWishlist = useCallback((cardId: string) => {
-    // TODO: appel API
-    console.log("toggle wishlist", cardId);
-  }, []);
-
-  const handleToggleCollection = useCallback((cardId: string) => {
-    // TODO: appel API
-    console.log("toggle collection", cardId);
-  }, []);
-
   const handleExportWishlist = useCallback(() => {
     // TODO: capture + partage via expo-media-library
     console.log("export wishlist");
+  }, []);
+
+  const handleFavorite = useCallback(() => {
+    console.log("add group to fav");
   }, []);
 
   // Titre de la section cartes
@@ -149,9 +138,18 @@ export default function GroupScreen() {
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.backBtn} onPress={handleExportWishlist}>
-          <Share2 size={18} color={Colors.text} strokeWidth={1.6} />
-        </TouchableOpacity>
+        <View style={styles.navbarIcons}>
+          <TouchableOpacity style={styles.backBtn} onPress={handleFavorite}>
+            <Heart size={18} color={Colors.text} strokeWidth={1.6} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={handleExportWishlist}
+          >
+            <Download size={18} color={Colors.text} strokeWidth={1.6} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -209,6 +207,10 @@ const styles = StyleSheet.create({
     // borderBottomWidth: 0.5,
     // borderBottomColor: Colors.border,
     paddingTop: 40,
+  },
+  navbarIcons: {
+    gap: 10,
+    flexDirection: "row",
   },
   backBtn: {
     width: 36,

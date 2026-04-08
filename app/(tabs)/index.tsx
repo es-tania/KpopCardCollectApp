@@ -3,6 +3,7 @@ import React, { useCallback } from "react";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
 import { MOCK_GROUPS, MOCK_GROUPS_PROGRESS, MOCK_PHOTOCARDS } from "@/src/data";
+import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CollectionProgress } from "../../src/components/home/CollectionProgress";
 import { FollowedGroupsRow } from "../../src/components/home/FollowedGroupsRow";
@@ -15,20 +16,8 @@ import { Theme } from "../../src/constants/theme";
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const handlePressFavorite = useCallback((id: string) => {
-    // TODO: toggle favori via API
-    console.log("toggle favorite", id);
-  }, []);
-
-  const handlePressWishlist = useCallback((id: string) => {
-    // TODO: toggle wishlist via API
-    console.log("toggle wishlist", id);
-  }, []);
-
-  const handlePressCollection = useCallback((id: string) => {
-    // TODO: toggle collection via API
-    console.log("toggle collection", id);
-  }, []);
+  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
+    usePhotocardActions();
 
   const handlePressGroup = useCallback((groupId: string) => {
     router.push(`/group/${groupId}`);
@@ -62,9 +51,9 @@ export default function HomeScreen() {
         <SectionLabel label="Derniers ajouts" />
         <RecentCardsCarousel
           cards={MOCK_PHOTOCARDS}
-          onPressFavorite={handlePressFavorite}
-          onPressWishlist={handlePressWishlist}
-          onPressCollection={handlePressCollection}
+          onPressFavorite={handleToggleFavorite}
+          onPressWishlist={handleToggleWishlist}
+          onPressCollection={handleToggleCollection}
         />
 
         <GlowDivider />

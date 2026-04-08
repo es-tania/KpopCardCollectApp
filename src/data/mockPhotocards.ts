@@ -21,6 +21,22 @@ const img = (id: string) => ({
 export const MOCK_PHOTOCARDS: PhotocardWithDetails[] = [
   // ── Keeho ──────────────────────────────────────────────────────────────────
   {
+    id: "keeho-a1-13",
+    memberId: "m1",
+    albumId: "a1",
+    groupId: "g2",
+    type: "normal",
+    version: "A ver.",
+    status: "approved",
+    imageUrl: img("f49e65ed2927d25aa15d04b3f45935b1"),
+    memberName: "Keeho",
+    albumTitle: "UNIQUE",
+    groupName: "P1Harmony",
+    isInCollection: true,
+    isFavorite: true,
+    isWishlisted: false,
+  },
+  {
     id: "keeho-a1-1",
     memberId: "m1",
     albumId: "a1",
