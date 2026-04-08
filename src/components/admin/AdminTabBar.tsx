@@ -1,10 +1,10 @@
 import React from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.full,
     paddingHorizontal: 6,
     paddingVertical: 1,
-    minWidth: 18,
+    // minWidth: 55,
     alignItems: "center",
   },
   badgeActive: {

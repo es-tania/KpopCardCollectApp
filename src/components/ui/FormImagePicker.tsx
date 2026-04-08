@@ -12,6 +12,7 @@ interface FormImagePickerProps {
   aspectRatio?: number;
   required?: boolean;
   error?: string;
+  previewWidth?: number;
 }
 
 export const FormImagePicker: React.FC<FormImagePickerProps> = ({
@@ -22,6 +23,7 @@ export const FormImagePicker: React.FC<FormImagePickerProps> = ({
   aspectRatio = 0.68,
   required,
   error,
+  previewWidth = 120,
 }) => (
   <View style={styles.container}>
     <Text style={styles.label}>
@@ -33,14 +35,14 @@ export const FormImagePicker: React.FC<FormImagePickerProps> = ({
       <View style={styles.previewWrap}>
         <Image
           source={{ uri: imageUri }}
-          style={[styles.preview, { aspectRatio }]}
+          style={[styles.preview, { width: previewWidth, aspectRatio }]}
           resizeMode="cover"
         />
         <TouchableOpacity style={styles.removeBtn} onPress={onRemove}>
           <X size={14} color={Colors.text} strokeWidth={2} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.changeBtn} onPress={onPick}>
-          <Camera size={14} color={Colors.bg} strokeWidth={2} />
+          <Camera size={12} color={Colors.text} strokeWidth={2} />
           <Text style={styles.changeBtnText}>Changer</Text>
         </TouchableOpacity>
       </View>
@@ -73,7 +75,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     borderStyle: "dashed",
-    borderRadius: Theme.borderRadius.md,
+    borderRadius: Theme.borderRadius.sm,
     padding: Theme.spacing.xl,
     alignItems: "center",
     gap: 8,

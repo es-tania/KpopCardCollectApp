@@ -1,17 +1,19 @@
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
 import { PhotocardWithDetails } from "@/src/types";
-import { Edit2, Trash2 } from "lucide-react-native";
+import { Edit2, Eye, Trash2 } from "lucide-react-native";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface PhotocardManageRowProps {
   card: PhotocardWithDetails;
+  onPreview: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
 
 export const PhotocardManageRow: React.FC<PhotocardManageRowProps> = ({
   card,
+  onPreview,
   onEdit,
   onDelete,
 }) => (
@@ -42,6 +44,9 @@ export const PhotocardManageRow: React.FC<PhotocardManageRowProps> = ({
     <View style={rowStyles.editBadge}>
       <TouchableOpacity style={rowStyles.editBtn} onPress={onEdit}>
         <Edit2 size={14} color={Colors.accent} strokeWidth={1.8} />
+      </TouchableOpacity>
+      <TouchableOpacity style={rowStyles.editBtn} onPress={onPreview}>
+        <Eye size={14} color={Colors.accent} strokeWidth={1.8} />
       </TouchableOpacity>
       <TouchableOpacity style={rowStyles.deleteBtn} onPress={onDelete}>
         <Trash2 size={14} color={Colors.danger} strokeWidth={1.8} />

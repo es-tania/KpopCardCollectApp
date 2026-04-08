@@ -150,7 +150,7 @@ export default function AdminScreen() {
         <AdminActionRow
           icon={<Edit size={17} color={Colors.accent} strokeWidth={1.6} />}
           label="Modifier un album"
-          onPress={() => router.push("/admin/manage")}
+          onPress={() => router.push("/admin/edit-album")}
         />
 
         <AdminActionRow

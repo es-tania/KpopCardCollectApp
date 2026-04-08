@@ -1,4 +1,9 @@
-import { MemberFormCard } from "@/src/components/member/MemberFormCard";
+import {
+  MemberFormCard,
+  MemberFormErrors,
+  MemberFormState,
+  newMemberForm,
+} from "@/src/components/member/MemberFormCard";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
 import { router } from "expo-router";
 import { ChevronLeft, Plus, UserPlus } from "lucide-react-native";
@@ -20,20 +25,6 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface MemberForm {
-  localId: string; // id temporaire pour le rendu
-  stageName: string;
-  realName: string;
-  koreanName: string;
-  birthDate: string;
-  position: string;
-  photoUri: string;
-}
-
-interface MemberErrors {
-  stageName?: string;
-}
 
 interface GroupFormState {
   name: string;
@@ -68,24 +59,14 @@ const INITIAL_GROUP: GroupFormState = {
   bannerUri: "",
 };
 
-const newMember = (): MemberForm => ({
-  localId: Math.random().toString(36).slice(2),
-  stageName: "",
-  realName: "",
-  koreanName: "",
-  birthDate: "",
-  position: "",
-  photoUri: "",
-});
-
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function AddGroupScreen() {
   const [form, setForm] = useState<GroupFormState>(INITIAL_GROUP);
   const [errors, setErrors] = useState<GroupFormErrors>({});
-  const [members, setMembers] = useState<MemberForm[]>([newMember()]);
+  const [members, setMembers] = useState<MemberFormState[]>([newMemberForm()]);
   const [memberErrors, setMemberErrors] = useState<
-    Record<string, MemberErrors>
+    Record<string, MemberFormErrors>
   >({});
   const [loading, setLoading] = useState(false);
 
@@ -95,7 +76,7 @@ export default function AddGroupScreen() {
   // ── Gestion membres ──────────────────────────────────────────────────────
 
   const handleAddMember = () => {
-    setMembers((prev) => [...prev, newMember()]);
+    setMembers((prev) => [...prev, newMemberForm()]);
   };
 
   const handleRemoveMember = (localId: string) => {
@@ -116,7 +97,7 @@ export default function AddGroupScreen() {
 
   const handleChangeMember = (
     localId: string,
-    key: keyof MemberForm,
+    key: keyof MemberFormState,
     value: string,
   ) => {
     setMembers((prev) =>
@@ -150,7 +131,7 @@ export default function AddGroupScreen() {
     setErrors(e);
 
     // Membres
-    const me: Record<string, MemberErrors> = {};
+    const me: Record<string, MemberFormErrors> = {};
     members.forEach((m) => {
       if (!m.stageName.trim()) {
         me[m.localId] = { stageName: "Nom de scène requis" };
@@ -303,6 +284,8 @@ export default function AddGroupScreen() {
               errors={memberErrors[member.localId]}
               onChange={handleChangeMember}
               onRemove={handleRemoveMember}
+              defaultExpanded={true} // ← ouvert par défaut pour l'ajout
+              showAvatar={false} // ← badge numéroté
             />
           ))}
 

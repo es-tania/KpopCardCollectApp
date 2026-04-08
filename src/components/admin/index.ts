@@ -4,7 +4,7 @@ export { AdminSearchBar } from "./AdminSearchBar";
 export { AdminSectionTitle } from "./AdminSectionTitle";
 export { AdminStatCard } from "./AdminStatCard";
 export { AdminTabBar } from "./AdminTabBar";
-export { AlbumManageRow } from "./photocard/AlbumManageRow";
-export { GroupManageRow } from "./photocard/GroupManageRow";
+export { AlbumManageRow } from "./album/AlbumManageRow";
+export { GroupManageRow } from "./group/GroupManageRow";
 export { PhotocardManageRow } from "./photocard/PhotocardManageRow";
 

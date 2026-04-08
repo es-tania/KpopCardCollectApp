@@ -9,15 +9,9 @@ import {
   MOCK_MEMBERS,
   MOCK_PHOTOCARDS,
 } from "@/src/data";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Animated,
@@ -63,8 +57,6 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function EditPhotocardScreen() {
-  const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
-
   const [viewMode, setViewMode] = useState<ViewMode>("search");
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -93,17 +85,6 @@ export default function EditPhotocardScreen() {
       friction: 12,
     }).start();
   }, [showFilters, filterAnim]);
-
-  // Si on arrive depuis manage.tsx avec un id présélectionné
-  useEffect(() => {
-    if (preselectedId) {
-      const card = MOCK_PHOTOCARDS.find((c) => c.id === preselectedId);
-      if (card) {
-        setSelectedCard(card);
-        setViewMode("edit");
-      }
-    }
-  }, [preselectedId]);
 
   // ── Options des filtres ──────────────────────────────────────────────────
 
@@ -163,6 +144,10 @@ export default function EditPhotocardScreen() {
   const handleSelectCard = useCallback((card: PhotocardWithDetails) => {
     setSelectedCard(card);
     setViewMode("edit");
+  }, []);
+
+  const handlePreviewCard = useCallback((card: PhotocardWithDetails) => {
+    setPreviewCard(card);
   }, []);
 
   const handleDeletePhotocard = useCallback((card: PhotocardWithDetails) => {
@@ -325,6 +310,7 @@ export default function EditPhotocardScreen() {
             renderItem={({ item }) => (
               <PhotocardManageRow
                 card={item}
+                onPreview={() => handlePreviewCard(item)}
                 onEdit={() => handleSelectCard(item)}
                 onDelete={() => handleDeletePhotocard(item)}
               />
