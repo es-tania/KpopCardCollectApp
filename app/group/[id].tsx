@@ -14,12 +14,12 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AlbumGrid } from "../../../src/components/group/AlbumGrid";
-import { GroupHeader } from "../../../src/components/group/GroupHeader";
-import { FilterOption } from "../../../src/components/ui/FilterPills";
-import { Colors } from "../../../src/constants/colors";
-import { Theme } from "../../../src/constants/theme";
-import { Album, Member } from "../../../src/types";
+import { AlbumGrid } from "../../src/components/group/AlbumGrid";
+import { GroupHeader } from "../../src/components/group/GroupHeader";
+import { FilterOption } from "../../src/components/ui/FilterPills";
+import { Colors } from "../../src/constants/colors";
+import { Theme } from "../../src/constants/theme";
+import { Album, Member } from "../../src/types";
 
 // ─── Types locaux ─────────────────────────────────────────────────────────────
 

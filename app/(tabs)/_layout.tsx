@@ -29,6 +29,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarShowLabel: false,
+        // animation: "fade",
+        animation: "none",
       }}
     >
       <Tabs.Screen
@@ -83,38 +85,6 @@ export default function TabLayout() {
               }
             />
           ),
-        }}
-      />
-
-      {/* Pages cachées de la nav mais gardant la bottom bar */}
-      <Tabs.Screen
-        name="group/[id]"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="member/[id]"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="album/[id]"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="admin/index"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="submit-card"
-        options={{
-          href: null,
         }}
       />
     </Tabs>

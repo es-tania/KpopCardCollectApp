@@ -22,16 +22,13 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AlbumGrid } from "../../../src/components/group/AlbumGrid";
-import { MembersList } from "../../../src/components/member/MembersList";
-import {
-  FilterOption,
-  FilterPills,
-} from "../../../src/components/ui/FilterPills";
-import { SectionLabel } from "../../../src/components/ui/SectionLabel";
-import { Colors } from "../../../src/constants/colors";
-import { Theme } from "../../../src/constants/theme";
-import { Album, Member } from "../../../src/types";
+import { AlbumGrid } from "../../src/components/group/AlbumGrid";
+import { MembersList } from "../../src/components/member/MembersList";
+import { FilterOption, FilterPills } from "../../src/components/ui/FilterPills";
+import { SectionLabel } from "../../src/components/ui/SectionLabel";
+import { Colors } from "../../src/constants/colors";
+import { Theme } from "../../src/constants/theme";
+import { Album, Member } from "../../src/types";
 
 // ─── Filtres ──────────────────────────────────────────────────────────────────
 
@@ -133,14 +130,8 @@ export default function MemberScreen() {
   );
 
   const handlePressBack = useCallback(() => {
-    if (groupId) {
-      router.push(`/group/${groupId}`);
-      setSelectedAlbum(null);
-      scrollToTop();
-    } else {
-      router.back();
-      scrollToTop();
-    }
+    router.back();
+    scrollToTop();
   }, [groupId, scrollToTop]);
 
   const handleToggleFavorite = useCallback((cardId: string) => {

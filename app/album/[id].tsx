@@ -10,24 +10,21 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  AlbumHeader,
-  AlbumMembersSelector,
-} from "../../../src/components/album";
-import { FilterPills } from "../../../src/components/ui/FilterPills";
-import { SectionLabel } from "../../../src/components/ui/SectionLabel";
-import { Colors } from "../../../src/constants/colors";
+import { AlbumHeader, AlbumMembersSelector } from "../../src/components/album";
+import { FilterPills } from "../../src/components/ui/FilterPills";
+import { SectionLabel } from "../../src/components/ui/SectionLabel";
+import { Colors } from "../../src/constants/colors";
 import {
   ALL_MEMBERS_ID,
   FILTER_OPTIONS,
   FilterKey,
-} from "../../../src/constants/filterOptions";
-import { Theme } from "../../../src/constants/theme";
-import { MOCK_ALBUMS } from "../../../src/data/mockAlbums";
-import { MOCK_MEMBERS } from "../../../src/data/mockMembers";
-import { MOCK_PHOTOCARDS } from "../../../src/data/mockPhotocards";
-import { useScrollToTop } from "../../../src/hooks/useScrollToTop";
-import { Member } from "../../../src/types";
+} from "../../src/constants/filterOptions";
+import { Theme } from "../../src/constants/theme";
+import { MOCK_ALBUMS } from "../../src/data/mockAlbums";
+import { MOCK_MEMBERS } from "../../src/data/mockMembers";
+import { MOCK_PHOTOCARDS } from "../../src/data/mockPhotocards";
+import { useScrollToTop } from "../../src/hooks/useScrollToTop";
+import { Member } from "../../src/types";
 
 export default function AlbumScreen() {
   const { id, groupId } = useLocalSearchParams<{
@@ -80,7 +77,7 @@ export default function AlbumScreen() {
 
   const handlePressBack = useCallback(() => {
     handleSelectAll();
-    groupId ? router.push(`/group/${groupId}`) : router.back();
+    router.back();
   }, [groupId]);
 
   const handleToggleFavorite = useCallback((cardId: string) => {

@@ -15,8 +15,6 @@ import { Theme } from "../../src/constants/theme";
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const username = "Tane"; // À remplacer par le store auth
-
   const handlePressFavorite = useCallback((id: string) => {
     // TODO: toggle favori via API
     console.log("toggle favorite", id);
@@ -33,10 +31,7 @@ export default function HomeScreen() {
   }, []);
 
   const handlePressGroup = useCallback((groupId: string) => {
-    router.push({
-      pathname: "/group/[id]",
-      params: { id: groupId },
-    });
+    router.push(`/group/${groupId}`);
   }, []);
 
   const handlePressAddGroup = useCallback(() => {
@@ -46,17 +41,6 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
-
-      {/* Header */}
-      {/* <View style={styles.header}>
-        <View>
-          <Text style={styles.headerSub}>Bonjour,</Text>
-          <Text style={styles.headerTitle}>{username} ✨</Text>
-        </View>
-        <TouchableOpacity style={styles.iconBtn}>
-          <Text style={styles.iconBtnText}>🔔</Text>
-        </TouchableOpacity>
-      </View> */}
 
       {/* Contenu scrollable */}
       <ScrollView
