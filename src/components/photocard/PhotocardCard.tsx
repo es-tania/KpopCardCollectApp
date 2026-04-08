@@ -1,9 +1,4 @@
-import {
-  Check,
-  Plus,
-  ShoppingBasket,
-  Star
-} from "lucide-react-native";
+import { Check, Plus, ShoppingBasket, Star } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -15,6 +10,7 @@ interface PhotocardCardProps {
   onPressFavorite?: () => void;
   onPressWishlist?: () => void;
   onPressCollection?: () => void;
+  onPress?: () => void;
 }
 
 const CARD_WIDTH = 130;
@@ -43,12 +39,17 @@ export const PhotocardCard: React.FC<PhotocardCardProps> = ({
   onPressFavorite,
   onPressWishlist,
   onPressCollection,
+  onPress,
 }) => {
   const typeLabel = getTypeLabel(card.type);
   const isSpecialType = card.type !== "normal";
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       {/* ── Image pleine taille ── */}
       <View style={styles.imageContainer}>
         <Image
@@ -131,7 +132,7 @@ export const PhotocardCard: React.FC<PhotocardCardProps> = ({
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

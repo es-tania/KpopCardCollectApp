@@ -246,17 +246,11 @@ export default function MemberScreen() {
 
             {/* Compteur */}
             <SectionLabel
-              label={`${filteredCards.length} carte${filteredCards.length !== 1 ? "s" : ""}`}
+              label={`${filteredCards.length} photocard${filteredCards.length !== 1 ? "s" : ""}`}
               style={styles.sectionLabel}
             />
 
             {filteredCards.length > 0 ? (
-              // <PhotocardGrid
-              //   cards={filteredCards}
-              //   onPressFavorite={handleToggleFavorite}
-              //   onPressWishlist={handleToggleWishlist}
-              //   onPressCollection={handleToggleCollection}
-              // />
               <PhotocardMiniGrid
                 cards={filteredCards}
                 onPressFavorite={handleToggleFavorite}
@@ -267,7 +261,7 @@ export default function MemberScreen() {
               <View style={styles.emptyState}>
                 <Text style={styles.emptyEmoji}>🃏</Text>
                 <Text style={styles.emptyText}>
-                  Aucune carte pour ce filtre
+                  Aucune photocard pour ce filtre
                 </Text>
               </View>
             )}

@@ -5,7 +5,14 @@ import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumGrid } from "../../../src/components/group/AlbumGrid";
 import { GroupHeader } from "../../../src/components/group/GroupHeader";
@@ -37,10 +44,14 @@ export default function GroupScreen() {
   const isMounted = useRef(false);
   const shouldScrollTop = useRef(false);
 
+  const savedScrollY = useRef<number>(0);
+  const isSavingScroll = useRef<boolean>(true);
+
   // Appelé quand on navigue vers membre ou album
   const handlePressMember = useCallback(
     (member: Member) => {
-      shouldScrollTop.current = true;
+      isSavingScroll.current = false;
+      shouldScrollTop.current = false;
       router.push(`/member/${member.id}?groupId=${groupId}`);
     },
     [groupId],
@@ -48,10 +59,20 @@ export default function GroupScreen() {
 
   const handlePressAlbum = useCallback(
     (album: Album) => {
+      isSavingScroll.current = false;
       shouldScrollTop.current = false;
       router.push(`/album/${album.id}?groupId=${groupId}`);
     },
     [groupId],
+  );
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (isSavingScroll.current) {
+        savedScrollY.current = e.nativeEvent.contentOffset.y;
+      }
+    },
+    [],
   );
 
   // Scroll en haut uniquement au retour depuis une page enfant
@@ -61,11 +82,17 @@ export default function GroupScreen() {
         isMounted.current = true;
         return;
       }
-      if (shouldScrollTop.current) {
+      if (isSavingScroll.current) {
+        savedScrollY.current = 0;
         scrollToTop();
-        shouldScrollTop.current = false;
+      } else {
+        // Retour depuis un enfant → restaurer
+        setTimeout(() => {
+          scrollRef.current?.scrollTo({ y: savedScrollY.current });
+        }, 50);
+        isSavingScroll.current = true;
       }
-    }, [scrollToTop]),
+    }, [scrollRef, scrollToTop]),
   );
 
   // Contexte d'affichage des cartes
@@ -131,6 +158,8 @@ export default function GroupScreen() {
         ref={scrollRef}
         style={styles.scroll}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {/* En-tête groupe */}
         <GroupHeader group={MOCK_GROUPS[0]} />

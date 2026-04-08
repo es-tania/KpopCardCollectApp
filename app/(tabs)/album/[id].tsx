@@ -1,3 +1,4 @@
+import { PhotocardMiniGrid } from "@/src/components/photocard";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
@@ -13,7 +14,6 @@ import {
   AlbumHeader,
   AlbumMembersSelector,
 } from "../../../src/components/album";
-import { PhotocardGrid } from "../../../src/components/group/PhotocardGrid";
 import { FilterPills } from "../../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../../src/components/ui/SectionLabel";
 import { Colors } from "../../../src/constants/colors";
@@ -79,6 +79,7 @@ export default function AlbumScreen() {
   }, []);
 
   const handlePressBack = useCallback(() => {
+    handleSelectAll();
     groupId ? router.push(`/group/${groupId}`) : router.back();
   }, [groupId]);
 
@@ -137,12 +138,12 @@ export default function AlbumScreen() {
 
         {/* Photocards */}
         <SectionLabel
-          label={`${filteredCards.length} carte${filteredCards.length !== 1 ? "s" : ""}`}
+          label={`${filteredCards.length} photocard${filteredCards.length !== 1 ? "s" : ""}`}
           style={styles.sectionLabel}
         />
 
         {filteredCards.length > 0 ? (
-          <PhotocardGrid
+          <PhotocardMiniGrid
             cards={filteredCards}
             onPressFavorite={handleToggleFavorite}
             onPressWishlist={handleToggleWishlist}
@@ -151,7 +152,9 @@ export default function AlbumScreen() {
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>🃏</Text>
-            <Text style={styles.emptyText}>Aucune carte pour ce filtre</Text>
+            <Text style={styles.emptyText}>
+              Aucune photocard pour ce filtre
+            </Text>
           </View>
         )}
 

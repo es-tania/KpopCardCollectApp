@@ -1,15 +1,16 @@
 import { Theme } from "@/src/constants/theme";
 import React, { useMemo, useState } from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Colors } from "../../constants/colors";
 import { PhotocardType, PhotocardWithDetails } from "../../types";
 import { PhotocardMini } from "./PhotocardMini";
+import { PhotocardModal } from "./PhotocardModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,9 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
   onPressCollection,
 }) => {
   const [activeType, setActiveType] = useState<TypeFilter>("all");
+  const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
+    null,
+  );
 
   // Déduit les types présents dans les cartes pour n'afficher que les filtres utiles
   const availableTypes = useMemo(() => {
@@ -100,6 +104,7 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
               onPressFavorite={() => onPressFavorite(card.id)}
               onPressWishlist={() => onPressWishlist(card.id)}
               onPressCollection={() => onPressCollection(card.id)}
+              onPress={() => setSelectedCard(card)}
             />
           ))}
         </View>
@@ -109,6 +114,15 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
           <Text style={styles.emptyText}>Aucune carte de ce type</Text>
         </View>
       )}
+
+      <PhotocardModal
+        card={selectedCard}
+        visible={selectedCard !== null}
+        onClose={() => setSelectedCard(null)}
+        onPressFavorite={() => console.log("toggle fav", selectedCard?.id)}
+        onPressWishlist={() => console.log("toggle wish", selectedCard?.id)}
+        onPressCollection={() => console.log("toggle coll", selectedCard?.id)}
+      />
     </View>
   );
 };

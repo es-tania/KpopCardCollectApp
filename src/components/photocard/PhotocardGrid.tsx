@@ -1,17 +1,18 @@
+import { Theme } from "@/src/constants/theme";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { PhotocardWithDetails } from "../../types";
-import { PhotocardCard } from "../photocard/PhotocardCard";
-import { PhotocardModal } from "../photocard/PhotocardModal";
+import { PhotocardCard } from "./PhotocardCard";
+import { PhotocardModal } from "./PhotocardModal";
 
-interface RecentCardsCarouselProps {
+interface PhotocardGridProps {
   cards: PhotocardWithDetails[];
-  onPressFavorite?: (id: string) => void;
-  onPressWishlist?: (id: string) => void;
-  onPressCollection?: (id: string) => void;
+  onPressFavorite: (id: string) => void;
+  onPressWishlist: (id: string) => void;
+  onPressCollection: (id: string) => void;
 }
 
-export const RecentCardsCarousel: React.FC<RecentCardsCarouselProps> = ({
+export const PhotocardGrid: React.FC<PhotocardGridProps> = ({
   cards,
   onPressFavorite,
   onPressWishlist,
@@ -21,18 +22,14 @@ export const RecentCardsCarousel: React.FC<RecentCardsCarouselProps> = ({
     null,
   );
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.content}
-    >
+    <View style={styles.grid}>
       {cards.map((card) => (
         <PhotocardCard
           key={card.id}
           card={card}
-          onPressFavorite={() => onPressFavorite?.(card.id)}
-          onPressWishlist={() => onPressWishlist?.(card.id)}
-          onPressCollection={() => onPressCollection?.(card.id)}
+          onPressFavorite={() => onPressFavorite(card.id)}
+          onPressWishlist={() => onPressWishlist(card.id)}
+          onPressCollection={() => onPressCollection(card.id)}
           onPress={() => setSelectedCard(card)}
         />
       ))}
@@ -44,13 +41,15 @@ export const RecentCardsCarousel: React.FC<RecentCardsCarouselProps> = ({
         onPressWishlist={() => console.log("toggle wish", selectedCard?.id)}
         onPressCollection={() => console.log("toggle coll", selectedCard?.id)}
       />
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  content: {
+  grid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
-    paddingBottom: 4,
+    paddingHorizontal: Theme.spacing.lg,
   },
 });

@@ -10,6 +10,7 @@ interface PhotocardMiniProps {
   onPressFavorite?: () => void;
   onPressWishlist?: () => void;
   onPressCollection?: () => void;
+  onPress?: () => void;
 }
 
 const getTypeLabel = (type: PhotocardWithDetails["type"]): string => {
@@ -34,12 +35,17 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
   onPressFavorite,
   onPressWishlist,
   onPressCollection,
+  onPress,
 }) => {
   const typeLabel = getTypeLabel(card.type);
   const isSpecialType = card.type !== "normal";
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       {/* ── Image ── */}
       <View style={styles.imageContainer}>
         {card.imageUrl ? (
@@ -69,11 +75,6 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
             <Text style={styles.albumTitle} numberOfLines={1}>
               {card.version ? `${card.version}` : ""}
             </Text>
-            {card.shopName && (
-              <Text style={styles.shopName} numberOfLines={1}>
-                {card.shopName}
-              </Text>
-            )}
             <Text style={styles.memberName} numberOfLines={1}>
               {card.albumTitle}
               {card.memberName ? ` · ${card.memberName}` : ""}
@@ -126,7 +127,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
