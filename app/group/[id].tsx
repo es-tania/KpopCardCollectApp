@@ -16,28 +16,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumGrid } from "../../src/components/group/AlbumGrid";
 import { GroupHeader } from "../../src/components/group/GroupHeader";
-import { FilterOption } from "../../src/components/ui/FilterPills";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { Album, Member } from "../../src/types";
-
-// ─── Types locaux ─────────────────────────────────────────────────────────────
-
-type TabKey = "members" | "albums";
-
-const FILTER_OPTIONS: FilterOption[] = [
-  { key: "all", label: "Toutes" },
-  { key: "collection", label: "Collection" },
-  { key: "favorites", label: "Favoris" },
-  { key: "wishlist", label: "Souhaits" },
-];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function GroupScreen() {
   const { scrollRef, scrollToTop } = useScrollToTop();
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState<TabKey>("members");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
@@ -104,7 +91,6 @@ export default function GroupScreen() {
       scrollToTop();
     } else if (selectedMember) {
       setSelectedMember(null);
-      setActiveTab("members");
       scrollToTop();
     } else {
       router.back();

@@ -1,4 +1,4 @@
-import { FilterOption } from "../components/ui/FilterPills";
+import { FilterOption } from "../../components/ui/FilterPills";
 
 export type FilterKey = "all" | "collection" | "favorites" | "wishlist";
 

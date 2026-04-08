@@ -120,7 +120,7 @@ export default function ProfileScreen() {
             }
             label="Administration"
             sublabel="Gérer les cartes et soumissions"
-            onPress={() => console.log("admin")}
+            onPress={() => router.push("/admin")}
           />
         )}
         <ProfileMenuRow

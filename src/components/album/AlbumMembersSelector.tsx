@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../../constants/colors";
-import { ALL_MEMBERS_ID } from "../../constants/filterOptions";
+import { ALL_MEMBERS_ID } from "../../constants/options/filterOptions";
 import { Theme } from "../../constants/theme";
 import { Member } from "../../types";
 import { MembersList } from "../member/MembersList";

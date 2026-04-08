@@ -1,5 +1,6 @@
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid } from "@/src/components/photocard";
+import { FILTER_OPTIONS } from "@/src/constants/options/filterOptions";
 import { MOCK_ALBUMS, MOCK_MEMBERS, MOCK_PHOTOCARDS } from "@/src/data";
 import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
@@ -25,7 +26,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumGrid } from "../../src/components/group/AlbumGrid";
 import { MembersList } from "../../src/components/member/MembersList";
-import { FilterOption, FilterPills } from "../../src/components/ui/FilterPills";
+import { FilterPills } from "../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
@@ -34,13 +35,6 @@ import { Album, Member } from "../../src/types";
 // ─── Filtres ──────────────────────────────────────────────────────────────────
 
 type FilterKey = "all" | "collection" | "favorites" | "wishlist";
-
-const FILTER_OPTIONS: FilterOption[] = [
-  { key: "all", label: "Toutes" },
-  { key: "collection", label: "Collection" },
-  { key: "favorites", label: "Favoris" },
-  { key: "wishlist", label: "Wishlist" },
-];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

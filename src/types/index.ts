@@ -204,7 +204,6 @@ export interface Photocard {
 
   // 🃏 Infos carte
   type: PhotocardType;
-  number?: number; // ex: 1/50
   version?: string; // ex: "A", "B", "Digipack"
 
   // 🎁 Spécificités collection

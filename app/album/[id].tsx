@@ -19,7 +19,7 @@ import {
   ALL_MEMBERS_ID,
   FILTER_OPTIONS,
   FilterKey,
-} from "../../src/constants/filterOptions";
+} from "../../src/constants/options/filterOptions";
 import { Theme } from "../../src/constants/theme";
 import { MOCK_ALBUMS } from "../../src/data/mockAlbums";
 import { MOCK_MEMBERS } from "../../src/data/mockMembers";
