@@ -1,4 +1,4 @@
-import { SelectOption } from "../../components/ui/FormSelect";
+import { SelectOption } from "@/src/types";
 
 export const YES_NO_OPTIONS: SelectOption[] = [
   { key: "oui", label: "Oui" },

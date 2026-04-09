@@ -1,3 +1,4 @@
+import { AdminTab } from "@/src/types";
 import React from "react";
 import {
   ScrollView,
@@ -8,12 +9,6 @@ import {
 } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
-
-export interface AdminTab {
-  key: string;
-  label: string;
-  count?: number;
-}
 
 interface AdminTabBarProps {
   tabs: AdminTab[];

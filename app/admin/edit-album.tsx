@@ -1,36 +1,29 @@
 import { AdminSearchBar, AlbumManageRow } from "@/src/components/admin";
-import {
-    AlbumEditForm,
-    AlbumEditFormState,
-} from "@/src/components/admin/album/AlbumEditForm";
+import { AlbumEditForm } from "@/src/components/admin/album/AlbumEditForm";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
 import { MOCK_ALBUMS, MOCK_GROUPS } from "@/src/data";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    Alert,
-    Animated,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { Album } from "../../src/types";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ViewMode = "search" | "edit";
+import { Album, AlbumEditFormState, ViewMode } from "../../src/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

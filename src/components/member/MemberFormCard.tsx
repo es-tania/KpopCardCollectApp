@@ -4,27 +4,12 @@ import { FormSelect } from "@/src/components/ui/FormSelect";
 import { Colors } from "@/src/constants/colors";
 import { POSITION_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
+import { MemberFormErrors, MemberFormState } from "@/src/types";
 import { Trash2 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface MemberFormState {
-  localId: string;
-  id?: string; // undefined = nouveau membre
-  stageName: string;
-  realName: string;
-  koreanName: string;
-  birthDate: string;
-  position: string;
-  photoUri: string;
-  isNew?: boolean;
-}
-
-export interface MemberFormErrors {
-  stageName?: string;
-}
 
 interface MemberFormCardProps {
   member: MemberFormState;

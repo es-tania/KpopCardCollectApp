@@ -1,7 +1,7 @@
+import { ALBUM_TYPE_LABELS } from "@/src/constants/options";
 import { Edit2, Trash2 } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ALBUM_TYPE_LABELS } from "../../../constants/albumTypeLabels";
 import { Colors } from "../../../constants/colors";
 import { Theme } from "../../../constants/theme";
 import { Album } from "../../../types";

@@ -7,39 +7,26 @@ import { Colors } from "@/src/constants/colors";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { MOCK_MEMBERS } from "@/src/data/mockMembers";
-import { Group } from "@/src/types";
+import {
+  Group,
+  GroupEditFormState,
+  MemberFormErrors,
+  MemberFormState,
+} from "@/src/types";
 import { Plus, UserPlus } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import {
-    MemberFormCard,
-    MemberFormErrors,
-    MemberFormState,
-} from "../../member/MemberFormCard";
+import { MemberFormCard } from "../../member/MemberFormCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface GroupEditFormState {
-  name: string;
-  koreanName: string;
-  company: string;
-  generation: string;
-  fandomName: string;
-  status: string;
-  debutDate: string;
-  disbandDate: string;
-  memberCount: string;
-  logoUri: string;
-  bannerUri: string;
-}
 
 interface GroupEditFormProps {
   group: Group;

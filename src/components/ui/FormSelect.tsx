@@ -1,21 +1,17 @@
+import { SelectOption } from "@/src/types";
 import { ChevronDown } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
-
-export interface SelectOption {
-  key: string;
-  label: string;
-}
 
 interface FormSelectProps {
   label: string;

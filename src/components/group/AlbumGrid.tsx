@@ -1,3 +1,4 @@
+import { ALBUM_TYPE_LABELS } from "@/src/constants/options";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -9,23 +10,6 @@ interface AlbumGridProps {
   albums: Album[];
   onPressAlbum: (album: Album) => void;
 }
-
-const ALBUM_TYPE_LABELS: Record<string, string> = {
-  mini_album: "Mini Album",
-  full_album: "Album",
-  single: "Single",
-  digital_single: "Digital",
-  repackage: "Repackage",
-  fanmeeting: "Fanmeeting",
-  fansign: "Fansign",
-  season_greetings: "Season Greetings",
-  membership_kit: "Membership Kit",
-  platform_album: "Platform",
-  lucky_draw: "Lucky Draw",
-  photobook: "Photobook",
-  event: "Event",
-  concert: "Concert",
-};
 
 const AlbumCard: React.FC<{
   album: Album;

@@ -1,4 +1,9 @@
-import { ALBUM_TYPE_OPTIONS, CATEGORY_OPTIONS } from "@/src/constants/options";
+import {
+  ALBUM_TYPE_OPTIONS,
+  CATEGORY_OPTIONS,
+  YES_NO_OPTIONS,
+} from "@/src/constants/options";
+import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
@@ -13,35 +18,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../src/components/ui/FormField";
 import { FormImagePicker } from "../../src/components/ui/FormImagePicker";
-import { FormSelect, SelectOption } from "../../src/components/ui/FormSelect";
+import { FormSelect } from "../../src/components/ui/FormSelect";
 import { FormSubmitButton } from "../../src/components/ui/FormSubmitButton";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { MOCK_GROUPS } from "../../src/data/mockGroups";
 
-interface FormState {
-  groupId: string;
-  title: string;
-  koreanTitle: string;
-  type: string;
-  category: string;
-  releaseDate: string;
-  eventName: string;
-  eventLocation: string;
-  eventDate: string;
-  versions: string;
-  hasPOB: string;
-  isLimited: string;
-  coverUri: string;
-}
-
-interface FormErrors {
-  groupId?: string;
-  title?: string;
-  type?: string;
-}
-
-const INITIAL: FormState = {
+const INITIAL: AlbumFormState = {
   groupId: "",
   title: "",
   koreanTitle: "",
@@ -55,19 +38,15 @@ const INITIAL: FormState = {
   hasPOB: "non",
   isLimited: "non",
   coverUri: "",
+  tags: "",
 };
 
-const YES_NO: SelectOption[] = [
-  { key: "oui", label: "Oui" },
-  { key: "non", label: "Non" },
-];
-
 export default function AddAlbumScreen() {
-  const [form, setForm] = useState<FormState>(INITIAL);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [form, setForm] = useState<AlbumFormState>(INITIAL);
+  const [errors, setErrors] = useState<AlbumFormErrors>({});
   const [loading, setLoading] = useState(false);
 
-  const set = (key: keyof FormState) => (value: string) =>
+  const set = (key: keyof AlbumFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const groupOptions: SelectOption[] = MOCK_GROUPS.map((g) => ({
@@ -76,7 +55,7 @@ export default function AddAlbumScreen() {
   }));
 
   const validate = (): boolean => {
-    const e: FormErrors = {};
+    const e: AlbumFormErrors = {};
     if (!form.groupId) e.groupId = "Groupe requis";
     if (!form.title.trim()) e.title = "Titre requis";
     if (!form.type) e.type = "Type requis";
@@ -209,13 +188,13 @@ export default function AddAlbumScreen() {
           />
           <FormSelect
             label="Contient des POB ?"
-            options={YES_NO}
+            options={YES_NO_OPTIONS}
             value={form.hasPOB}
             onChange={set("hasPOB")}
           />
           <FormSelect
             label="Édition limitée ?"
-            options={YES_NO}
+            options={YES_NO_OPTIONS}
             value={form.isLimited}
             onChange={set("isLimited")}
           />

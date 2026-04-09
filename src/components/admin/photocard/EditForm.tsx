@@ -1,40 +1,33 @@
 import { Colors } from "@/src/constants/colors";
 import {
-    RARITY_OPTIONS,
-    SHOP_OPTIONS,
-    TYPE_OPTIONS,
+  PHOTOCARD_TYPE_OPTIONS,
+  RARITY_OPTIONS,
+  SHOP_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { MOCK_ALBUMS, MOCK_MEMBERS } from "@/src/data";
-import { PhotocardWithDetails } from "@/src/types";
+import {
+  PhotocardEditFormState,
+  PhotocardWithDetails,
+  SelectOption,
+} from "@/src/types";
 import { useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { FormField } from "../../ui/FormField";
 import { FormImagePicker } from "../../ui/FormImagePicker";
-import { FormSelect, SelectOption } from "../../ui/FormSelect";
+import { FormSelect } from "../../ui/FormSelect";
 import { FormSubmitButton } from "../../ui/FormSubmitButton";
-
-interface EditFormState {
-  type: string;
-  version: string;
-  shopName: string;
-  rarity: string;
-  imageUri: string;
-  backImageUri: string;
-  memberId: string;
-  albumId: string;
-}
 
 interface EditFormProps {
   card: PhotocardWithDetails;
-  onSave: (data: EditFormState) => void;
+  onSave: (data: PhotocardEditFormState) => void;
   onCancel: () => void;
   loading: boolean;
 }
@@ -45,7 +38,7 @@ export const EditForm: React.FC<EditFormProps> = ({
   onCancel,
   loading,
 }) => {
-  const [form, setForm] = useState<EditFormState>({
+  const [form, setForm] = useState<PhotocardEditFormState>({
     type: card.type,
     version: card.version ?? "",
     shopName: card.shopName ?? "",
@@ -56,7 +49,7 @@ export const EditForm: React.FC<EditFormProps> = ({
     albumId: card.albumId,
   });
 
-  const set = (key: keyof EditFormState) => (value: string) =>
+  const set = (key: keyof PhotocardEditFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   // Options album et membre liés au groupe de la carte
@@ -135,7 +128,7 @@ export const EditForm: React.FC<EditFormProps> = ({
         <Text style={editStyles.sectionTitle}>Détails</Text>
         <FormSelect
           label="Type"
-          options={TYPE_OPTIONS}
+          options={PHOTOCARD_TYPE_OPTIONS}
           value={form.type}
           onChange={set("type")}
         />

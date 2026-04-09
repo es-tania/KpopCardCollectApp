@@ -1,4 +1,4 @@
-import { SelectOption } from "../../components/ui/FormSelect";
+import { SelectOption } from "@/src/types";
 
 export const CATEGORY_OPTIONS: SelectOption[] = [
   { key: "music", label: "Musique" },
@@ -6,3 +6,10 @@ export const CATEGORY_OPTIONS: SelectOption[] = [
   { key: "merch", label: "Merch" },
   { key: "media", label: "Média" },
 ];
+
+export const CATEGORY_LABELS: Record<string, string> = {
+  music: "Musique",
+  event: "Événement",
+  merch: "Merch",
+  media: "Média",
+};

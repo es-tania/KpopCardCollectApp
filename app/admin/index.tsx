@@ -28,8 +28,6 @@ import {
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
-// ─── Mock soumissions en attente ──────────────────────────────────────────────
-
 // ─── Stats mock ───────────────────────────────────────────────────────────────
 
 const STATS = {

@@ -60,10 +60,6 @@ interface GroupHeaderProps {
   group: Group;
 }
 
-interface GroupHeaderProps {
-  group: Group;
-}
-
 export const GroupHeader: React.FC<GroupHeaderProps> = ({ group }) => {
   const [expanded, setExpanded] = useState(false);
 

@@ -1,4 +1,4 @@
-import { Submission } from "../components/admin/submissions";
+import { Submission } from "../types";
 import { MOCK_PHOTOCARDS } from "./mockPhotocards";
 
 export const MOCK_SUBMISSIONS: Submission[] = [

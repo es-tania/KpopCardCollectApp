@@ -4,32 +4,23 @@ import { FormSelect } from "@/src/components/ui/FormSelect";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import {
-    ALBUM_TYPE_OPTIONS,
-    CATEGORY_OPTIONS,
-    YES_NO_OPTIONS,
+  ALBUM_TYPE_OPTIONS,
+  CATEGORY_OPTIONS,
+  YES_NO_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
-import { Album } from "@/src/types";
+import { Album, AlbumEditFormState } from "@/src/types";
 import React, { useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface AlbumEditFormState {
-  title: string;
-  koreanTitle: string;
-  type: string;
-  category: string;
-  releaseDate: string;
-  eventName: string;
-  eventLocation: string;
-  eventDate: string;
-  versions: string;
-  hasPOB: string;
-  isLimited: string;
-  coverUri: string;
-  tags: string;
-}
 
 interface AlbumEditFormProps {
   album: Album;

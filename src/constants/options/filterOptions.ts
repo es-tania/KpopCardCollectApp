@@ -1,8 +1,8 @@
-import { FilterOption } from "../../components/ui/FilterPills";
+import { SelectOption } from "@/src/types";
 
 export type FilterKey = "all" | "collection" | "favorites" | "wishlist";
 
-export const FILTER_OPTIONS: FilterOption[] = [
+export const FILTER_OPTIONS: SelectOption[] = [
   { key: "all", label: "Toutes" },
   { key: "collection", label: "Collection" },
   { key: "favorites", label: "Favoris" },

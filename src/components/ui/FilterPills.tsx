@@ -1,15 +1,11 @@
+import { SelectOption } from "@/src/types";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 
-export type FilterOption = {
-  key: string;
-  label: string;
-};
-
 interface FilterPillsProps {
-  options: FilterOption[];
+  options: SelectOption[];
   selected: string;
   onSelect: (key: string) => void;
 }

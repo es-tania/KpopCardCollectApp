@@ -1,35 +1,34 @@
 import { AdminSearchBar, GroupManageRow } from "@/src/components/admin";
-import {
-    GroupEditForm,
-    GroupEditFormState,
-} from "@/src/components/admin/group/GroupEditForm";
+import { GroupEditForm } from "@/src/components/admin/group/GroupEditForm";
+import { STATUS_FILTER_OPTIONS } from "@/src/constants/options";
 import { MOCK_GROUPS } from "@/src/data";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
 import React, {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 import {
-    Alert,
-    Animated,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Animated,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { Group } from "../../src/types";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ViewMode = "search" | "edit";
+import {
+  Group,
+  GroupEditFormState,
+  StatusFilter,
+  ViewMode,
+} from "../../src/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -43,17 +42,6 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
     ],
   );
 };
-
-// ─── Filtres status ───────────────────────────────────────────────────────────
-
-type StatusFilter = "all" | "active" | "hiatus" | "disbanded";
-
-const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
-  { key: "all", label: "Tous" },
-  { key: "active", label: "Actifs" },
-  { key: "hiatus", label: "Hiatus" },
-  { key: "disbanded", label: "Disbandés" },
-];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -215,7 +203,7 @@ export default function EditGroupScreen() {
             <View style={styles.filtersPanelInner}>
               {/* Pills statut */}
               <View style={styles.statusPills}>
-                {STATUS_FILTERS.map((sf) => (
+                {STATUS_FILTER_OPTIONS.map((sf) => (
                   <TouchableOpacity
                     key={sf.key}
                     style={[
@@ -270,7 +258,11 @@ export default function EditGroupScreen() {
               {statusFilter !== "all" && (
                 <Text style={styles.countFilter}>
                   {" "}
-                  · {STATUS_FILTERS.find((s) => s.key === statusFilter)?.label}
+                  ·{" "}
+                  {
+                    STATUS_FILTER_OPTIONS.find((s) => s.key === statusFilter)
+                      ?.label
+                  }
                 </Text>
               )}
             </Text>

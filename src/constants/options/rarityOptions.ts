@@ -1,4 +1,4 @@
-import { SelectOption } from "../../components/ui/FormSelect";
+import { SelectOption } from "@/src/types";
 
 export const RARITY_OPTIONS: SelectOption[] = [
   { key: "common", label: "Commune" },

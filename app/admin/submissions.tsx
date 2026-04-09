@@ -1,27 +1,30 @@
 import { AdminSearchBar } from "@/src/components/admin";
-import { AdminTab, AdminTabBar } from "@/src/components/admin/AdminTabBar";
-import { Submission, SubmissionCard } from "@/src/components/admin/submissions";
+import { AdminTabBar } from "@/src/components/admin/AdminTabBar";
+import { SubmissionCard } from "@/src/components/admin/submissions/SubmissionCard";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import { MOCK_SUBMISSIONS } from "@/src/data/mockSubmissions";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { PhotocardWithDetails } from "../../src/types";
+import {
+  AdminTab,
+  PhotocardWithDetails,
+  Submission,
+  SubmissionStatus,
+} from "../../src/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type StatusFilter = "pending" | "approved" | "rejected";
 
 const TABS: AdminTab[] = [
   {
@@ -44,7 +47,7 @@ const TABS: AdminTab[] = [
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SubmissionsScreen() {
-  const [activeTab, setActiveTab] = useState<StatusFilter>("pending");
+  const [activeTab, setActiveTab] = useState<SubmissionStatus>("pending");
   const [query, setQuery] = useState("");
   const [submissions, setSubmissions] =
     useState<Submission[]>(MOCK_SUBMISSIONS);
@@ -148,7 +151,7 @@ export default function SubmissionsScreen() {
   }, [submissions]);
 
   const handleTabChange = useCallback((key: string) => {
-    setActiveTab(key as StatusFilter);
+    setActiveTab(key as SubmissionStatus);
     setQuery("");
   }, []);
 

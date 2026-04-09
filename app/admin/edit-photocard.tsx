@@ -24,22 +24,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { PhotocardWithDetails } from "../../src/types";
-
-// ─── Types locaux ─────────────────────────────────────────────────────────────
-
-type ViewMode = "search" | "edit";
-
-interface EditFormState {
-  type: string;
-  version: string;
-  shopName: string;
-  rarity: string;
-  imageUri: string;
-  backImageUri: string;
-  memberId: string;
-  albumId: string;
-}
+import {
+  PhotocardEditFormState,
+  PhotocardWithDetails,
+  ViewMode,
+} from "../../src/types";
 
 // ─── Helpers suppression ──────────────────────────────────────────────────────
 
@@ -161,7 +150,7 @@ export default function EditPhotocardScreen() {
     );
   }, []);
 
-  const handleSave = useCallback(async (data: EditFormState) => {
+  const handleSave = useCallback(async (data: PhotocardEditFormState) => {
     setSaving(true);
     await new Promise((r) => setTimeout(r, 1000));
     setSaving(false);

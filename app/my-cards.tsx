@@ -1,8 +1,10 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
+import { ALL_KEY } from "@/src/constants/key";
 import { MOCK_GROUPS } from "@/src/data/mockGroups";
 import { MOCK_PHOTOCARDS } from "@/src/data/mockPhotocards";
 import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
+import { CardMode } from "@/src/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Grid3x3, SlidersHorizontal } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -18,12 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PhotocardMiniGrid } from "../src/components/photocard/PhotocardMiniGrid";
 import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
-
-// ─── Constantes ───────────────────────────────────────────────────────────────
-
-const ALL_KEY = "all";
-
-type CardMode = "collection" | "favorites" | "wishlist";
 
 // ─── Config par mode ──────────────────────────────────────────────────────────
 

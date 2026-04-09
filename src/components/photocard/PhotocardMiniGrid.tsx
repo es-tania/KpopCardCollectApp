@@ -1,3 +1,4 @@
+import { PHOTOCARD_TYPE_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import React, { useMemo, useState } from "react";
 import {
@@ -8,28 +9,13 @@ import {
   View,
 } from "react-native";
 import { Colors } from "../../constants/colors";
-import { PhotocardType, PhotocardWithDetails } from "../../types";
+import {
+  PhotocardType,
+  PhotocardTypeFilter,
+  PhotocardWithDetails,
+} from "../../types";
 import { PhotocardMini } from "./PhotocardMini";
 import { PhotocardModal } from "./PhotocardModal";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type TypeFilter = "all" | PhotocardType;
-
-interface TypeFilterOption {
-  key: TypeFilter;
-  label: string;
-}
-
-const TYPE_FILTER_OPTIONS: TypeFilterOption[] = [
-  { key: "all", label: "Tous" },
-  { key: "normal", label: "Normal" },
-  { key: "pob", label: "POB" },
-  { key: "broadcast", label: "Broadcast" },
-  { key: "lucky_draw", label: "Lucky Draw" },
-  { key: "event", label: "Event" },
-  { key: "benefit", label: "Benefit" },
-];
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +34,7 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
   onPressWishlist,
   onPressCollection,
 }) => {
-  const [activeType, setActiveType] = useState<TypeFilter>("all");
+  const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
   );
@@ -56,7 +42,7 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
   // Déduit les types présents dans les cartes pour n'afficher que les filtres utiles
   const availableTypes = useMemo(() => {
     const types = new Set(cards.map((c) => c.type));
-    return TYPE_FILTER_OPTIONS.filter(
+    return PHOTOCARD_TYPE_OPTIONS.filter(
       (opt) => opt.key === "all" || types.has(opt.key as PhotocardType),
     );
   }, [cards]);

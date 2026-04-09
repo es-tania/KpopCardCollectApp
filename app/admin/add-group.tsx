@@ -1,10 +1,14 @@
 import {
   MemberFormCard,
-  MemberFormErrors,
-  MemberFormState,
   newMemberForm,
 } from "@/src/components/member/MemberFormCard";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
+import {
+  GroupFormErrors,
+  GroupFormState,
+  MemberFormErrors,
+  MemberFormState,
+} from "@/src/types";
 import { router } from "expo-router";
 import { ChevronLeft, Plus, UserPlus } from "lucide-react-native";
 import React, { useState } from "react";
@@ -24,26 +28,6 @@ import { FormSubmitButton } from "../../src/components/ui/FormSubmitButton";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface GroupFormState {
-  name: string;
-  koreanName: string;
-  company: string;
-  debutDate: string;
-  generation: string;
-  fandomName: string;
-  memberCount: string;
-  status: string;
-  logoUri: string;
-  bannerUri: string;
-}
-
-interface GroupFormErrors {
-  name?: string;
-  company?: string;
-}
-
 // ─── Valeurs initiales ────────────────────────────────────────────────────────
 
 const INITIAL_GROUP: GroupFormState = {
@@ -51,6 +35,7 @@ const INITIAL_GROUP: GroupFormState = {
   koreanName: "",
   company: "",
   debutDate: "",
+  disbandDate: "",
   generation: "",
   fandomName: "",
   memberCount: "",

@@ -1,16 +1,15 @@
 import { View } from "@/components/Themed";
 import { Colors } from "@/src/constants/colors";
+import { ALL_KEY } from "@/src/constants/key";
 import { Theme } from "@/src/constants/theme";
 import { Group } from "@/src/types";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
 } from "react-native";
-
-const ALL_KEY = "all";
 
 interface GroupFilterProps {
   groups: Group[];

@@ -2,12 +2,10 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
-import { PhotocardWithDetails } from "../../types";
-
-type ScanResultStatus = "found" | "not_found";
+import { PhotocardWithDetails, ScanStatus } from "../../types";
 
 interface ScanResultCardProps {
-  status: ScanResultStatus;
+  status: ScanStatus;
   card?: PhotocardWithDetails;
   onAddToCollection?: () => void;
   onAddToWishlist?: () => void;

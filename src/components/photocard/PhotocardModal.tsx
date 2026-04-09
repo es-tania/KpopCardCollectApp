@@ -1,25 +1,29 @@
 import {
-    Calendar,
-    Check,
-    Hash,
-    Layers,
-    Plus,
-    Share,
-    ShoppingCart,
-    Star,
-    Tag,
-    X,
+  PHOTOCARD_TYPE_LABELS,
+  SUBMISSION_STATUS_LABELS,
+} from "@/src/constants/options";
+import {
+  Calendar,
+  Check,
+  Hash,
+  Layers,
+  Plus,
+  Share,
+  ShoppingCart,
+  Star,
+  Tag,
+  X,
 } from "lucide-react-native";
 import React from "react";
 import {
-    Dimensions,
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/colors";
@@ -31,21 +35,6 @@ const CARD_WIDTH = SCREEN_WIDTH * 0.72;
 const CARD_HEIGHT = CARD_WIDTH / 0.68;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const TYPE_LABELS: Record<string, string> = {
-  normal: "Normal",
-  pob: "Pre-Order Benefit",
-  lucky_draw: "Lucky Draw",
-  broadcast: "Broadcast",
-  event: "Event",
-  benefit: "Benefit",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  approved: "Approuvée",
-  pending: "En attente",
-  rejected: "Refusée",
-};
 
 // ─── Sous-composant ligne d'info ──────────────────────────────────────────────
 
@@ -115,7 +104,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
 }) => {
   if (!card) return null;
 
-  const typeLabel = TYPE_LABELS[card.type] ?? card.type;
+  const typeLabel = PHOTOCARD_TYPE_LABELS[card.type] ?? card.type;
   const isSpecialType = card.type !== "normal";
 
   return (
@@ -294,15 +283,6 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
                 value={card.version}
               />
             )}
-            {card.number !== undefined && (
-              <InfoRow
-                icon={
-                  <Hash size={14} color={Colors.textMuted} strokeWidth={1.6} />
-                }
-                label="Numéro"
-                value={`#${card.number}`}
-              />
-            )}
             {card.shopName && (
               <InfoRow
                 icon={
@@ -332,7 +312,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
                 <Check size={14} color={Colors.textMuted} strokeWidth={1.6} />
               }
               label="Statut"
-              value={STATUS_LABELS[card.status] ?? card.status}
+              value={SUBMISSION_STATUS_LABELS[card.status] ?? card.status}
             />
           </View>
         </ScrollView>

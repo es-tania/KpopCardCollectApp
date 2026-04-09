@@ -1,17 +1,10 @@
+import { PHOTOCARD_TYPE_LABELS } from "@/src/constants/options";
 import { Check, Eye, X } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../../constants/colors";
 import { Theme } from "../../../constants/theme";
-import { PhotocardWithDetails } from "../../../types";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface Submission {
-  card: PhotocardWithDetails;
-  submittedBy: string;
-  submittedAt: string;
-}
+import { Submission } from "../../../types";
 
 interface SubmissionCardProps {
   submission: Submission;
@@ -39,15 +32,6 @@ const STATUS_CONFIG = {
     bg: "rgba(240,112,112,0.1)",
     border: "rgba(240,112,112,0.3)",
   },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-  normal: "Normal",
-  pob: "POB",
-  lucky_draw: "Lucky Draw",
-  broadcast: "Broadcast",
-  event: "Event",
-  benefit: "Benefit",
 };
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -120,7 +104,7 @@ export const SubmissionCard: React.FC<SubmissionCardProps> = ({
           <View style={styles.tagsRow}>
             <View style={styles.typeBadge}>
               <Text style={styles.typeBadgeText}>
-                {TYPE_LABELS[card.type] ?? card.type}
+                {PHOTOCARD_TYPE_LABELS[card.type] ?? card.type}
               </Text>
             </View>
             {card.version && <Text style={styles.version}>{card.version}</Text>}

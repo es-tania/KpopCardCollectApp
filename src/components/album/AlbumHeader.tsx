@@ -1,3 +1,4 @@
+import { ALBUM_TYPE_LABELS, CATEGORY_LABELS } from "@/src/constants/options";
 import {
   Calendar,
   ChevronDown,
@@ -10,7 +11,6 @@ import {
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ALBUM_TYPE_LABELS } from "../../constants/albumTypeLabels";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 import { Album } from "../../types";
@@ -62,15 +62,6 @@ const infoStyles = StyleSheet.create({
     textAlign: "right",
   },
 });
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const CATEGORY_LABELS: Record<string, string> = {
-  music: "Musique",
-  event: "Événement",
-  merch: "Merch",
-  media: "Média",
-};
 
 // ─── Composant principal ──────────────────────────────────────────────────────
 

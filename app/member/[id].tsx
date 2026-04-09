@@ -30,11 +30,7 @@ import { FilterPills } from "../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { Album, Member } from "../../src/types";
-
-// ─── Filtres ──────────────────────────────────────────────────────────────────
-
-type FilterKey = "all" | "collection" | "favorites" | "wishlist";
+import { Album, FilterKey, Member } from "../../src/types";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 

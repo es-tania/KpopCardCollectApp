@@ -1,4 +1,4 @@
-import { SelectOption } from "../../components/ui/FormSelect";
+import { SelectOption } from "@/src/types";
 
 export const GENERATION_OPTIONS: SelectOption[] = [
   { key: "1st gen", label: "1ère génération" },

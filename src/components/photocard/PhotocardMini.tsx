@@ -1,3 +1,4 @@
+import { PHOTOCARD_TYPE_LABELS } from "@/src/constants/options";
 import { Check, Plus, ShoppingBasket, Star } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -13,23 +14,6 @@ interface PhotocardMiniProps {
   onPress?: () => void;
 }
 
-const getTypeLabel = (type: PhotocardWithDetails["type"]): string => {
-  switch (type) {
-    case "pob":
-      return "POB";
-    case "lucky_draw":
-      return "Lucky Draw";
-    case "broadcast":
-      return "Broadcast";
-    case "event":
-      return "Event";
-    case "benefit":
-      return "Benefit";
-    default:
-      return "";
-  }
-};
-
 export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
   card,
   onPressFavorite,
@@ -37,7 +21,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
   onPressCollection,
   onPress,
 }) => {
-  const typeLabel = getTypeLabel(card.type);
+  const typeLabel = PHOTOCARD_TYPE_LABELS[card.type];
   const isSpecialType = card.type !== "normal";
 
   return (

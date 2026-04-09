@@ -1,8 +1,13 @@
 import {
+  PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
   SHOP_OPTIONS,
-  TYPE_OPTIONS,
 } from "@/src/constants/options";
+import {
+  PhotocardFormErrors,
+  PhotocardFormState,
+  SelectOption,
+} from "@/src/types";
 import { router } from "expo-router";
 import { ChevronLeft, Sparkles } from "lucide-react-native";
 import React, { useState } from "react";
@@ -17,7 +22,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../src/components/ui/FormField";
 import { FormImagePicker } from "../../src/components/ui/FormImagePicker";
-import { FormSelect, SelectOption } from "../../src/components/ui/FormSelect";
+import { FormSelect } from "../../src/components/ui/FormSelect";
 import { FormSubmitButton } from "../../src/components/ui/FormSubmitButton";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
@@ -27,35 +32,12 @@ import { MOCK_MEMBERS } from "../../src/data/mockMembers";
 
 // ─── Formulaire ───────────────────────────────────────────────────────────────
 
-interface FormState {
-  groupId: string;
-  albumId: string;
-  memberId: string;
-  type: string;
-  version: string;
-  number: string;
-  eventName: string;
-  rarity: string;
-  imageUri: string;
-  backImageUri: string;
-  shopName: string;
-}
-
-interface FormErrors {
-  groupId?: string;
-  albumId?: string;
-  memberId?: string;
-  type?: string;
-  imageUri?: string;
-}
-
-const INITIAL_FORM: FormState = {
+const INITIAL_FORM: PhotocardFormState = {
   groupId: "",
   albumId: "",
   memberId: "",
   type: "",
   version: "",
-  number: "",
   eventName: "",
   rarity: "common",
   imageUri: "",
@@ -66,12 +48,12 @@ const INITIAL_FORM: FormState = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardScreen() {
-  const [form, setForm] = useState<FormState>(INITIAL_FORM);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [form, setForm] = useState<PhotocardFormState>(INITIAL_FORM);
+  const [errors, setErrors] = useState<PhotocardFormErrors>({});
   const [loading, setLoading] = useState(false);
   const [aiDetecting, setAiDetecting] = useState(false);
 
-  const set = (key: keyof FormState) => (value: string) =>
+  const set = (key: keyof PhotocardFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   // Options dynamiques selon les sélections
@@ -109,7 +91,7 @@ export default function AddPhotocardScreen() {
   };
 
   const validate = (): boolean => {
-    const e: FormErrors = {};
+    const e: PhotocardFormErrors = {};
     if (!form.groupId) e.groupId = "Groupe requis";
     if (!form.albumId) e.albumId = "Album requis";
     if (!form.memberId) e.memberId = "Membre requis";
@@ -214,12 +196,11 @@ export default function AddPhotocardScreen() {
         </View>
 
         {/* ── Détails ── */}
-        {/* ── Détails ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Détails</Text>
           <FormSelect
             label="Type"
-            options={TYPE_OPTIONS}
+            options={PHOTOCARD_TYPE_OPTIONS}
             value={form.type}
             onChange={set("type")}
             required
