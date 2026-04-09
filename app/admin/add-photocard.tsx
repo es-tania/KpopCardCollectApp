@@ -8,7 +8,7 @@ import {
   PhotocardFormState,
   SelectOption,
 } from "@/src/types";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Sparkles } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -48,7 +48,16 @@ const INITIAL_FORM: PhotocardFormState = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardScreen() {
-  const [form, setForm] = useState<PhotocardFormState>(INITIAL_FORM);
+  const { groupId: preGroupId, memberId: preMemberId } = useLocalSearchParams<{
+    groupId?: string;
+    memberId?: string;
+  }>();
+  const [form, setForm] = useState<PhotocardFormState>({
+    ...INITIAL_FORM,
+    // Pré-remplit depuis les params de route (venant du scan)
+    groupId: preGroupId ?? "",
+    memberId: preMemberId ?? "",
+  });
   const [errors, setErrors] = useState<PhotocardFormErrors>({});
   const [loading, setLoading] = useState(false);
   const [aiDetecting, setAiDetecting] = useState(false);

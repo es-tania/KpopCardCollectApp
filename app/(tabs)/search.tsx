@@ -97,41 +97,42 @@ export default function SearchScreen() {
   }, []);
 
   const handlePressScan = useCallback(() => {
+    router.push("/scan");
     // TODO: ouvrir la caméra avec expo-camera
     // Simulation pour la démo
-    Alert.alert(
-      "Scanner une carte",
-      "La caméra s'ouvrira ici (expo-camera). Simulation d'un résultat...",
-      [
-        {
-          text: 'Simuler "Trouvée"',
-          onPress: () =>
-            setScanState({
-              status: "found",
-              card: {
-                id: "pc1",
-                memberId: "m1",
-                albumId: "a1",
-                groupId: "g1",
-                type: "normal",
-                status: "approved",
-                memberName: "Keeho",
-                albumTitle: "ALARM",
-                groupName: "P1Harmony",
-                version: "A",
-                isInCollection: false,
-                isFavorite: false,
-                isWishlisted: false,
-              },
-            }),
-        },
-        {
-          text: 'Simuler "Inconnue"',
-          onPress: () => setScanState({ status: "not_found" }),
-        },
-        { text: "Annuler", style: "cancel" },
-      ],
-    );
+    // Alert.alert(
+    //   "Scanner une carte",
+    //   "La caméra s'ouvrira ici (expo-camera). Simulation d'un résultat...",
+    //   [
+    //     {
+    //       text: 'Simuler "Trouvée"',
+    //       onPress: () =>
+    //         setScanState({
+    //           status: "found",
+    //           card: {
+    //             id: "pc1",
+    //             memberId: "m1",
+    //             albumId: "a1",
+    //             groupId: "g1",
+    //             type: "normal",
+    //             status: "approved",
+    //             memberName: "Keeho",
+    //             albumTitle: "ALARM",
+    //             groupName: "P1Harmony",
+    //             version: "A",
+    //             isInCollection: false,
+    //             isFavorite: false,
+    //             isWishlisted: false,
+    //           },
+    //         }),
+    //     },
+    //     {
+    //       text: 'Simuler "Inconnue"',
+    //       onPress: () => setScanState({ status: "not_found" }),
+    //     },
+    //     { text: "Annuler", style: "cancel" },
+    //   ],
+    // );
   }, []);
 
   const handleAddToCollection = useCallback(() => {
