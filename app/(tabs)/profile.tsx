@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import {
+  Download,
   Grid3x3,
   LogOut,
   ShieldCheck,
@@ -82,6 +83,11 @@ export default function ProfileScreen() {
           badge={130}
           onPress={() => router.push("/my-cards")}
         />
+        <ProfileMenuRow
+          icon={<Download size={17} color={Colors.accent} strokeWidth={1.6} />}
+          label="Exporter une wishlist"
+          onPress={() => router.push("/export?mode=wishlist")}
+        />
 
         {/* ── Listes ── */}
         <ProfileSectionTitle title="Mes listes" />
@@ -100,12 +106,6 @@ export default function ProfileScreen() {
           onPress={() => router.push("/my-cards?mode=wishlist")}
         />
         {/* <ProfileMenuRow
-          icon={<List size={17} color={Colors.textMuted} strokeWidth={1.6} />}
-          label="À trader"
-          badge={12}
-          onPress={() => console.log("a trader")}
-        />
-        <ProfileMenuRow
           icon={<List size={17} color={Colors.textMuted} strokeWidth={1.6} />}
           label="Doubles"
           badge={7}

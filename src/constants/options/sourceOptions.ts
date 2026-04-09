@@ -1,8 +1,8 @@
-// import { FilterChip } from "../../components/export/ExportFilterSection";
+import { SelectOption } from "@/src/types";
 
-// export const SOURCE_OPTIONS: FilterChip[] = [
-//   { key: "collection", label: "Ma collection" },
-//   { key: "wishlist",   label: "Wishlist" },
-//   { key: "favorites",  label: "Favoris" },
-//   { key: "all",        label: "Toutes" },
-// ];
+export const SOURCE_OPTIONS: SelectOption[] = [
+  { key: "collection", label: "Ma collection" },
+  { key: "wishlist", label: "Wishlist" },
+  { key: "favorites", label: "Favoris" },
+  { key: "all", label: "Toutes" },
+];
