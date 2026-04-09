@@ -1,26 +1,27 @@
 import {
-    AuthDivider,
-    AuthFooter,
-    AuthHeader,
-    PasswordField,
-    SocialButton,
+  AuthDivider,
+  AuthFooter,
+  AuthHeader,
+  PasswordField,
+  SocialButton,
 } from "@/src/components/auth";
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
+import { authService } from "@/src/services";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -52,14 +53,16 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    router.replace("/(tabs)");
-
     if (!validate()) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    // TODO: appel API auth
-    router.replace("/(tabs)");
+    try {
+      await authService.signInWithEmail(form.email, form.password);
+      router.replace("/(tabs)");
+    } catch (error: any) {
+      Alert.alert("Erreur de connexion", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogle = useCallback(() => {

@@ -21,6 +21,8 @@ export interface GroupFormState {
   status: string;
   logoUri: string;
   bannerUri: string;
+  removeLogo: boolean;
+  removeBanner: boolean;
 }
 
 export type GroupFormErrors = FormErrors<GroupFormState>;
@@ -82,7 +84,9 @@ export interface MemberFormState {
   birthDate: string;
   position: string;
   photoUri: string;
-  isNew?: boolean;
+  existingPhotoUrl?: string;
+  removePhoto: boolean;
+  isNew: boolean;
 }
 
 export type MemberFormErrors = FormErrors<MemberFormState>;

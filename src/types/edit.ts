@@ -37,4 +37,6 @@ export interface GroupEditFormState {
   memberCount: string;
   logoUri: string;
   bannerUri: string;
+  removeLogo: boolean;
+  removeBanner: boolean;
 }

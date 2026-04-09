@@ -1,26 +1,27 @@
 import {
-    AuthDivider,
-    AuthFooter,
-    AuthHeader,
-    PasswordField,
-    SocialButton,
+  AuthDivider,
+  AuthFooter,
+  AuthHeader,
+  PasswordField,
+  SocialButton,
 } from "@/src/components/auth";
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
+import { authService } from "@/src/services";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -73,20 +74,24 @@ export default function RegisterScreen() {
   };
 
   const handleRegister = async () => {
-    if (!validate()) return;
-    if (!acceptedTerms) {
-      Alert.alert("CGU", "Tu dois accepter les conditions d'utilisation.");
-      return;
-    }
+    if (!validate() || !acceptedTerms) return;
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    // TODO: appel API register
-    Alert.alert(
-      "✅ Compte créé !",
-      "Bienvenue sur KardVault ! Vérifie ton email pour confirmer ton compte.",
-      [{ text: "OK", onPress: () => router.replace("/(tabs)") }],
-    );
+    try {
+      await authService.signUpWithEmail(
+        form.email,
+        form.password,
+        form.username,
+      );
+      Alert.alert(
+        "✅ Compte créé !",
+        "Vérifie ton email pour confirmer ton compte.",
+        [{ text: "OK", onPress: () => router.replace("/(auth)/login") }],
+      );
+    } catch (error: any) {
+      Alert.alert("Erreur d'inscription", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogle = useCallback(() => {

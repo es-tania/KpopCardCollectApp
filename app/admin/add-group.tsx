@@ -3,16 +3,19 @@ import {
   newMemberForm,
 } from "@/src/components/member/MemberFormCard";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
+import { useAddGroup } from "@/src/hooks/useAddGroup";
 import {
   GroupFormErrors,
   GroupFormState,
   MemberFormErrors,
   MemberFormState,
 } from "@/src/types";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { ChevronLeft, Plus, UserPlus } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -42,18 +45,50 @@ const INITIAL_GROUP: GroupFormState = {
   status: "active",
   logoUri: "",
   bannerUri: "",
+  removeBanner: false,
+  removeLogo: false,
+};
+
+const pickLocalImage = async (
+  onPicked: (uri: string) => void,
+  aspect?: [number, number],
+) => {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    Alert.alert("Permission refusée", "L'accès à la galerie est nécessaire.");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: aspect ?? [1, 1],
+    quality: 0.85,
+  });
+
+  if (!result.canceled) {
+    onPicked(result.assets[0].uri);
+  }
 };
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function AddGroupScreen() {
   const [form, setForm] = useState<GroupFormState>(INITIAL_GROUP);
-  const [errors, setErrors] = useState<GroupFormErrors>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof GroupFormState, string>>
+  >({});
   const [members, setMembers] = useState<MemberFormState[]>([newMemberForm()]);
   const [memberErrors, setMemberErrors] = useState<
     Record<string, MemberFormErrors>
   >({});
-  const [loading, setLoading] = useState(false);
+  const { loading, progress, error, submit } = useAddGroup(() => {
+    Alert.alert(
+      "✅ Succès",
+      `Groupe "${form.name}" ajouté avec ${members.length} membre${members.length > 1 ? "s" : ""} !`,
+      [{ text: "OK", onPress: () => router.back() }],
+    );
+  });
 
   const setField = (key: keyof GroupFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -83,7 +118,7 @@ export default function AddGroupScreen() {
   const handleChangeMember = (
     localId: string,
     key: keyof MemberFormState,
-    value: string,
+    value: string | boolean,
   ) => {
     setMembers((prev) =>
       prev.map((m) => (m.localId === localId ? { ...m, [key]: value } : m)),
@@ -135,18 +170,21 @@ export default function AddGroupScreen() {
       Alert.alert("Formulaire incomplet", "Vérifie les champs obligatoires.");
       return;
     }
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    Alert.alert(
-      "✅ Succès",
-      `Groupe "${form.name}" ajouté avec ${members.length} membre${members.length > 1 ? "s" : ""} !`,
-      [{ text: "OK", onPress: () => router.back() }],
-    );
+    await submit(form, members);
   };
+
+  useEffect(() => {
+    if (error) Alert.alert("Erreur", error);
+  }, [error]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
+      {progress && (
+        <View style={styles.progressWrap}>
+          <ActivityIndicator size="small" color={Colors.accent} />
+          <Text style={styles.progressText}>{progress}</Text>
+        </View>
+      )}
       {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
@@ -164,28 +202,6 @@ export default function AddGroupScreen() {
       >
         {/* ── Médias ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Médias</Text>
-          <FormImagePicker
-            label="Logo"
-            imageUri={form.logoUri}
-            onPick={() => setField("logoUri")("https://picsum.photos/200/200")}
-            onRemove={() => setField("logoUri")("")}
-            aspectRatio={1}
-          />
-          <FormImagePicker
-            label="Bannière"
-            imageUri={form.bannerUri}
-            onPick={() =>
-              setField("bannerUri")("https://picsum.photos/800/300")
-            }
-            onRemove={() => setField("bannerUri")("")}
-            aspectRatio={800 / 300}
-          />
-        </View>
-
-        {/* ── Identité ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identité</Text>
           <FormField
             label="Nom du groupe"
             value={form.name}
@@ -195,6 +211,30 @@ export default function AddGroupScreen() {
             error={errors.name}
             autoCapitalize="words"
           />
+          <FormImagePicker
+            label="Logo"
+            imageUri={form.logoUri}
+            onPick={() =>
+              pickLocalImage((uri) => setField("logoUri")(uri), [1, 1])
+            }
+            onRemove={() => setField("logoUri")("")}
+            aspectRatio={1}
+          />
+          <FormImagePicker
+            label="Bannière"
+            imageUri={form.bannerUri}
+            onPick={() =>
+              pickLocalImage((uri) => setField("bannerUri")(uri), [8, 4])
+            }
+            onRemove={() => setField("bannerUri")("")}
+            aspectRatio={800 / 300}
+            previewWidth={300}
+          />
+        </View>
+
+        {/* ── Identité ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Identité</Text>
           <FormField
             label="Nom coréen"
             value={form.koreanName}
@@ -238,13 +278,14 @@ export default function AddGroupScreen() {
             onChangeText={setField("debutDate")}
             placeholder="YYYY-MM-DD"
           />
-          <FormField
-            label="Nombre de membres"
-            value={form.memberCount}
-            onChangeText={setField("memberCount")}
-            placeholder="ex: 6"
-            keyboardType="numeric"
-          />
+          {form.status === "disbanded" && (
+            <FormField
+              label="Date de disband"
+              value={form.disbandDate}
+              onChangeText={setField("disbandDate")}
+              placeholder="YYYY-MM-DD"
+            />
+          )}
         </View>
 
         {/* ── Membres ── */}
@@ -269,8 +310,8 @@ export default function AddGroupScreen() {
               errors={memberErrors[member.localId]}
               onChange={handleChangeMember}
               onRemove={handleRemoveMember}
-              defaultExpanded={true} // ← ouvert par défaut pour l'ajout
-              showAvatar={false} // ← badge numéroté
+              defaultExpanded={true}
+              showAvatar={false}
             />
           ))}
 
@@ -300,6 +341,20 @@ export default function AddGroupScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
+  progressWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Theme.spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+    padding: Theme.spacing.md,
+  },
+  progressText: {
+    fontSize: Theme.fontSize.base,
+    color: Colors.accent,
+  },
   navbar: {
     flexDirection: "row",
     alignItems: "center",

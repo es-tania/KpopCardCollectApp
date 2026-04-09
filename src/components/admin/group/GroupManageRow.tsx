@@ -21,7 +21,7 @@ export const GroupManageRow: React.FC<GroupManageRowProps> = ({
     <View style={styles.logoWrap}>
       {group.logoUrl || group.logoUrl ? (
         <Image
-          source={(group.logoUrl ?? group.logoUrl) as any}
+          source={group.logoUrl as any}
           style={styles.logo}
           resizeMode="contain"
         />

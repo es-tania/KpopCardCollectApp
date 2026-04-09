@@ -1,7 +1,9 @@
 import { AdminSearchBar, GroupManageRow } from "@/src/components/admin";
 import { GroupEditForm } from "@/src/components/admin/group/GroupEditForm";
 import { STATUS_FILTER_OPTIONS } from "@/src/constants/options";
-import { MOCK_GROUPS } from "@/src/data";
+import { useEditGroup } from "@/src/hooks/useEditGroup";
+import { useGroups } from "@/src/hooks/useGroups";
+import { groupsService } from "@/src/services";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
 import React, {
@@ -12,6 +14,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   FlatList,
@@ -25,7 +28,8 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import {
   Group,
-  GroupEditFormState,
+  GroupFormState,
+  MemberFormState,
   StatusFilter,
   ViewMode,
 } from "../../src/types";
@@ -48,9 +52,11 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
 export default function EditGroupScreen() {
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
 
+  const { groups, loading: groupsLoading, refetch } = useGroups();
+
   const [viewMode, setViewMode] = useState<ViewMode>("search");
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
-  const [saving, setSaving] = useState(false);
+  // const [saving, setSaving] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
   // ── Filtres ─────────────────────────────────────────────────────────────
@@ -58,6 +64,19 @@ export default function EditGroupScreen() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   const filterAnim = useRef(new Animated.Value(1)).current;
+
+  const { loading, progress, error, submit } = useEditGroup(async () => {
+    await refetch();
+    Alert.alert("✅ Enregistré", "Le groupe a été modifié avec succès.", [
+      {
+        text: "OK",
+        onPress: () => {
+          setViewMode("search");
+          setSelectedGroup(null);
+        },
+      },
+    ]);
+  });
 
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
@@ -71,21 +90,29 @@ export default function EditGroupScreen() {
 
   // Présélection depuis manage.tsx
   useEffect(() => {
-    if (preselectedId) {
-      const group = MOCK_GROUPS.find((g) => g.id === preselectedId);
+    if (preselectedId && groups.length > 0) {
+      const group = groups.find((g) => g.id === preselectedId);
       if (group) {
         setSelectedGroup(group);
         setViewMode("edit");
       }
     }
-  }, [preselectedId]);
+  }, [preselectedId, groups]);
+
+  // Affiche l'erreur API
+  useEffect(() => {
+    if (error) Alert.alert("Erreur", error);
+  }, [error]);
 
   // ── Groupes filtrés ──────────────────────────────────────────────────────
 
   const filteredGroups = useMemo(() => {
-    return [...MOCK_GROUPS]
+    return [...groups]
       .filter((g) => {
-        if (statusFilter !== "all" && g.status !== statusFilter) return false;
+        if (statusFilter !== "all") {
+          const groupStatus = g.status ?? "active";
+          if (groupStatus !== statusFilter) return false;
+        }
         if (query) {
           const q = query.toLowerCase();
           return (
@@ -99,7 +126,7 @@ export default function EditGroupScreen() {
         return true;
       })
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [query, statusFilter]);
+  }, [groups, query, statusFilter]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -108,28 +135,39 @@ export default function EditGroupScreen() {
     setViewMode("edit");
   }, []);
 
-  const handleDeleteGroup = useCallback((group: Group) => {
-    confirmDelete(group.name, () => {
-      Alert.alert("✅ Supprimé", "Groupe supprimé.");
-      // TODO: API delete
-    });
-  }, []);
+  const handleDeleteGroup = useCallback(
+    (group: Group) => {
+      Alert.alert(
+        "Supprimer le groupe",
+        `Es-tu sûre de vouloir supprimer "${group.name}" ? Tous ses membres, albums et photocards seront supprimés.`,
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await groupsService.delete(group.id);
+                await refetch();
+                Alert.alert("✅ Supprimé", "Groupe supprimé.");
+              } catch (err: any) {
+                Alert.alert("Erreur", err.message);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [refetch],
+  );
 
-  const handleSave = useCallback(async (data: GroupEditFormState) => {
-    setSaving(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setSaving(false);
-    Alert.alert("✅ Enregistré", "Le groupe a été modifié avec succès.", [
-      {
-        text: "OK",
-        onPress: () => {
-          setViewMode("search");
-          setSelectedGroup(null);
-        },
-      },
-    ]);
-    // TODO: appel API update
-  }, []);
+  const handleSave = useCallback(
+    async (form: GroupFormState, members: MemberFormState[]) => {
+      if (!selectedGroup) return;
+      await submit(selectedGroup.id, form, members, selectedGroup);
+    },
+    [selectedGroup, submit],
+  );
 
   const handleCancel = useCallback(() => {
     setViewMode("search");
@@ -255,41 +293,37 @@ export default function EditGroupScreen() {
             <Text style={styles.countText}>
               <Text style={styles.countNum}>{filteredGroups.length}</Text>{" "}
               groupe{filteredGroups.length !== 1 ? "s" : ""}
-              {statusFilter !== "all" && (
-                <Text style={styles.countFilter}>
-                  {" "}
-                  ·{" "}
-                  {
-                    STATUS_FILTER_OPTIONS.find((s) => s.key === statusFilter)
-                      ?.label
-                  }
-                </Text>
-              )}
             </Text>
           </View>
 
           {/* Liste */}
-          <FlatList
-            data={filteredGroups}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <GroupManageRow
-                group={item}
-                onEdit={() => handleSelectGroup(item)}
-                onDelete={() => handleDeleteGroup(item)}
-              />
-            )}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🔍</Text>
-                <Text style={styles.emptyTitle}>Aucun groupe trouvé</Text>
-                <Text style={styles.emptySubtitle}>
-                  Essaie de changer les filtres
-                </Text>
-              </View>
-            }
-            showsVerticalScrollIndicator={false}
-          />
+          {groupsLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={Colors.accent} />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredGroups}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <GroupManageRow
+                  group={item}
+                  onEdit={() => handleSelectGroup(item)}
+                  onDelete={() => handleDeleteGroup(item)}
+                />
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyEmoji}>🔍</Text>
+                  <Text style={styles.emptyTitle}>Aucun groupe trouvé</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Essaie de changer les filtres
+                  </Text>
+                </View>
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </>
       )}
 
@@ -299,7 +333,8 @@ export default function EditGroupScreen() {
           group={selectedGroup}
           onSave={handleSave}
           onCancel={handleCancel}
-          loading={saving}
+          loading={loading}
+          progress={progress}
         />
       )}
     </SafeAreaView>
@@ -419,6 +454,12 @@ const styles = StyleSheet.create({
   },
   countFilter: {
     color: Colors.textMuted,
+  },
+
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Empty

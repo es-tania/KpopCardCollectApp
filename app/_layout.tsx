@@ -1,12 +1,35 @@
 import { Colors } from "@/src/constants/colors";
-import { Stack } from "expo-router";
-import React from "react";
-import { StatusBar } from "react-native";
-
-// TODO: remplacer par un vrai check auth (Zustand store / SecureStore)
-const IS_AUTHENTICATED = false;
+import { useAuth } from "@/src/hooks/useAuth";
+import { router, Stack } from "expo-router";
+import React, { useEffect } from "react";
+import { ActivityIndicator, StatusBar, View } from "react-native";
 
 export default function RootLayout() {
+  const { isAuthenticated, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+    if (isAuthenticated) {
+      router.replace("/(tabs)");
+    } else {
+      router.replace("/(auth)/login");
+    }
+  }, [isAuthenticated, loading]);
+
+  if (loading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: Colors.bg,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ActivityIndicator color={Colors.accent} />
+      </View>
+    );
+  }
   return (
     <>
       <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
@@ -19,8 +42,6 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
-        {/* <Stack.Screen name="(auth)" redirect={IS_AUTHENTICATED} />
-        <Stack.Screen name="(tabs)" redirect={!IS_AUTHENTICATED} /> */}
       </Stack>
     </>
   );

@@ -21,7 +21,7 @@ export interface Member {
   koreanName?: string; // Nom en hangul
 
   // 🖼️ Médias
-  photoUrl?: ImageSourcePropType;
+  photoUrl?: ImageSourcePropType | null;
 
   // 🎤 Rôle dans le groupe
   position?: MemberPosition[];

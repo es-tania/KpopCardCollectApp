@@ -5,6 +5,7 @@ import { Colors } from "@/src/constants/colors";
 import { POSITION_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { MemberFormErrors, MemberFormState } from "@/src/types";
+import * as ImagePicker from "expo-image-picker";
 import { Trash2 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -18,13 +19,28 @@ interface MemberFormCardProps {
   onChange: (
     localId: string,
     key: keyof MemberFormState,
-    value: string,
+    value: string | boolean,
   ) => void;
   onRemove: (localId: string) => void;
-  // ── Variantes visuelles ──
-  defaultExpanded?: boolean; // true pour add-group, false pour edit
-  showAvatar?: boolean; // true pour edit (avatar miniature), false pour add (badge numéroté)
+  defaultExpanded?: boolean;
+  showAvatar?: boolean;
 }
+
+const pickLocalImage = async (onPicked: (uri: string) => void) => {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return;
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: [1, 1],
+    quality: 0.85,
+  });
+
+  if (!result.canceled) {
+    onPicked(result.assets[0].uri);
+  }
+};
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -51,9 +67,9 @@ export const MemberFormCard: React.FC<MemberFormCardProps> = ({
           {showAvatar ? (
             // Mode edit : avatar miniature
             <View style={styles.miniAvatar}>
-              {member.photoUri ? (
+              {member.photoUri || member.existingPhotoUrl ? (
                 <Image
-                  source={{ uri: member.photoUri }}
+                  source={{ uri: member.photoUri || member.existingPhotoUrl }}
                   style={styles.miniAvatarImg}
                   resizeMode="cover"
                 />
@@ -104,33 +120,36 @@ export const MemberFormCard: React.FC<MemberFormCardProps> = ({
       {expanded && (
         <View style={styles.body}>
           <View style={styles.bodyRow}>
+            <FormField
+              label="Nom de scène"
+              value={member.stageName}
+              onChangeText={(v) => onChange(member.localId, "stageName", v)}
+              placeholder="ex: Keeho"
+              required
+              error={errors?.stageName}
+              autoCapitalize="words"
+            />
             <View style={styles.photoCol}>
               <FormImagePicker
                 label="Photo"
-                imageUri={member.photoUri}
+                imageUri={member.photoUri || member.existingPhotoUrl || ""}
                 onPick={() =>
-                  onChange(
-                    member.localId,
-                    "photoUri",
-                    "https://picsum.photos/200/300",
-                  )
+                  pickLocalImage((uri) => {
+                    (onChange(member.localId, "photoUri", uri),
+                      onChange(member.localId, "removePhoto", false));
+                  })
                 }
-                onRemove={() => onChange(member.localId, "photoUri", "")}
-                aspectRatio={2 / 3}
+                onRemove={() => {
+                  onChange(member.localId, "photoUri", "");
+                  onChange(member.localId, "existingPhotoUrl", "");
+                  onChange(member.localId, "removePhoto", true);
+                }}
+                aspectRatio={1 / 1}
                 previewWidth={100}
               />
             </View>
 
             <View style={styles.fieldsCol}>
-              <FormField
-                label="Nom de scène"
-                value={member.stageName}
-                onChangeText={(v) => onChange(member.localId, "stageName", v)}
-                placeholder="ex: Keeho"
-                required
-                error={errors?.stageName}
-                autoCapitalize="words"
-              />
               <FormField
                 label="Nom réel"
                 value={member.realName}
@@ -177,6 +196,8 @@ export const newMemberForm = (): MemberFormState => ({
   birthDate: "",
   position: "",
   photoUri: "",
+  existingPhotoUrl: undefined,
+  removePhoto: false,
   isNew: true,
 });
 

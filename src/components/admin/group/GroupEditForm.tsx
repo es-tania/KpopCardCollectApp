@@ -6,16 +6,19 @@ import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
-import { MOCK_MEMBERS } from "@/src/data/mockMembers";
+import { useGroupMembers } from "@/src/hooks/useGroupMembers";
 import {
   Group,
   GroupEditFormState,
+  GroupFormState,
   MemberFormErrors,
   MemberFormState,
 } from "@/src/types";
+import * as ImagePicker from "expo-image-picker";
 import { Plus, UserPlus } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ScrollView,
@@ -24,25 +27,47 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { MemberFormCard } from "../../member/MemberFormCard";
+import { MemberFormCard, newMemberForm } from "../../member/MemberFormCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface GroupEditFormProps {
   group: Group;
-  onSave: (data: GroupEditFormState) => void;
+  onSave: (form: GroupFormState, members: MemberFormState[]) => void;
   onCancel: () => void;
   loading: boolean;
+  progress: string | null;
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
+
+const pickLocalImage = async (
+  onPicked: (uri: string) => void,
+  aspect?: [number, number],
+) => {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return;
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: aspect ?? [1, 1],
+    quality: 0.85,
+  });
+
+  if (!result.canceled) onPicked(result.assets[0].uri);
+};
 
 export const GroupEditForm: React.FC<GroupEditFormProps> = ({
   group,
   onSave,
   onCancel,
   loading,
+  progress,
 }) => {
+  const { members: fetchedMembers, loading: membersLoading } = useGroupMembers(
+    group.id,
+  );
   const [form, setForm] = useState<GroupEditFormState>({
     name: group.name,
     koreanName: group.koreanName ?? "",
@@ -55,46 +80,42 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
     memberCount: group.memberCount?.toString() ?? "",
     logoUri: "",
     bannerUri: "",
+    removeLogo: false,
+    removeBanner: false,
   });
-
-  const set = (key: keyof GroupEditFormState) => (value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }));
 
   // ── État membres ─────────────────────────────────────────────────────────
 
-  const [members, setMembers] = useState<MemberFormState[]>(() =>
-    MOCK_MEMBERS.filter((m) => m.groupId === group.id).map((m) => ({
-      localId: m.id,
-      id: m.id,
-      stageName: m.stageName,
-      realName: m.realName ?? "",
-      koreanName: m.koreanName ?? "",
-      birthDate: m.birthDate ?? "",
-      position: m.position?.[0] ?? "",
-      photoUri: "",
-      isNew: false,
-    })),
-  );
-
+  const [members, setMembers] = useState<MemberFormState[]>([]);
   const [memberErrors, setMemberErrors] = useState<
     Record<string, MemberFormErrors>
   >({});
 
-  const handleAddMember = () => {
-    setMembers((prev) => [
-      ...prev,
-      {
-        localId: Math.random().toString(36).slice(2),
-        stageName: "",
-        realName: "",
-        koreanName: "",
-        birthDate: "",
-        position: "",
-        photoUri: "",
-        isNew: true,
-      },
-    ]);
-  };
+  useEffect(() => {
+    if (fetchedMembers.length > 0) {
+      setMembers(
+        fetchedMembers.map((m) => ({
+          localId: m.id,
+          id: m.id,
+          stageName: m.stageName,
+          realName: m.realName ?? "",
+          koreanName: m.koreanName ?? "",
+          birthDate: m.birthDate ?? "",
+          position: m.position?.[0] ?? "",
+          photoUri: "",
+          existingPhotoUrl: (m.photoUrl as any)?.uri ?? undefined,
+          removePhoto: false, // ← initialise à false
+          isNew: false,
+        })),
+      );
+    }
+  }, [fetchedMembers]);
+
+  const set = (key: keyof GroupEditFormState) => (value: string) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
+
+  const handleAddMember = () =>
+    setMembers((prev) => [...prev, newMemberForm()]);
 
   const handleRemoveMember = (localId: string) => {
     const member = members.find((m) => m.localId === localId);
@@ -105,25 +126,27 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
       return;
     }
 
-    const msg = member.isNew
-      ? "Retirer ce nouveau membre ?"
-      : `Supprimer définitivement ${member.stageName} du groupe ?`;
-
-    Alert.alert("Confirmer", msg, [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: member.isNew ? "Retirer" : "Supprimer",
-        style: "destructive",
-        onPress: () =>
-          setMembers((prev) => prev.filter((m) => m.localId !== localId)),
-      },
-    ]);
+    Alert.alert(
+      "Confirmer",
+      member.isNew
+        ? "Retirer ce nouveau membre ?"
+        : `Supprimer définitivement ${member.stageName} ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: member.isNew ? "Retirer" : "Supprimer",
+          style: "destructive",
+          onPress: () =>
+            setMembers((prev) => prev.filter((m) => m.localId !== localId)),
+        },
+      ],
+    );
   };
 
   const handleChangeMember = (
     localId: string,
     key: keyof MemberFormState,
-    value: string,
+    value: string | boolean,
   ) => {
     setMembers((prev) =>
       prev.map((m) => (m.localId === localId ? { ...m, [key]: value } : m)),
@@ -136,6 +159,25 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
       });
     }
   };
+
+  const validateMembers = (): boolean => {
+    const me: Record<string, { stageName?: string }> = {};
+    members.forEach((m) => {
+      if (!m.stageName.trim()) {
+        me[m.localId] = { stageName: "Nom de scène requis" };
+      }
+    });
+    setMemberErrors(me);
+    return Object.keys(me).length === 0;
+  };
+
+  if (membersLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator color={Colors.accent} />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -257,17 +299,46 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Médias</Text>
         <FormImagePicker
-          label="Nouveau logo (laisser vide pour ne pas modifier)"
+          label="Nouveau logo"
           imageUri={form.logoUri}
-          onPick={() => set("logoUri")("https://picsum.photos/200/200")}
-          onRemove={() => set("logoUri")("")}
+          onPick={() =>
+            pickLocalImage(
+              (uri) => {
+                set("logoUri")(uri);
+                setForm((prev) => ({ ...prev, removeLogo: false })); // annule la suppression si on repick
+              },
+              [1, 1],
+            )
+          }
+          onRemove={() =>
+            setForm((prev) => ({
+              ...prev,
+              logoUri: "",
+              removeLogo: true,
+            }))
+          }
           aspectRatio={1}
         />
+
         <FormImagePicker
-          label="Nouvelle bannière (laisser vide pour ne pas modifier)"
+          label="Nouvelle bannière"
           imageUri={form.bannerUri}
-          onPick={() => set("bannerUri")("https://picsum.photos/800/300")}
-          onRemove={() => set("bannerUri")("")}
+          onPick={() =>
+            pickLocalImage(
+              (uri) => {
+                set("bannerUri")(uri);
+                setForm((prev) => ({ ...prev, removeBanner: false }));
+              },
+              [8, 4],
+            )
+          }
+          onRemove={() =>
+            setForm((prev) => ({
+              ...prev,
+              bannerUri: "",
+              removeBanner: true,
+            }))
+          }
           aspectRatio={800 / 300}
         />
       </View>
@@ -365,6 +436,8 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
             errors={memberErrors[member.localId]}
             onChange={handleChangeMember}
             onRemove={handleRemoveMember}
+            defaultExpanded={false}
+            showAvatar={true}
           />
         ))}
 
@@ -379,6 +452,14 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
         </TouchableOpacity>
       </View>
 
+      {/* ── Progression ── */}
+      {progress && (
+        <View style={styles.progressWrap}>
+          <ActivityIndicator size="small" color={Colors.accent} />
+          <Text style={styles.progressText}>{progress}</Text>
+        </View>
+      )}
+
       {/* ── Actions ── */}
       <View style={styles.btnGroup}>
         <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
@@ -387,25 +468,15 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
         <View style={styles.saveBtn}>
           <FormSubmitButton
             label="Enregistrer"
-            // Dans le bouton Enregistrer
             onPress={() => {
-              // Validation membres
-              const me: Record<string, MemberFormErrors> = {};
-              members.forEach((m) => {
-                if (!m.stageName.trim()) {
-                  me[m.localId] = { stageName: "Nom de scène requis" };
-                }
-              });
-              if (Object.keys(me).length > 0) {
-                setMemberErrors(me);
+              if (!validateMembers()) {
                 Alert.alert(
                   "Formulaire incomplet",
-                  "Vérifie les noms de scène des membres.",
+                  "Vérifie les noms de scène.",
                 );
                 return;
               }
-              onSave(form);
-              // TODO: passer aussi les membres dans onSave
+              onSave(form, members);
             }}
             loading={loading}
           />
@@ -556,6 +627,20 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.medium,
   },
   saveBtn: { flex: 1 },
+  progressWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Theme.spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+    padding: Theme.spacing.md,
+  },
+  progressText: {
+    fontSize: Theme.fontSize.base,
+    color: Colors.accent,
+  },
 });
 
 const memberSectionStyles = StyleSheet.create({
