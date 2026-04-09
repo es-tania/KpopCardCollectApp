@@ -8,5 +8,6 @@ export * from "./member";
 export * from "./navigation";
 export * from "./photocard";
 export * from "./scan";
+export * from "./settings";
 export * from "./user";
 

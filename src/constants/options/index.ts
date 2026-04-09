@@ -10,7 +10,7 @@ export { SUBMISSION_STATUS_LABELS } from "./submissionStatusOptions";
 export { YES_NO_OPTIONS } from "./yesNoOptions";
 // ─── Labels ───────────────────────────────────────────────────────────────────
 export {
-    PHOTOCARD_TYPE_LABELS,
+    PHOTOCARD_FILTER_OPTIONS, PHOTOCARD_TYPE_LABELS,
     PHOTOCARD_TYPE_OPTIONS
 } from "./photocardTypeLabels";
 export { SCAN_STATUS_HINTS } from "./scanFilterOptions";

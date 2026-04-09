@@ -31,7 +31,8 @@ export default function ProfileScreen() {
 
   const handlePressSettings = useCallback(() => {
     // TODO: naviguer vers les paramètres
-    Alert.alert("Paramètres", "À venir");
+    // Alert.alert("Paramètres", "À venir");
+    router.push("/settings");
   }, []);
 
   const handlePressAvatar = useCallback(() => {

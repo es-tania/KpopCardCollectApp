@@ -16,7 +16,17 @@ interface TypeFilterOption {
 
 export const PHOTOCARD_TYPE_OPTIONS: TypeFilterOption[] = [
   { key: "normal", label: "Normal" },
-  { key: "pob", label: "POB (Pre-Order Benefit)" },
+  { key: "pob", label: "POB" },
+  { key: "broadcast", label: "Broadcast" },
+  { key: "lucky_draw", label: "Lucky Draw" },
+  { key: "event", label: "Event" },
+  { key: "benefit", label: "Benefit" },
+];
+
+export const PHOTOCARD_FILTER_OPTIONS: TypeFilterOption[] = [
+  { key: "all", label: "Toutes" },
+  { key: "normal", label: "Normal" },
+  { key: "pob", label: "POB" },
   { key: "broadcast", label: "Broadcast" },
   { key: "lucky_draw", label: "Lucky Draw" },
   { key: "event", label: "Event" },

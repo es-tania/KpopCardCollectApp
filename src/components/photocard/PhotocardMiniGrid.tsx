@@ -1,4 +1,6 @@
-import { PHOTOCARD_TYPE_OPTIONS } from "@/src/constants/options";
+import {
+  PHOTOCARD_FILTER_OPTIONS
+} from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import React, { useMemo, useState } from "react";
 import {
@@ -42,7 +44,7 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
   // Déduit les types présents dans les cartes pour n'afficher que les filtres utiles
   const availableTypes = useMemo(() => {
     const types = new Set(cards.map((c) => c.type));
-    return PHOTOCARD_TYPE_OPTIONS.filter(
+    return PHOTOCARD_FILTER_OPTIONS.filter(
       (opt) => opt.key === "all" || types.has(opt.key as PhotocardType),
     );
   }, [cards]);
