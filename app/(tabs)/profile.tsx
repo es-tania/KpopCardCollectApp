@@ -49,7 +49,8 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: () => {
           // TODO: appel API logout + navigation vers login
-          console.log("logout");
+          // console.log("logout");
+          router.replace("/(auth)/login");
         },
       },
     ]);

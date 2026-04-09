@@ -3,6 +3,9 @@ import { Stack } from "expo-router";
 import React from "react";
 import { StatusBar } from "react-native";
 
+// TODO: remplacer par un vrai check auth (Zustand store / SecureStore)
+const IS_AUTHENTICATED = false;
+
 export default function RootLayout() {
   return (
     <>
@@ -16,6 +19,8 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
+        {/* <Stack.Screen name="(auth)" redirect={IS_AUTHENTICATED} />
+        <Stack.Screen name="(tabs)" redirect={!IS_AUTHENTICATED} /> */}
       </Stack>
     </>
   );
