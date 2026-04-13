@@ -105,7 +105,7 @@ export const useAddGroup = (onSuccess: () => void): UseAddGroupResult => {
           realName: member.realName || undefined,
           koreanName: member.koreanName || undefined,
           birthDate: member.birthDate || undefined,
-          position: member.position ? ([member.position] as any) : [],
+          position: member.position as any,
           photoUrl: photoUrl ? { uri: photoUrl } : undefined,
         });
       }

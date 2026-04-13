@@ -42,6 +42,7 @@ export type AlbumType =
 export interface Album {
   id: string;
   groupId: string;
+  groupName: string;
 
   // 🧾 Infos principales
   title: string;

@@ -1,13 +1,18 @@
+import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
 import {
   ALBUM_TYPE_OPTIONS,
   CATEGORY_OPTIONS,
   YES_NO_OPTIONS,
 } from "@/src/constants/options";
+import { useAddAlbum } from "@/src/hooks/useAddAlbum";
+import { useGroups } from "@/src/hooks/useGroups";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -22,37 +27,73 @@ import { FormSelect } from "../../src/components/ui/FormSelect";
 import { FormSubmitButton } from "../../src/components/ui/FormSubmitButton";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { MOCK_GROUPS } from "../../src/data/mockGroups";
 
-const INITIAL: AlbumFormState = {
-  groupId: "",
-  title: "",
-  koreanTitle: "",
-  type: "",
-  category: "music",
-  releaseDate: "",
-  eventName: "",
-  eventLocation: "",
-  eventDate: "",
-  versions: "",
-  hasPOB: "non",
-  isLimited: "non",
-  coverUri: "",
-  tags: "",
+const pickLocalImage = async (
+  onPicked: (uri: string) => void,
+  aspect?: [number, number],
+) => {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return;
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: aspect ?? [1, 1],
+    quality: 0.85,
+  });
+  if (!result.canceled) onPicked(result.assets[0].uri);
 };
 
 export default function AddAlbumScreen() {
-  const [form, setForm] = useState<AlbumFormState>(INITIAL);
+  const { groups } = useGroups();
+
+  const groupOptions: SelectOption[] = groups.map((g) => ({
+    key: g.id,
+    label: g.name,
+  }));
+
+  const [form, setForm] = useState<AlbumFormState>({
+    groupId: "",
+    groupName: "",
+    title: "",
+    koreanTitle: "",
+    type: "",
+    category: "music",
+    releaseDate: "",
+    eventName: "",
+    eventLocation: "",
+    eventDate: "",
+    versions: "",
+    hasPOB: "non",
+    isLimited: "non",
+    coverUri: "",
+    tags: "",
+    removeCore: false,
+  });
+  console.log(form);
   const [errors, setErrors] = useState<AlbumFormErrors>({});
-  const [loading, setLoading] = useState(false);
+
+  const { loading, progress, error, submit } = useAddAlbum(() => {
+    Alert.alert("✅ Succès", `Album "${form.title}" ajouté !`, [
+      { text: "OK", onPress: () => router.back() },
+    ]);
+  });
+
+  React.useEffect(() => {
+    if (error) Alert.alert("Erreur", error);
+  }, [error]);
 
   const set = (key: keyof AlbumFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  const groupOptions: SelectOption[] = MOCK_GROUPS.map((g) => ({
-    key: g.id,
-    label: g.name,
-  }));
+  const setGroup = (key: keyof AlbumFormState) => (value: string) => {
+    const option = groupOptions.find((o) => o.key === value);
+
+    setForm((prev) => ({
+      ...prev,
+      [key]: value,
+      groupName: option?.label ?? "",
+    }));
+  };
 
   const validate = (): boolean => {
     const e: AlbumFormErrors = {};
@@ -65,12 +106,7 @@ export default function AddAlbumScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    Alert.alert("✅ Succès", "Album ajouté avec succès !", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+    await submit(form);
   };
 
   return (
@@ -93,9 +129,9 @@ export default function AddAlbumScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Couverture</Text>
           <FormImagePicker
-            label="Image de couverture"
+            label="Couverture"
             imageUri={form.coverUri}
-            onPick={() => set("coverUri")("https://picsum.photos/400/400")}
+            onPick={() => pickLocalImage((uri) => set("coverUri")(uri), [1, 1])}
             onRemove={() => set("coverUri")("")}
             aspectRatio={1}
           />
@@ -103,12 +139,12 @@ export default function AddAlbumScreen() {
 
         {/* ── Identité ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identité</Text>
+          <Text style={styles.sectionTitle}>Identification</Text>
           <FormSelect
             label="Groupe"
             options={groupOptions}
             value={form.groupId}
-            onChange={set("groupId")}
+            onChange={setGroup("groupId")}
             required
             error={errors.groupId}
           />
@@ -146,17 +182,15 @@ export default function AddAlbumScreen() {
         {/* ── Dates ── */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Dates</Text>
-          <FormField
+          <FormDatePicker
             label="Date de sortie"
             value={form.releaseDate}
-            onChangeText={set("releaseDate")}
-            placeholder="YYYY-MM-DD"
+            onChange={set("releaseDate")}
           />
-          <FormField
+          <FormDatePicker
             label="Date de l'event"
             value={form.eventDate}
-            onChangeText={set("eventDate")}
-            placeholder="YYYY-MM-DD"
+            onChange={set("eventDate")}
           />
         </View>
 
@@ -186,6 +220,12 @@ export default function AddAlbumScreen() {
             onChangeText={set("versions")}
             placeholder="ex: A, B, Digipack (séparées par virgule)"
           />
+          <FormField
+            label="Tags"
+            value={form.tags}
+            onChangeText={set("tags")}
+            placeholder="ex: 1st mini, debut (séparés par virgule)"
+          />
           <FormSelect
             label="Contient des POB ?"
             options={YES_NO_OPTIONS}
@@ -199,6 +239,14 @@ export default function AddAlbumScreen() {
             onChange={set("isLimited")}
           />
         </View>
+
+        {/* ── Progression ── */}
+        {progress && (
+          <View style={styles.progressWrap}>
+            <ActivityIndicator size="small" color={Colors.accent} />
+            <Text style={styles.progressText}>{progress}</Text>
+          </View>
+        )}
 
         <FormSubmitButton
           label="Ajouter l'album"
@@ -252,5 +300,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     paddingBottom: Theme.spacing.sm,
+  },
+  progressWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Theme.spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+    padding: Theme.spacing.md,
+  },
+  progressText: {
+    fontSize: Theme.fontSize.base,
+    color: Colors.accent,
   },
 });

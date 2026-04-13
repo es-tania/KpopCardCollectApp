@@ -1,14 +1,14 @@
 import { FormField } from "@/src/components/ui/FormField";
 import { FormImagePicker } from "@/src/components/ui/FormImagePicker";
-import { FormSelect } from "@/src/components/ui/FormSelect";
 import { Colors } from "@/src/constants/colors";
-import { POSITION_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { MemberFormErrors, MemberFormState } from "@/src/types";
 import * as ImagePicker from "expo-image-picker";
 import { Trash2 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { PositionSelector } from "../admin/group/PositionSelector";
+import { FormDatePicker } from "../ui/FormDatePicker";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,7 +19,7 @@ interface MemberFormCardProps {
   onChange: (
     localId: string,
     key: keyof MemberFormState,
-    value: string | boolean,
+    value: string | boolean | string[],
   ) => void;
   onRemove: (localId: string) => void;
   defaultExpanded?: boolean;
@@ -98,9 +98,6 @@ export const MemberFormCard: React.FC<MemberFormCardProps> = ({
                 </View>
               )}
             </View>
-            {member.position && (
-              <Text style={styles.headerPosition}>{member.position}</Text>
-            )}
           </View>
         </View>
 
@@ -166,19 +163,18 @@ export const MemberFormCard: React.FC<MemberFormCardProps> = ({
             </View>
           </View>
 
-          <FormSelect
-            label="Position principale"
-            options={POSITION_OPTIONS}
-            value={member.position}
-            onChange={(v) => onChange(member.localId, "position", v)}
-            placeholder="Sélectionner une position..."
+          <PositionSelector
+            selected={member.position}
+            onChange={(positions) =>
+              onChange(member.localId, "position", positions as any)
+            }
           />
-          <FormField
+
+          <FormDatePicker
             label="Date de naissance"
             value={member.birthDate}
-            onChangeText={(v) => onChange(member.localId, "birthDate", v)}
-            placeholder="YYYY-MM-DD"
-            keyboardType="numeric"
+            onChange={(v) => onChange(member.localId, "birthDate", v)}
+            maxDate={new Date()}
           />
         </View>
       )}
@@ -194,7 +190,7 @@ export const newMemberForm = (): MemberFormState => ({
   realName: "",
   koreanName: "",
   birthDate: "",
-  position: "",
+  position: [],
   photoUri: "",
   existingPhotoUrl: undefined,
   removePhoto: false,

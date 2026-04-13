@@ -45,9 +45,6 @@ export const GroupManageRow: React.FC<GroupManageRowProps> = ({
       <Text style={styles.meta} numberOfLines={1}>
         {[group.company, group.generation].filter(Boolean).join(" · ")}
       </Text>
-      <Text style={styles.count}>
-        {group.totalPhotocards} photocards · {group.memberCount ?? "?"} membres
-      </Text>
     </View>
 
     {/* Actions */}

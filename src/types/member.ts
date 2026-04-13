@@ -2,14 +2,22 @@ import { ImageSourcePropType } from "react-native";
 
 export type MemberPosition =
   | "Leader"
-  | "Main Vocal"
-  | "Lead Vocal"
-  | "Sub Vocal"
+  | "Main Vocalist"
+  | "Lead Vocalist"
+  | "Sub Vocalist"
   | "Main Dancer"
   | "Lead Dancer"
   | "Rapper"
+  | "Main Rapper"
   | "Visual"
-  | "Maknae";
+  | "Maknae"
+  | "Vocalist"
+  | "Composer"
+  | "Center"
+  | "Captain"
+  | "Performer"
+  | "Producer"
+  | "Dancer";
 
 export interface Member {
   id: string;

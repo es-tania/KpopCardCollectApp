@@ -4,14 +4,17 @@ import { FormSelect } from "@/src/components/ui/FormSelect";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import {
+  ALBUM_TYPE_LABELS,
   ALBUM_TYPE_OPTIONS,
   CATEGORY_OPTIONS,
   YES_NO_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { Album, AlbumEditFormState } from "@/src/types";
+import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -27,7 +30,25 @@ interface AlbumEditFormProps {
   onSave: (data: AlbumEditFormState) => void;
   onCancel: () => void;
   loading: boolean;
+  progress: string | null; // ← nouveau
 }
+
+const pickLocalImage = async (
+  onPicked: (uri: string) => void,
+  aspect?: [number, number],
+) => {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return;
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
+    aspect: aspect ?? [1, 1],
+    quality: 0.85,
+  });
+
+  if (!result.canceled) onPicked(result.assets[0].uri);
+};
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -36,6 +57,7 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
   onSave,
   onCancel,
   loading,
+  progress,
 }) => {
   const [form, setForm] = useState<AlbumEditFormState>({
     title: album.title,
@@ -51,6 +73,7 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
     isLimited: album.isLimited ? "oui" : "non",
     coverUri: "",
     tags: album.tags?.join(", ") ?? "",
+    removeCover: false,
   });
 
   const set = (key: keyof AlbumEditFormState) => (value: string) =>
@@ -81,7 +104,7 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
             <Text style={styles.previewKorean}>{album.koreanTitle}</Text>
           )}
           <Text style={styles.previewMeta}>
-            {album.type}
+            {ALBUM_TYPE_LABELS[album.type]}
             {album.releaseDate
               ? ` · ${new Date(album.releaseDate).getFullYear()}`
               : ""}
@@ -96,10 +119,24 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Couverture</Text>
         <FormImagePicker
-          label="Nouvelle couverture (laisser vide pour ne pas modifier)"
-          imageUri={form.coverUri}
-          onPick={() => set("coverUri")("https://picsum.photos/400/400")}
-          onRemove={() => set("coverUri")("")}
+          label="Nouvelle couverture"
+          imageUri={form.coverUri || (album.coverUrl as any)?.uri || ""}
+          onPick={() =>
+            pickLocalImage(
+              (uri) => {
+                set("coverUri")(uri);
+                setForm((prev) => ({ ...prev, removeCover: false }));
+              },
+              [1, 1],
+            )
+          }
+          onRemove={() =>
+            setForm((prev) => ({
+              ...prev,
+              coverUri: "",
+              removeCover: true,
+            }))
+          }
           aspectRatio={1}
         />
       </View>
@@ -212,6 +249,14 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
           />
         </View>
       </View>
+
+      {/* Progression */}
+      {progress && (
+        <View style={styles.progressWrap}>
+          <ActivityIndicator size="small" color={Colors.accent} />
+          <Text style={styles.progressText}>{progress}</Text>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -289,4 +334,18 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.medium,
   },
   saveBtn: { flex: 1 },
+  progressWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Theme.spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+    padding: Theme.spacing.md,
+  },
+  progressText: {
+    fontSize: Theme.fontSize.base,
+    color: Colors.accent,
+  },
 });

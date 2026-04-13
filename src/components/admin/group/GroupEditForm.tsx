@@ -28,6 +28,7 @@ import {
   View,
 } from "react-native";
 import { MemberFormCard, newMemberForm } from "../../member/MemberFormCard";
+import { FormDatePicker } from "../../ui/FormDatePicker";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,6 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
     status: group.status ?? "active",
     debutDate: group.debutDate ?? "",
     disbandDate: group.disbandDate ?? "",
-    memberCount: group.memberCount?.toString() ?? "",
     logoUri: "",
     bannerUri: "",
     removeLogo: false,
@@ -101,7 +101,7 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
           realName: m.realName ?? "",
           koreanName: m.koreanName ?? "",
           birthDate: m.birthDate ?? "",
-          position: m.position?.[0] ?? "",
+          position: m.position ?? [],
           photoUri: "",
           existingPhotoUrl: (m.photoUrl as any)?.uri ?? undefined,
           removePhoto: false, // ← initialise à false
@@ -146,7 +146,7 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
   const handleChangeMember = (
     localId: string,
     key: keyof MemberFormState,
-    value: string | boolean,
+    value: string | boolean | string[],
   ) => {
     setMembers((prev) =>
       prev.map((m) => (m.localId === localId ? { ...m, [key]: value } : m)),
@@ -270,13 +270,6 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
           <View style={styles.previewStatDivider} />
           <View style={styles.previewStat}>
             <Text style={styles.previewStatNum}>
-              {group.memberCount ?? "—"}
-            </Text>
-            <Text style={styles.previewStatLabel}>Membres</Text>
-          </View>
-          <View style={styles.previewStatDivider} />
-          <View style={styles.previewStat}>
-            <Text style={styles.previewStatNum}>
               {group.totalAlbums ?? "—"}
             </Text>
             <Text style={styles.previewStatLabel}>Albums</Text>
@@ -390,11 +383,12 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
           value={form.status}
           onChange={set("status")}
         />
-        <FormField
+        <FormDatePicker
           label="Date de début"
           value={form.debutDate}
-          onChangeText={set("debutDate")}
-          placeholder="YYYY-MM-DD"
+          onChange={set("debutDate")}
+          minDate={form.debutDate ? new Date(form.debutDate) : undefined}
+          maxDate={new Date()}
         />
         {/* Disband uniquement si disbanded */}
         {form.status === "disbanded" && (
@@ -405,13 +399,6 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
             placeholder="YYYY-MM-DD"
           />
         )}
-        <FormField
-          label="Nombre de membres"
-          value={form.memberCount}
-          onChangeText={set("memberCount")}
-          placeholder="ex: 6"
-          keyboardType="numeric"
-        />
       </View>
 
       {/* ── Membres ── */}

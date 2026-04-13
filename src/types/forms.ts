@@ -17,7 +17,6 @@ export interface GroupFormState {
   disbandDate: string;
   generation: string;
   fandomName: string;
-  memberCount: string;
   status: string;
   logoUri: string;
   bannerUri: string;
@@ -31,6 +30,7 @@ export type GroupFormErrors = FormErrors<GroupFormState>;
 
 export interface AlbumFormState {
   groupId: string;
+  groupName: string;
   title: string;
   koreanTitle: string;
   type: string;
@@ -44,6 +44,7 @@ export interface AlbumFormState {
   isLimited: string;
   coverUri: string;
   tags: string;
+  removeCore: boolean;
 }
 
 export type AlbumFormErrors = FormErrors<AlbumFormState>;
@@ -82,7 +83,7 @@ export interface MemberFormState {
   realName: string;
   koreanName: string;
   birthDate: string;
-  position: string;
+  position: string[];
   photoUri: string;
   existingPhotoUrl?: string;
   removePhoto: boolean;

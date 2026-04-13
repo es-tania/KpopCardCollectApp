@@ -12,6 +12,7 @@ export interface AlbumEditFormState {
   isLimited: string;
   coverUri: string;
   tags: string;
+  removeCover: boolean;
 }
 
 export interface PhotocardEditFormState {
@@ -34,7 +35,6 @@ export interface GroupEditFormState {
   status: string;
   debutDate: string;
   disbandDate: string;
-  memberCount: string;
   logoUri: string;
   bannerUri: string;
   removeLogo: boolean;

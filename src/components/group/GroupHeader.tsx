@@ -5,8 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   Disc3,
-  Heart,
-  Users,
+  Heart
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -224,13 +223,6 @@ export const GroupHeader: React.FC<GroupHeaderProps> = ({ group }) => {
               value={formatDate(group.disbandDate)}
             />
           )}
-          <InfoRow
-            icon={
-              <Users size={14} color={Colors.textMuted} strokeWidth={1.6} />
-            }
-            label="Membres"
-            value={group.memberCount?.toString() ?? "—"}
-          />
           <InfoRow
             icon={
               <Disc3 size={14} color={Colors.textMuted} strokeWidth={1.6} />

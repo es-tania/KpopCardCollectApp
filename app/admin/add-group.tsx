@@ -2,6 +2,7 @@ import {
   MemberFormCard,
   newMemberForm,
 } from "@/src/components/member/MemberFormCard";
+import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
 import { useAddGroup } from "@/src/hooks/useAddGroup";
 import {
@@ -41,7 +42,6 @@ const INITIAL_GROUP: GroupFormState = {
   disbandDate: "",
   generation: "",
   fandomName: "",
-  memberCount: "",
   status: "active",
   logoUri: "",
   bannerUri: "",
@@ -272,18 +272,19 @@ export default function AddGroupScreen() {
             value={form.status}
             onChange={setField("status")}
           />
-          <FormField
+          <FormDatePicker
             label="Date de début"
             value={form.debutDate}
-            onChangeText={setField("debutDate")}
-            placeholder="YYYY-MM-DD"
+            onChange={setField("debutDate")}
+            maxDate={new Date()} // ne peut pas débuter dans le futur
           />
           {form.status === "disbanded" && (
-            <FormField
+            <FormDatePicker
               label="Date de disband"
               value={form.disbandDate}
-              onChangeText={setField("disbandDate")}
-              placeholder="YYYY-MM-DD"
+              onChange={setField("disbandDate")}
+              minDate={form.debutDate ? new Date(form.debutDate) : undefined}
+              maxDate={new Date()}
             />
           )}
         </View>

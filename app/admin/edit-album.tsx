@@ -1,7 +1,12 @@
 import { AdminSearchBar, AlbumManageRow } from "@/src/components/admin";
 import { AlbumEditForm } from "@/src/components/admin/album/AlbumEditForm";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
-import { MOCK_ALBUMS, MOCK_GROUPS } from "@/src/data";
+import { MOCK_GROUPS } from "@/src/data";
+import { useAlbums } from "@/src/hooks/useAlbums";
+import { useEditAlbum } from "@/src/hooks/useEditAlbum";
+import { useGroups } from "@/src/hooks/useGroups";
+import { albumsService, storageService } from "@/src/services";
+import { extractUrl } from "@/src/utils/extractUrl";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
 import React, {
@@ -12,6 +17,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   FlatList,
@@ -42,7 +48,7 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
 
 export default function EditAlbumScreen() {
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
-
+  const { albums, loading: albumsLoading, refetch } = useAlbums();
   const [viewMode, setViewMode] = useState<ViewMode>("search");
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [saving, setSaving] = useState(false);
@@ -52,7 +58,35 @@ export default function EditAlbumScreen() {
   const [query, setQuery] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
+  const { groups } = useGroups();
   const filterAnim = useRef(new Animated.Value(1)).current;
+
+  const { loading, progress, error, submit } = useEditAlbum(async () => {
+    await refetch();
+    Alert.alert("✅ Enregistré", "L'album a été modifié avec succès.", [
+      {
+        text: "OK",
+        onPress: () => {
+          setViewMode("search");
+          setSelectedAlbum(null);
+        },
+      },
+    ]);
+  });
+
+  useEffect(() => {
+    if (preselectedId && albums.length > 0) {
+      const album = albums.find((a) => a.id === preselectedId);
+      if (album) {
+        setSelectedAlbum(album);
+        setViewMode("edit");
+      }
+    }
+  }, [preselectedId, albums]);
+
+  useEffect(() => {
+    if (error) Alert.alert("Erreur", error);
+  }, [error]);
 
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
@@ -64,33 +98,17 @@ export default function EditAlbumScreen() {
     }).start();
   }, [showFilters, filterAnim]);
 
-  // Présélection si on arrive depuis manage.tsx
-  useEffect(() => {
-    if (preselectedId) {
-      const album = MOCK_ALBUMS.find((a) => a.id === preselectedId);
-      if (album) {
-        setSelectedAlbum(album);
-        setViewMode("edit");
-      }
-    }
-  }, [preselectedId]);
-
   // ── Options filtres ──────────────────────────────────────────────────────
 
   const groupOptions = useMemo(
-    () =>
-      MOCK_GROUPS.map((g) => ({
-        id: g.id,
-        label: g.name,
-        sublabel: g.company,
-      })),
-    [],
+    () => groups.map((g) => ({ id: g.id, label: g.name, sublabel: g.company })),
+    [groups],
   );
 
   // ── Albums filtrés ───────────────────────────────────────────────────────
 
   const filteredAlbums = useMemo(() => {
-    return MOCK_ALBUMS.filter((a) => {
+    return albums.filter((a) => {
       if (selectedGroupId && a.groupId !== selectedGroupId) return false;
       if (query) {
         const q = query.toLowerCase();
@@ -98,13 +116,12 @@ export default function EditAlbumScreen() {
           a.title.toLowerCase().includes(q) ||
           a.koreanTitle?.toLowerCase().includes(q) ||
           a.type.toLowerCase().includes(q) ||
-          a.eventName?.toLowerCase().includes(q) ||
-          a.eventLocation?.toLowerCase().includes(q)
+          a.eventName?.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [selectedGroupId, query]);
+  }, [albums, selectedGroupId, query]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -113,28 +130,44 @@ export default function EditAlbumScreen() {
     setViewMode("edit");
   }, []);
 
-  const handleDeleteAlbum = useCallback((album: Album) => {
-    confirmDelete(album.title, () => {
-      Alert.alert("✅ Supprimé", "Album supprimé.");
-      // TODO: API delete
-    });
-  }, []);
+  const handleDeleteAlbum = useCallback(
+    (album: Album) => {
+      Alert.alert(
+        "Supprimer l'album",
+        `Es-tu sûre de vouloir supprimer "${album.title}" ?`,
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Supprime la cover du bucket
+                const coverUrl = extractUrl(album.coverUrl);
+                if (coverUrl) {
+                  await storageService.deleteFromUrl("album-covers", coverUrl);
+                }
+                await albumsService.delete(album.id);
+                await refetch();
+                Alert.alert("✅ Supprimé", "Album supprimé.");
+              } catch (err: any) {
+                Alert.alert("Erreur", err.message);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [refetch],
+  );
 
-  const handleSave = useCallback(async (data: AlbumEditFormState) => {
-    setSaving(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setSaving(false);
-    Alert.alert("✅ Enregistré", "L'album a été modifié avec succès.", [
-      {
-        text: "OK",
-        onPress: () => {
-          setViewMode("search");
-          setSelectedAlbum(null);
-        },
-      },
-    ]);
-    // TODO: appel API update
-  }, []);
+  const handleSave = useCallback(
+    async (data: AlbumEditFormState) => {
+      if (!selectedAlbum) return;
+      await submit(selectedAlbum.id, data, selectedAlbum);
+    },
+    [selectedAlbum, submit],
+  );
 
   const handleCancel = useCallback(() => {
     setViewMode("search");
@@ -156,13 +189,6 @@ export default function EditAlbumScreen() {
     }
   }, [viewMode, handleCancel]);
 
-  // ── Titre navbar ─────────────────────────────────────────────────────────
-
-  const navTitle =
-    viewMode === "edit" && selectedAlbum
-      ? selectedAlbum.title
-      : "Modifier un album";
-
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       {/* ── Navbar ── */}
@@ -171,7 +197,9 @@ export default function EditAlbumScreen() {
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text style={styles.navTitle} numberOfLines={1}>
-          {navTitle}
+          {viewMode === "edit" && selectedAlbum
+            ? selectedAlbum.title
+            : "Modifier un album"}
         </Text>
         {viewMode === "search" ? (
           <TouchableOpacity
@@ -236,31 +264,37 @@ export default function EditAlbumScreen() {
           </View>
 
           {/* Liste */}
-          <FlatList
-            data={filteredAlbums}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              const group = MOCK_GROUPS.find((g) => g.id === item.groupId);
-              return (
-                <AlbumManageRow
-                  album={item}
-                  groupName={group?.name}
-                  onEdit={() => handleSelectAlbum(item)}
-                  onDelete={() => handleDeleteAlbum(item)}
-                />
-              );
-            }}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🔍</Text>
-                <Text style={styles.emptyTitle}>Aucun album trouvé</Text>
-                <Text style={styles.emptySubtitle}>
-                  Essaie de changer les filtres
-                </Text>
-              </View>
-            }
-            showsVerticalScrollIndicator={false}
-          />
+          {albumsLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator color={Colors.accent} />
+            </View>
+          ) : (
+            <FlatList
+              data={filteredAlbums}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => {
+                const group = groups.find((g) => g.id === item.groupId);
+                return (
+                  <AlbumManageRow
+                    album={item}
+                    groupName={group?.name}
+                    onEdit={() => handleSelectAlbum(item)}
+                    onDelete={() => handleDeleteAlbum(item)}
+                  />
+                );
+              }}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyEmoji}>🔍</Text>
+                  <Text style={styles.emptyTitle}>Aucun album trouvé</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Essaie de changer les filtres
+                  </Text>
+                </View>
+              }
+              showsVerticalScrollIndicator={false}
+            />
+          )}
         </>
       )}
 
@@ -270,7 +304,8 @@ export default function EditAlbumScreen() {
           album={selectedAlbum}
           onSave={handleSave}
           onCancel={handleCancel}
-          loading={saving}
+          loading={loading}
+          progress={progress}
         />
       )}
     </SafeAreaView>
@@ -357,5 +392,10 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: "center",
     paddingHorizontal: Theme.spacing.xl,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

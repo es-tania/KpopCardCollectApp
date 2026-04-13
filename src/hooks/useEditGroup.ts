@@ -151,7 +151,7 @@ export const useEditGroup = (onSuccess: () => void): UseEditGroupResult => {
           realName: member.realName || undefined,
           koreanName: member.koreanName || undefined,
           birthDate: member.birthDate || undefined,
-          position: member.position ? ([member.position] as any) : [],
+          position: member.position as any,
           photoUrl:
             photoUrl !== undefined
               ? photoUrl === null

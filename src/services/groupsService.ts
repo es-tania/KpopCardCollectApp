@@ -72,7 +72,6 @@ const mapGroup = (data: any): Group => ({
   status: data.status ?? "active",
   generation: data.generation,
   fandomName: data.fandom_name,
-  memberCount: data.group_stats?.member_count,
   totalAlbums: data.group_stats?.total_albums,
   totalPhotocards: data.group_stats?.total_photocards ?? 0,
   createdAt: data.created_at,
