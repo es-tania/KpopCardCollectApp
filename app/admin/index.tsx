@@ -126,6 +126,12 @@ export default function AdminScreen() {
           onPress={() => router.push("/admin/add-photocard")}
         />
         <AdminActionRow
+          icon={<ImagePlus size={17} color={Colors.accent} strokeWidth={1.6} />}
+          label="Ajouter des photocards en lot"
+          sublabel="Même album, plusieurs membres"
+          onPress={() => router.push("/admin/add-photocards-bulk")}
+        />
+        <AdminActionRow
           icon={<Disc3 size={17} color={Colors.accent} strokeWidth={1.6} />}
           label="Ajouter un album / event"
           onPress={() => router.push("/admin/add-album")}
