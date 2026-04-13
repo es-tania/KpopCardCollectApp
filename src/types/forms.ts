@@ -53,8 +53,10 @@ export type AlbumFormErrors = FormErrors<AlbumFormState>;
 
 export interface PhotocardFormState {
   groupId: string;
+  groupName: string;
   albumId: string;
   memberId: string;
+  memberName: string;
   type: string;
   version: string;
   shopName: string;

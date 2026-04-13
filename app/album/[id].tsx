@@ -1,9 +1,13 @@
 import { PhotocardMiniGrid } from "@/src/components/photocard";
-import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { useAlbum } from "@/src/hooks/useAlbum";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Share2 } from "lucide-react-native";
+import { ChevronLeft, Download } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,9 +25,6 @@ import {
   FilterKey,
 } from "../../src/constants/options/filterOptions";
 import { Theme } from "../../src/constants/theme";
-import { MOCK_ALBUMS } from "../../src/data/mockAlbums";
-import { MOCK_MEMBERS } from "../../src/data/mockMembers";
-import { MOCK_PHOTOCARDS } from "../../src/data/mockPhotocards";
 import { useScrollToTop } from "../../src/hooks/useScrollToTop";
 import { Member } from "../../src/types";
 
@@ -34,24 +35,53 @@ export default function AlbumScreen() {
   }>();
   const { scrollRef, scrollToTop } = useScrollToTop();
 
+  // ── UI state ──────────────────────────────────────────────────────────
   const [selectedMemberId, setSelectedMemberId] =
     useState<string>(ALL_MEMBERS_ID);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
-  const album = useMemo(() => MOCK_ALBUMS.find((a) => a.id === id), [id]);
+  // ── Data BDD ──────────────────────────────────────────────────────────
+  const { album, loading: albumLoading } = useAlbum(id);
+  const { members, loading: membersLoading } = useGroupMembers(groupId);
+  const { photocards, loading: photocardsLoading } = usePhotocards({
+    albumId: id,
+  });
 
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useUserCollection();
+
+  // ── Membres présents dans cet album ───────────────────────────────────
   const albumMembers = useMemo(() => {
-    const memberIdsInAlbum = new Set(
-      MOCK_PHOTOCARDS.filter((c) => c.albumId === id).map((c) => c.memberId),
-    );
-    return MOCK_MEMBERS.filter((m) => memberIdsInAlbum.has(m.id));
-  }, [id]);
+    const memberIdsInAlbum = new Set(photocards.map((c) => c.memberId));
+    return members.filter((m) => memberIdsInAlbum.has(m.id));
+  }, [photocards, members]);
 
+  // ── Photocards enrichies ──────────────────────────────────────────────
+  const enrichedPhotocards = useMemo(() => {
+    return photocards.map((card) => ({
+      ...card,
+      isInCollection: collectionIds.has(card.id),
+      isFavorite: favoriteIds.has(card.id),
+      isWishlisted: wishlistIds.has(card.id),
+    }));
+  }, [photocards, collectionIds, favoriteIds, wishlistIds]);
+
+  // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
-    let cards = MOCK_PHOTOCARDS.filter((c) => c.albumId === id);
+    let cards = enrichedPhotocards;
+
+    // Filtre par membre
     if (selectedMemberId !== ALL_MEMBERS_ID) {
       cards = cards.filter((c) => c.memberId === selectedMemberId);
     }
+
+    // Filtre par état
     switch (activeFilter) {
       case "collection":
         return cards.filter((c) => c.isInCollection);
@@ -62,27 +92,45 @@ export default function AlbumScreen() {
       default:
         return cards;
     }
-  }, [id, selectedMemberId, activeFilter]);
+  }, [enrichedPhotocards, selectedMemberId, activeFilter]);
 
-  const handleSelectMember = useCallback((member: Member) => {
-    setSelectedMemberId((prev) =>
-      prev === member.id ? ALL_MEMBERS_ID : member.id,
-    );
-    setActiveFilter("all");
-  }, []);
+  // ── Handlers ──────────────────────────────────────────────────────────
+
+  const handleSelectMember = useCallback(
+    (member: Member) => {
+      setSelectedMemberId((prev) =>
+        prev === member.id ? ALL_MEMBERS_ID : member.id,
+      );
+      setActiveFilter("all");
+      scrollToTop();
+    },
+    [scrollToTop],
+  );
 
   const handleSelectAll = useCallback(() => {
     setSelectedMemberId(ALL_MEMBERS_ID);
     setActiveFilter("all");
-  }, []);
+    scrollToTop();
+  }, [scrollToTop]);
 
   const handlePressBack = useCallback(() => {
     handleSelectAll();
     router.back();
   }, [groupId]);
 
-  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
-    usePhotocardActions();
+  const handleExport = useCallback(() => {
+    router.push(`/export?albumId=${id}`);
+  }, [id]);
+
+  if (albumLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} size="large" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -91,11 +139,8 @@ export default function AlbumScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={handlePressBack}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.navBtn}
-          onPress={() => console.log("export")}
-        >
-          <Share2 size={18} color={Colors.text} strokeWidth={1.6} />
+        <TouchableOpacity style={styles.navBtn} onPress={handleExport}>
+          <Download size={18} color={Colors.text} strokeWidth={1.6} />
         </TouchableOpacity>
       </View>
 
@@ -109,12 +154,32 @@ export default function AlbumScreen() {
 
         {/* Sélecteur membres */}
         <SectionLabel label="Membres" style={styles.sectionLabel} />
-        <AlbumMembersSelector
-          members={albumMembers}
-          selectedMemberId={selectedMemberId}
-          onSelectAll={handleSelectAll}
-          onSelectMember={handleSelectMember}
-        />
+        {membersLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <AlbumMembersSelector
+            members={albumMembers.map((m) => {
+              const memberCards = enrichedPhotocards.filter(
+                (c) => c.memberId === m.id,
+              );
+              return {
+                ...m,
+                // Stats spécifiques à cet album
+                totalPhotocards: memberCards.length,
+                ownedPhotocards: memberCards.filter((c) => c.isInCollection)
+                  .length,
+                wishlistPhotocards: memberCards.filter((c) => c.isWishlisted)
+                  .length,
+              };
+            })}
+            selectedMemberId={selectedMemberId}
+            onSelectAll={handleSelectAll}
+            onSelectMember={handleSelectMember}
+          />
+        )}
 
         {/* Filtres */}
         <View style={styles.filtersRow}>
@@ -131,12 +196,17 @@ export default function AlbumScreen() {
           style={styles.sectionLabel}
         />
 
-        {filteredCards.length > 0 ? (
+        {photocardsLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : filteredCards.length > 0 ? (
           <PhotocardMiniGrid
             cards={filteredCards}
-            onPressFavorite={handleToggleFavorite}
-            onPressWishlist={handleToggleWishlist}
-            onPressCollection={handleToggleCollection}
+            onPressFavorite={(cardId) => toggleFavorite(cardId)}
+            onPressWishlist={(cardId) => toggleWishlist(cardId)}
+            onPressCollection={(cardId) => toggleCollection(cardId)}
           />
         ) : (
           <View style={styles.emptyState}>
@@ -157,6 +227,11 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   navbar: {
     flexDirection: "row",
@@ -191,6 +266,9 @@ const styles = StyleSheet.create({
   sectionLabel: {
     paddingHorizontal: Theme.spacing.lg,
     paddingVertical: Theme.spacing.sm,
+  },
+  sectionLoading: {
+    paddingVertical: Theme.spacing.xl,
   },
   filtersRow: {
     paddingHorizontal: Theme.spacing.lg,

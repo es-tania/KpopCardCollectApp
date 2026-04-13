@@ -4,8 +4,8 @@ import {
   storageService,
 } from "@/src/services/storageService";
 import { Album, AlbumEditFormState } from "@/src/types";
+import { extractUrl } from "@/src/utils/extractUrl";
 import { useState } from "react";
-import { extractUrl } from "../utils/extractUrl";
 
 interface UseEditAlbumResult {
   loading: boolean;

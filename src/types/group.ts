@@ -22,6 +22,7 @@ export interface Group {
   fandomName?: string;
 
   // 👥 Données liées
+  memberCount?: number;
   totalAlbums?: number;
   totalPhotocards: number; // total sur l'app
 

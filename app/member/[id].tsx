@@ -1,9 +1,11 @@
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid } from "@/src/components/photocard";
 import { FILTER_OPTIONS } from "@/src/constants/options/filterOptions";
-import { MOCK_ALBUMS, MOCK_MEMBERS, MOCK_PHOTOCARDS } from "@/src/data";
-import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
+import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
 import React, {
@@ -14,6 +16,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -41,44 +44,60 @@ export default function MemberScreen() {
     groupId: string;
   }>();
 
+  // ── UI state ──────────────────────────────────────────────────────────
   // Membre actif (celui sur lequel on a cliqué + possibilité d'en changer)
-  const [activeMemberId, setActiveMemberId] = useState<string>(id ?? "m1");
+  const [activeMemberId, setActiveMemberId] = useState<string>(id ?? "");
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
   const albumsScrollY = useRef<number>(0);
   const isAlbumsViewActive = useRef<boolean>(true);
 
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (isAlbumsViewActive.current) {
-        albumsScrollY.current = e.nativeEvent.contentOffset.y;
-      }
-    },
-    [selectedAlbum],
-  );
+  // ── Data BDD ──────────────────────────────────────────────────────────
+  const { members, loading: membersLoading } = useGroupMembers(groupId);
+  const { albums, loading: albumsLoading } = useAlbums(groupId);
 
-  useEffect(() => {
-    if (id) {
-      setActiveMemberId(id);
-      setSelectedAlbum(null);
-      setActiveFilter("all");
-      albumsScrollY.current = 0;
-      scrollToTop();
-    }
-  }, [id]);
+  // Photocards du membre actif
+  const { photocards, loading: photocardsLoading } = usePhotocards({
+    memberId: activeMemberId,
+  });
 
+  // États collection/favoris/wishlist
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useUserCollection();
+
+  // ── Membre actif ──────────────────────────────────────────────────────
   const activeMember = useMemo(
-    () => MOCK_MEMBERS.find((m) => m.id === activeMemberId) ?? MOCK_MEMBERS[0],
-    [activeMemberId],
+    () => members.find((m) => m.id === activeMemberId) ?? members[0] ?? null,
+    [members, activeMemberId],
   );
 
-  // Filtrage des photocards
-  const filteredCards = useMemo(() => {
-    let cards = MOCK_PHOTOCARDS.filter((c) => c.memberId === activeMemberId);
-    if (selectedAlbum)
-      cards = cards.filter((c) => c.albumId === selectedAlbum.id);
+  // ── Photocards enrichies ──────────────────────────────────────────────
+  const enrichedPhotocards = useMemo(() => {
+    return photocards.map((card) => ({
+      ...card,
+      isInCollection: collectionIds.has(card.id),
+      isFavorite: favoriteIds.has(card.id),
+      isWishlisted: wishlistIds.has(card.id),
+    }));
+  }, [photocards, collectionIds, favoriteIds, wishlistIds]);
 
+  // ── Photocards filtrées ───────────────────────────────────────────────
+  const filteredCards = useMemo(() => {
+    let cards = enrichedPhotocards;
+
+    // Filtre par album sélectionné
+    if (selectedAlbum) {
+      cards = cards.filter((c) => c.albumId === selectedAlbum.id);
+    }
+
+    // Filtre par état
     switch (activeFilter) {
       case "collection":
         return cards.filter((c) => c.isInCollection);
@@ -89,8 +108,30 @@ export default function MemberScreen() {
       default:
         return cards;
     }
-  }, [activeMemberId, selectedAlbum, activeFilter]);
+  }, [enrichedPhotocards, selectedAlbum, activeFilter]);
 
+  // ── Sync id depuis les params ─────────────────────────────────────────
+  useEffect(() => {
+    if (id) {
+      setActiveMemberId(id);
+      setSelectedAlbum(null);
+      setActiveFilter("all");
+      albumsScrollY.current = 0;
+      scrollToTop();
+    }
+  }, [id]);
+
+  // ── Scroll handler ────────────────────────────────────────────────────
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (isAlbumsViewActive.current) {
+        albumsScrollY.current = e.nativeEvent.contentOffset.y;
+      }
+    },
+    [selectedAlbum],
+  );
+
+  // ── Handlers ──────────────────────────────────────────────────────────
   const handleSelectAlbum = useCallback(
     (album: Album) => {
       isAlbumsViewActive.current = false;
@@ -116,8 +157,10 @@ export default function MemberScreen() {
       if (member.id === activeMemberId) return;
       setActiveMemberId(member.id);
       setActiveFilter("all");
+      albumsScrollY.current = 0;
+      scrollToTop();
     },
-    [activeMemberId],
+    [activeMemberId, scrollToTop],
   );
 
   const handlePressBack = useCallback(() => {
@@ -125,12 +168,20 @@ export default function MemberScreen() {
     scrollToTop();
   }, [groupId, scrollToTop]);
 
-  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
-    usePhotocardActions();
-
   const handleExport = useCallback(() => {
-    console.log("export wishlist");
+    router.push(`/export?memberId=${activeMemberId}`);
   }, []);
+
+  // ── Loading ───────────────────────────────────────────────────────────
+  if (membersLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} size="large" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -152,13 +203,13 @@ export default function MemberScreen() {
         scrollEventThrottle={16}
       >
         {/* ── Header membre ── */}
-        <MemberHeader member={activeMember} />
+        {activeMember && <MemberHeader member={activeMember} />}
 
         {/* ── Sélecteur membres (scroll horizontal) ── */}
         <View style={styles.membersSection}>
           <SectionLabel label="Membres" style={styles.sectionLabel} />
           <MembersList
-            members={MOCK_MEMBERS}
+            members={members}
             selectedId={activeMemberId}
             onPressMember={handleSelectMember}
           />
@@ -180,7 +231,14 @@ export default function MemberScreen() {
               label={"Choisissez un album"}
               style={styles.sectionLabel}
             />
-            <AlbumGrid albums={MOCK_ALBUMS} onPressAlbum={handleSelectAlbum} />
+            {albumsLoading ? (
+              <ActivityIndicator
+                color={Colors.accent}
+                style={styles.sectionLoading}
+              />
+            ) : (
+              <AlbumGrid albums={albums} onPressAlbum={handleSelectAlbum} />
+            )}
           </>
         ) : (
           <>
@@ -192,11 +250,7 @@ export default function MemberScreen() {
             >
               {selectedAlbum.coverUrl && (
                 <Image
-                  source={
-                    typeof selectedAlbum.coverUrl === "string"
-                      ? { uri: selectedAlbum.coverUrl }
-                      : (selectedAlbum.coverUrl as any)
-                  }
+                  source={selectedAlbum.coverUrl as any}
                   style={styles.albumBannerCover}
                   resizeMode="cover"
                 />
@@ -209,12 +263,7 @@ export default function MemberScreen() {
                   Appuie pour changer d'album
                 </Text>
               </View>
-              <ChevronLeft
-                size={16}
-                color={Colors.textMuted}
-                strokeWidth={1.6}
-                style={{ transform: [{ rotate: "180deg" }] }}
-              />
+              <ChevronLeft size={20} color={Colors.text} strokeWidth={1.6} />
             </TouchableOpacity>
 
             {/* Compteur */}
@@ -223,12 +272,18 @@ export default function MemberScreen() {
               style={styles.sectionLabel}
             />
 
-            {filteredCards.length > 0 ? (
+            {/* Grille photocards */}
+            {photocardsLoading ? (
+              <ActivityIndicator
+                color={Colors.accent}
+                style={styles.sectionLoading}
+              />
+            ) : filteredCards.length > 0 ? (
               <PhotocardMiniGrid
                 cards={filteredCards}
-                onPressFavorite={handleToggleFavorite}
-                onPressWishlist={handleToggleWishlist}
-                onPressCollection={handleToggleCollection}
+                onPressFavorite={(id) => toggleFavorite(id)}
+                onPressWishlist={(id) => toggleWishlist(id)}
+                onPressCollection={(id) => toggleCollection(id)}
               />
             ) : (
               <View style={styles.emptyState}>
@@ -253,6 +308,11 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   navbar: {
     flexDirection: "row",
@@ -292,6 +352,9 @@ const styles = StyleSheet.create({
   sectionLabel: {
     paddingHorizontal: Theme.spacing.lg,
     paddingTop: Theme.spacing.md,
+  },
+  sectionLoading: {
+    paddingVertical: Theme.spacing.xl,
   },
   filtersRow: {
     paddingHorizontal: Theme.spacing.lg,

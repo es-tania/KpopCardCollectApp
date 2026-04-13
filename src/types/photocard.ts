@@ -21,8 +21,8 @@ export interface Photocard {
   groupId: string;
 
   // 🖼️ Médias
-  imageUrl?: ImageSourcePropType;
-  backImageUrl?: ImageSourcePropType;
+  imageUrl?: ImageSourcePropType | null;
+  backImageUrl?: ImageSourcePropType | null;
 
   // 🃏 Infos carte
   type: PhotocardType;

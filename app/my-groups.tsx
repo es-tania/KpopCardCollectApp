@@ -1,14 +1,15 @@
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { router } from "expo-router";
 import { ChevronLeft, Heart, Search } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../src/constants/colors";
@@ -123,11 +124,12 @@ const AlphaHeader: React.FC<{ letter: string }> = ({ letter }) => (
 
 export default function MyGroupsScreen() {
   const [query, setQuery] = useState("");
+  const { groups } = useGroups(true);
 
   // Filtre + tri alphabétique
   const filteredGroups = useMemo(() => {
     const q = query.toLowerCase().trim();
-    return [...MOCK_FOLLOWED_GROUPS]
+    return [...groups]
       .filter(
         (g) =>
           !q ||

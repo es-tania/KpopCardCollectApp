@@ -3,15 +3,22 @@ import { FilterSelector } from "@/src/components/admin/FilterSelector";
 import { EditForm } from "@/src/components/admin/photocard/EditForm";
 import { PhotocardManageRow } from "@/src/components/admin/photocard/PhotocardManageRow";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
-import {
-  MOCK_ALBUMS,
-  MOCK_GROUPS,
-  MOCK_MEMBERS,
-  MOCK_PHOTOCARDS,
-} from "@/src/data";
+import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { useGroups } from "@/src/hooks/group/useGroups";
+import { useEditPhotocard } from "@/src/hooks/photocard/useEditPhotocard";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { photocardsService, storageService } from "@/src/services";
+import { extractUrl } from "@/src/utils/extractUrl";
 import { router } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   Animated,
@@ -46,10 +53,11 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function EditPhotocardScreen() {
-  const [viewMode, setViewMode] = useState<ViewMode>("search");
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
   );
+
+  const [viewMode, setViewMode] = useState<ViewMode>("search");
   const [previewCard, setPreviewCard] = useState<PhotocardWithDetails | null>(
     null,
   );
@@ -65,6 +73,26 @@ export default function EditPhotocardScreen() {
   // Animation filtres
   const filterAnim = useRef(new Animated.Value(1)).current;
 
+  const { photocards, loading: photocardsLoading, refetch } = usePhotocards();
+  const { groups } = useGroups();
+
+  const { loading, progress, error, submit } = useEditPhotocard(async () => {
+    await refetch();
+    Alert.alert("✅ Enregistré", "La photocard a été modifiée.", [
+      {
+        text: "OK",
+        onPress: () => {
+          setViewMode("search");
+          setSelectedCard(null);
+        },
+      },
+    ]);
+  });
+
+  useEffect(() => {
+    if (error) Alert.alert("Erreur", error);
+  }, [error]);
+
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
     Animated.spring(filterAnim, {
@@ -78,33 +106,32 @@ export default function EditPhotocardScreen() {
   // ── Options des filtres ──────────────────────────────────────────────────
 
   const groupOptions = useMemo(
-    () =>
-      MOCK_GROUPS.map((g) => ({
-        id: g.id,
-        label: g.name,
-        sublabel: g.company,
-      })),
-    [],
+    () => groups.map((g) => ({ id: g.id, label: g.name, sublabel: g.company })),
+    [groups],
   );
 
-  const albumOptions = useMemo(() => {
-    if (!selectedGroupId) return [];
-    return MOCK_ALBUMS.filter((a) => a.groupId === selectedGroupId).map(
-      (a) => ({ id: a.id, label: a.title }),
-    );
-  }, [selectedGroupId]);
+  // Albums filtrés selon le groupe sélectionné
+  const { albums: filteredAlbumOptions } = useAlbums(
+    selectedGroupId ?? undefined,
+  );
 
-  const memberOptions = useMemo(() => {
-    if (!selectedGroupId) return [];
-    return MOCK_MEMBERS.filter((m) => m.groupId === selectedGroupId).map(
-      (m) => ({ id: m.id, label: m.stageName }),
-    );
-  }, [selectedGroupId]);
+  const albumOptions = useMemo(
+    () => filteredAlbumOptions.map((a) => ({ id: a.id, label: a.title })),
+    [filteredAlbumOptions],
+  );
+
+  // Membres filtrés selon le groupe sélectionné
+  const { members: filteredMemberOptions } = useGroupMembers(selectedGroupId);
+
+  const memberOptions = useMemo(
+    () => filteredMemberOptions.map((m) => ({ id: m.id, label: m.stageName })),
+    [filteredMemberOptions],
+  );
 
   // ── Photocards filtrées ──────────────────────────────────────────────────
 
   const filteredCards = useMemo(() => {
-    return MOCK_PHOTOCARDS.filter((c) => {
+    return photocards.filter((c) => {
       if (selectedGroupId && c.groupId !== selectedGroupId) return false;
       if (selectedAlbumId && c.albumId !== selectedAlbumId) return false;
       if (selectedMemberId && c.memberId !== selectedMemberId) return false;
@@ -120,7 +147,7 @@ export default function EditPhotocardScreen() {
       }
       return true;
     });
-  }, [selectedGroupId, selectedAlbumId, selectedMemberId, query]);
+  }, [photocards, selectedGroupId, selectedAlbumId, selectedMemberId, query]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -139,32 +166,53 @@ export default function EditPhotocardScreen() {
     setPreviewCard(card);
   }, []);
 
-  const handleDeletePhotocard = useCallback((card: PhotocardWithDetails) => {
-    confirmDelete(
-      "la photocard",
-      `${card.memberName} — ${card.albumTitle}`,
-      () => {
-        Alert.alert("✅ Supprimée", "Photocard supprimée.");
-        // TODO: API delete
-      },
-    );
-  }, []);
+  const handleDeletePhotocard = useCallback(
+    (card: PhotocardWithDetails) => {
+      Alert.alert(
+        "Supprimer la photocard",
+        `Es-tu sûre de vouloir supprimer "${card.memberName} — ${card.albumTitle}" ? Cette action est irréversible.`,
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Supprimer",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Supprime les images du bucket
+                const imageUrl = extractUrl(card.imageUrl);
+                const backImageUrl = extractUrl(card.backImageUrl);
 
-  const handleSave = useCallback(async (data: PhotocardEditFormState) => {
-    setSaving(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setSaving(false);
-    Alert.alert("✅ Enregistré", "La photocard a été modifiée avec succès.", [
-      {
-        text: "OK",
-        onPress: () => {
-          setViewMode("search");
-          setSelectedCard(null);
-        },
-      },
-    ]);
-    // TODO: appel API update
-  }, []);
+                if (imageUrl)
+                  await storageService.deleteFromUrl("photocards", imageUrl);
+                if (backImageUrl)
+                  await storageService.deleteFromUrl(
+                    "photocards",
+                    backImageUrl,
+                  );
+
+                // Supprime en BDD
+                await photocardsService.delete(card.id);
+                await refetch();
+
+                Alert.alert("✅ Supprimée", "Photocard supprimée.");
+              } catch (err: any) {
+                Alert.alert("Erreur", err.message);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [refetch],
+  );
+
+  const handleSave = useCallback(
+    async (data: PhotocardEditFormState) => {
+      if (!selectedCard) return;
+      await submit(selectedCard.id, data, selectedCard);
+    },
+    [selectedCard, submit],
+  );
 
   const handleCancel = useCallback(() => {
     setViewMode("search");
@@ -284,11 +332,11 @@ export default function EditPhotocardScreen() {
               <Text style={styles.countNum}>{filteredCards.length}</Text> carte
               {filteredCards.length !== 1 ? "s" : ""}
               {selectedGroupId &&
-                ` · ${MOCK_GROUPS.find((g) => g.id === selectedGroupId)?.name}`}
+                ` · ${groups.find((g) => g.id === selectedGroupId)?.name}`}
               {selectedAlbumId &&
-                ` · ${MOCK_ALBUMS.find((a) => a.id === selectedAlbumId)?.title}`}
+                ` · ${filteredAlbumOptions.find((a) => a.id === selectedAlbumId)?.title}`}
               {selectedMemberId &&
-                ` · ${MOCK_MEMBERS.find((m) => m.id === selectedMemberId)?.stageName}`}
+                ` · ${filteredMemberOptions.find((m) => m.id === selectedMemberId)?.stageName}`}
             </Text>
           </View>
 
@@ -325,6 +373,7 @@ export default function EditPhotocardScreen() {
           onSave={handleSave}
           onCancel={handleCancel}
           loading={saving}
+          progress={progress}
         />
       )}
 

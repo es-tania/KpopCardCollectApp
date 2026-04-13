@@ -5,7 +5,7 @@ import {
   ChevronDown,
   ChevronUp,
   Disc3,
-  Heart
+  Heart,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -169,10 +169,6 @@ export const GroupHeader: React.FC<GroupHeaderProps> = ({ group }) => {
             <Text style={styles.statLabel}>Collectées</Text>
           </View>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNum}>{group.totalPhotocards}</Text>
-            <Text style={styles.statLabel}>Total</Text>
-          </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={[styles.statNum, { color: Colors.accent2 }]}>
@@ -227,7 +223,7 @@ export const GroupHeader: React.FC<GroupHeaderProps> = ({ group }) => {
             icon={
               <Disc3 size={14} color={Colors.textMuted} strokeWidth={1.6} />
             }
-            label="Albums"
+            label="Albums enregistrés"
             value={group.totalAlbums?.toString() ?? "—"}
           />
           <InfoRow

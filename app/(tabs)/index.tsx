@@ -2,7 +2,8 @@ import { router } from "expo-router";
 import React, { useCallback } from "react";
 import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
 
-import { MOCK_GROUPS, MOCK_GROUPS_PROGRESS, MOCK_PHOTOCARDS } from "@/src/data";
+import { MOCK_GROUPS_PROGRESS, MOCK_PHOTOCARDS } from "@/src/data";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CollectionProgress } from "../../src/components/home/CollectionProgress";
@@ -16,6 +17,8 @@ import { Theme } from "../../src/constants/theme";
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const { groups } = useGroups(true);
+
   const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
     usePhotocardActions();
 
@@ -40,7 +43,7 @@ export default function HomeScreen() {
         {/* Groupes suivis */}
         <SectionLabel label="Groupes suivis" />
         <FollowedGroupsRow
-          groups={MOCK_GROUPS}
+          groups={groups}
           onPressGroup={handlePressGroup}
           onPressAdd={handlePressAddGroup}
         />

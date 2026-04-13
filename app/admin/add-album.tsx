@@ -1,18 +1,18 @@
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
+import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   ALBUM_TYPE_OPTIONS,
   CATEGORY_OPTIONS,
   YES_NO_OPTIONS,
 } from "@/src/constants/options";
-import { useAddAlbum } from "@/src/hooks/useAddAlbum";
-import { useGroups } from "@/src/hooks/useGroups";
+import { useAddAlbum } from "@/src/hooks/album/useAddAlbum";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
-import * as ImagePicker from "expo-image-picker";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -27,21 +27,6 @@ import { FormSelect } from "../../src/components/ui/FormSelect";
 import { FormSubmitButton } from "../../src/components/ui/FormSubmitButton";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-
-const pickLocalImage = async (
-  onPicked: (uri: string) => void,
-  aspect?: [number, number],
-) => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) return;
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: aspect ?? [1, 1],
-    quality: 0.85,
-  });
-  if (!result.canceled) onPicked(result.assets[0].uri);
-};
 
 export default function AddAlbumScreen() {
   const { groups } = useGroups();
@@ -131,7 +116,9 @@ export default function AddAlbumScreen() {
           <FormImagePicker
             label="Couverture"
             imageUri={form.coverUri}
-            onPick={() => pickLocalImage((uri) => set("coverUri")(uri), [1, 1])}
+            onPick={() =>
+              pickLocalImage((uri) => set("coverUri")(uri), { aspect: [1, 1] })
+            }
             onRemove={() => set("coverUri")("")}
             aspectRatio={1}
           />
@@ -241,12 +228,7 @@ export default function AddAlbumScreen() {
         </View>
 
         {/* ── Progression ── */}
-        {progress && (
-          <View style={styles.progressWrap}>
-            <ActivityIndicator size="small" color={Colors.accent} />
-            <Text style={styles.progressText}>{progress}</Text>
-          </View>
-        )}
+        <ProgressIndicator message={progress} />
 
         <FormSubmitButton
           label="Ajouter l'album"
@@ -300,19 +282,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     paddingBottom: Theme.spacing.sm,
-  },
-  progressWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Theme.spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: Colors.borderActive,
-    padding: Theme.spacing.md,
-  },
-  progressText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.accent,
   },
 });

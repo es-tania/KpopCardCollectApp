@@ -1,7 +1,7 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
 import { ALL_KEY } from "@/src/constants/key";
-import { MOCK_GROUPS } from "@/src/data/mockGroups";
 import { MOCK_PHOTOCARDS } from "@/src/data/mockPhotocards";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { CardMode } from "@/src/types";
@@ -47,6 +47,7 @@ const MODE_CONFIG: Record<
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function MyCardsScreen() {
+  const { groups } = useGroups(true);
   const { mode: rawMode } = useLocalSearchParams<{ mode?: string }>();
   const mode: CardMode =
     rawMode === "favorites" || rawMode === "wishlist" ? rawMode : "collection";
@@ -87,7 +88,7 @@ export default function MyCardsScreen() {
   // Groupes présents dans la collection
   const groupsInCards = useMemo(() => {
     const groupIds = new Set(modeCards.map((c) => c.groupId));
-    return MOCK_GROUPS.filter((g) => groupIds.has(g.id));
+    return groups.filter((g) => groupIds.has(g.id));
   }, [modeCards]);
 
   // Filtre par groupe

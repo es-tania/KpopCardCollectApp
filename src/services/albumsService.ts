@@ -84,7 +84,7 @@ const mapAlbum = (data: any): Album => ({
   category: data.category ?? "music",
   coverUrl: data.cover_url ? { uri: data.cover_url } : undefined,
   releaseDate: data.release_date ?? undefined,
-  totalPhotocards: 0,
+  totalPhotocards: data.total_photocards ?? 0,
   hasPOB: data.has_pob ?? false,
   isLimited: data.is_limited ?? false,
   eventName: data.event_name ?? undefined,

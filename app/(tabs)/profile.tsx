@@ -1,3 +1,4 @@
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { router } from "expo-router";
 import {
   Download,
@@ -21,6 +22,7 @@ import { Colors } from "../../src/constants/colors";
 import { MOCK_USER } from "../../src/data/mockUser";
 
 export default function ProfileScreen() {
+  const { groups } = useGroups(true);
   const user = MOCK_USER;
 
   const stats = [

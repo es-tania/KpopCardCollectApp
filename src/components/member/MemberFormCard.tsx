@@ -3,7 +3,7 @@ import { FormImagePicker } from "@/src/components/ui/FormImagePicker";
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
 import { MemberFormErrors, MemberFormState } from "@/src/types";
-import * as ImagePicker from "expo-image-picker";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { Trash2 } from "lucide-react-native";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -25,22 +25,6 @@ interface MemberFormCardProps {
   defaultExpanded?: boolean;
   showAvatar?: boolean;
 }
-
-const pickLocalImage = async (onPicked: (uri: string) => void) => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) return;
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 0.85,
-  });
-
-  if (!result.canceled) {
-    onPicked(result.assets[0].uri);
-  }
-};
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -131,10 +115,13 @@ export const MemberFormCard: React.FC<MemberFormCardProps> = ({
                 label="Photo"
                 imageUri={member.photoUri || member.existingPhotoUrl || ""}
                 onPick={() =>
-                  pickLocalImage((uri) => {
-                    (onChange(member.localId, "photoUri", uri),
-                      onChange(member.localId, "removePhoto", false));
-                  })
+                  pickLocalImage(
+                    (uri) => {
+                      (onChange(member.localId, "photoUri", uri),
+                        onChange(member.localId, "removePhoto", false));
+                    },
+                    { aspect: [1, 1] },
+                  )
                 }
                 onRemove={() => {
                   onChange(member.localId, "photoUri", "");

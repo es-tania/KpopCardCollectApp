@@ -3,20 +3,20 @@ import {
   newMemberForm,
 } from "@/src/components/member/MemberFormCard";
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
+import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
-import { useAddGroup } from "@/src/hooks/useAddGroup";
+import { useAddGroup } from "@/src/hooks/group/useAddGroup";
 import {
   GroupFormErrors,
   GroupFormState,
   MemberFormErrors,
   MemberFormState,
 } from "@/src/types";
-import * as ImagePicker from "expo-image-picker";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router } from "expo-router";
 import { ChevronLeft, Plus, UserPlus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -47,28 +47,6 @@ const INITIAL_GROUP: GroupFormState = {
   bannerUri: "",
   removeBanner: false,
   removeLogo: false,
-};
-
-const pickLocalImage = async (
-  onPicked: (uri: string) => void,
-  aspect?: [number, number],
-) => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) {
-    Alert.alert("Permission refusée", "L'accès à la galerie est nécessaire.");
-    return;
-  }
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: aspect ?? [1, 1],
-    quality: 0.85,
-  });
-
-  if (!result.canceled) {
-    onPicked(result.assets[0].uri);
-  }
 };
 
 // ─── Page principale ──────────────────────────────────────────────────────────
@@ -118,7 +96,7 @@ export default function AddGroupScreen() {
   const handleChangeMember = (
     localId: string,
     key: keyof MemberFormState,
-    value: string | boolean,
+    value: string | boolean | string[],
   ) => {
     setMembers((prev) =>
       prev.map((m) => (m.localId === localId ? { ...m, [key]: value } : m)),
@@ -179,12 +157,6 @@ export default function AddGroupScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      {progress && (
-        <View style={styles.progressWrap}>
-          <ActivityIndicator size="small" color={Colors.accent} />
-          <Text style={styles.progressText}>{progress}</Text>
-        </View>
-      )}
       {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
@@ -215,7 +187,9 @@ export default function AddGroupScreen() {
             label="Logo"
             imageUri={form.logoUri}
             onPick={() =>
-              pickLocalImage((uri) => setField("logoUri")(uri), [1, 1])
+              pickLocalImage((uri) => setField("logoUri")(uri), {
+                aspect: [1, 1],
+              })
             }
             onRemove={() => setField("logoUri")("")}
             aspectRatio={1}
@@ -224,7 +198,9 @@ export default function AddGroupScreen() {
             label="Bannière"
             imageUri={form.bannerUri}
             onPick={() =>
-              pickLocalImage((uri) => setField("bannerUri")(uri), [8, 4])
+              pickLocalImage((uri) => setField("bannerUri")(uri), {
+                aspect: [8, 5],
+              })
             }
             onRemove={() => setField("bannerUri")("")}
             aspectRatio={800 / 300}
@@ -333,6 +309,7 @@ export default function AddGroupScreen() {
           onPress={handleSubmit}
           loading={loading}
         />
+        <ProgressIndicator message={progress} />
       </ScrollView>
     </SafeAreaView>
   );

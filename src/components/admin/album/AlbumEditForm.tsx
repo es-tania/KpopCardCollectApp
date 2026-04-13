@@ -11,10 +11,9 @@ import {
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { Album, AlbumEditFormState } from "@/src/types";
-import * as ImagePicker from "expo-image-picker";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   ScrollView,
   StyleSheet,
@@ -22,6 +21,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { ProgressIndicator } from "../../ui/ProgressIndicator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -32,23 +32,6 @@ interface AlbumEditFormProps {
   loading: boolean;
   progress: string | null; // ← nouveau
 }
-
-const pickLocalImage = async (
-  onPicked: (uri: string) => void,
-  aspect?: [number, number],
-) => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) return;
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: aspect ?? [1, 1],
-    quality: 0.85,
-  });
-
-  if (!result.canceled) onPicked(result.assets[0].uri);
-};
 
 // ─── Composant ────────────────────────────────────────────────────────────────
 
@@ -127,7 +110,7 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
                 set("coverUri")(uri);
                 setForm((prev) => ({ ...prev, removeCover: false }));
               },
-              [1, 1],
+              { aspect: [1, 1] },
             )
           }
           onRemove={() =>
@@ -251,12 +234,7 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
       </View>
 
       {/* Progression */}
-      {progress && (
-        <View style={styles.progressWrap}>
-          <ActivityIndicator size="small" color={Colors.accent} />
-          <Text style={styles.progressText}>{progress}</Text>
-        </View>
-      )}
+      <ProgressIndicator message={progress} />
     </ScrollView>
   );
 };
@@ -334,18 +312,4 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.medium,
   },
   saveBtn: { flex: 1 },
-  progressWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Theme.spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: Colors.borderActive,
-    padding: Theme.spacing.md,
-  },
-  progressText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.accent,
-  },
 });

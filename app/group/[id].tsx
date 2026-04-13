@@ -1,11 +1,17 @@
 import { MembersGrid } from "@/src/components/member/MembersGrid";
 import { SectionLabel } from "@/src/components/ui/SectionLabel";
-import { MOCK_ALBUMS, MOCK_GROUPS, MOCK_MEMBERS } from "@/src/data";
+import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { useGroup } from "@/src/hooks/useGroup";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Download, Heart } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -25,6 +31,17 @@ import { Album, Member } from "../../src/types";
 export default function GroupScreen() {
   const { scrollRef, scrollToTop } = useScrollToTop();
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
+
+  // ── Data BDD ──────────────────────────────────────────────────────────
+  const { group, loading: groupLoading } = useGroup(groupId);
+  const { members, loading: membersLoading } = useGroupMembers(groupId);
+  const { albums, loading: albumsLoading } = useAlbums(groupId);
+  const { photocards, loading: photocardsLoading } = usePhotocards({ groupId });
+
+  const { followedIds, toggleFollow } = useFollowedGroups();
+  const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
+
+  // ── UI state ──────────────────────────────────────────────────────────
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
@@ -34,24 +51,7 @@ export default function GroupScreen() {
   const savedScrollY = useRef<number>(0);
   const isSavingScroll = useRef<boolean>(true);
 
-  // Appelé quand on navigue vers membre ou album
-  const handlePressMember = useCallback(
-    (member: Member) => {
-      isSavingScroll.current = false;
-      shouldScrollTop.current = false;
-      router.push(`/member/${member.id}?groupId=${groupId}`);
-    },
-    [groupId],
-  );
-
-  const handlePressAlbum = useCallback(
-    (album: Album) => {
-      isSavingScroll.current = false;
-      shouldScrollTop.current = false;
-      router.push(`/album/${album.id}?groupId=${groupId}`);
-    },
-    [groupId],
-  );
+  const isFollowing = group ? followedIds.has(group.id) : false;
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -82,8 +82,24 @@ export default function GroupScreen() {
     }, [scrollRef, scrollToTop]),
   );
 
-  // Contexte d'affichage des cartes
-  const showingCards = selectedMember !== null || selectedAlbum !== null;
+  // Appelé quand on navigue vers membre ou album
+  const handlePressMember = useCallback(
+    (member: Member) => {
+      isSavingScroll.current = false;
+      shouldScrollTop.current = false;
+      router.push(`/member/${member.id}?groupId=${groupId}`);
+    },
+    [groupId],
+  );
+
+  const handlePressAlbum = useCallback(
+    (album: Album) => {
+      isSavingScroll.current = false;
+      shouldScrollTop.current = false;
+      router.push(`/album/${album.id}?groupId=${groupId}`);
+    },
+    [groupId],
+  );
 
   const handlePressBack = useCallback(() => {
     if (selectedAlbum) {
@@ -97,24 +113,57 @@ export default function GroupScreen() {
     }
   }, [selectedAlbum, selectedMember, scrollToTop]);
 
+  const handleToggleFollow = useCallback(() => {
+    if (group) toggleFollow(group.id);
+  }, [group, toggleFollow]);
+
   const handleExportWishlist = useCallback(() => {
-    // TODO: capture + partage via expo-media-library
-    console.log("export wishlist");
-  }, []);
+    router.push(`/export?groupId=${groupId}`);
+  }, [groupId]);
 
-  const handleFavorite = useCallback(() => {
-    console.log("add group to fav");
-  }, []);
+  const enrichedPhotocards = useMemo(() => {
+    return photocards.map((card) => ({
+      ...card,
+      isInCollection: collectionIds.has(card.id),
+      isFavorite: favoriteIds.has(card.id),
+      isWishlisted: wishlistIds.has(card.id),
+    }));
+  }, [photocards, collectionIds, favoriteIds, wishlistIds]);
 
-  // Titre de la section cartes
-  const cardsSectionTitle = useMemo(() => {
-    if (selectedMember && selectedAlbum)
-      return `${selectedMember.stageName} · ${selectedAlbum.title}`;
-    if (selectedMember)
-      return `${selectedMember.stageName} — toutes les cartes`;
-    if (selectedAlbum) return selectedAlbum.title;
-    return "";
-  }, [selectedMember, selectedAlbum]);
+  // Stats par album pour l'utilisateur connecté
+  const albumsWithStats = useMemo(() => {
+    return albums.map((album) => {
+      const albumCards = enrichedPhotocards.filter(
+        (c) => c.albumId === album.id,
+      );
+      return {
+        ...album,
+        totalPhotocards: albumCards.length,
+        ownedPhotocards: albumCards.filter((c) => c.isInCollection).length,
+        wishlistPhotocards: albumCards.filter((c) => c.isWishlisted).length,
+        completionPercentage:
+          albumCards.length > 0
+            ? Math.round(
+                (albumCards.filter((c) => c.isInCollection).length /
+                  albumCards.length) *
+                  100,
+              )
+            : 0,
+      };
+    });
+  }, [albums, enrichedPhotocards]);
+
+  if (groupLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} size="large" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!group) return null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -125,8 +174,16 @@ export default function GroupScreen() {
         </TouchableOpacity>
 
         <View style={styles.navbarIcons}>
-          <TouchableOpacity style={styles.backBtn} onPress={handleFavorite}>
-            <Heart size={18} color={Colors.text} strokeWidth={1.6} />
+          <TouchableOpacity
+            style={[styles.backBtn, isFollowing && styles.backBtnActive]}
+            onPress={handleToggleFollow}
+          >
+            <Heart
+              size={18}
+              color={isFollowing ? Colors.danger : Colors.text}
+              fill={isFollowing ? Colors.danger : "transparent"}
+              strokeWidth={1.6}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -146,25 +203,37 @@ export default function GroupScreen() {
         scrollEventThrottle={16}
       >
         {/* En-tête groupe */}
-        <GroupHeader group={MOCK_GROUPS[0]} />
+        <GroupHeader group={group} />
 
         {/* Contenu onglet Membres */}
         <SectionLabel label="Membres" style={styles.sectionLabel} />
 
-        <MembersGrid
-          members={MOCK_MEMBERS}
-          selectedId={selectedMember?.id}
-          onPressMember={handlePressMember}
-        />
+        {membersLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <MembersGrid
+            members={members}
+            selectedId={selectedMember?.id}
+            onPressMember={handlePressMember}
+          />
+        )}
 
         {/* Contenu onglet Albums */}
         <SectionLabel
           label="Albums"
           style={[styles.sectionLabel, { marginTop: Theme.spacing.lg }]}
         />
-        {/* {!showingCards && activeTab === "albums" && ( */}
-        <AlbumGrid albums={MOCK_ALBUMS} onPressAlbum={handlePressAlbum} />
-        {/* )} */}
+        {albumsLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <AlbumGrid albums={albumsWithStats} onPressAlbum={handlePressAlbum} />
+        )}
 
         <View style={styles.bottomPad} />
       </ScrollView>
@@ -179,6 +248,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
   },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   navbar: {
     position: "absolute",
     top: 0,
@@ -190,8 +264,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
-    // borderBottomWidth: 0.5,
-    // borderBottomColor: Colors.border,
     paddingTop: 40,
   },
   navbarIcons: {
@@ -205,6 +277,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: Theme.borderRadius.full,
     backgroundColor: "rgba(9, 12, 18, 0.45)",
+  },
+  backBtnActive: {
+    backgroundColor: "rgba(240,112,112,0.2)",
   },
   navTitle: {
     flex: 1,
@@ -235,6 +310,9 @@ const styles = StyleSheet.create({
   sectionLabel: {
     paddingHorizontal: Theme.spacing.lg,
     paddingTop: Theme.spacing.md,
+  },
+  sectionLoading: {
+    paddingVertical: Theme.spacing.xl,
   },
   bottomPad: {
     height: 40,

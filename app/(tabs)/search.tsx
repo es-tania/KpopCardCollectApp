@@ -1,4 +1,4 @@
-import { MOCK_SEARCH_GROUPS } from "@/src/data";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import {
@@ -77,14 +77,15 @@ const ScanBanner: React.FC<ScanBannerProps> = ({ onPress }) => (
 // ─── Page principale ─────────────────────────────────────────────────────────
 
 export default function SearchScreen() {
+  const { groups } = useGroups();
   const [query, setQuery] = useState("");
   const [scanState, setScanState] = useState<ScanState>({ status: "idle" });
 
   // Filtrage des groupes en temps réel
   const filteredGroups = useMemo(() => {
-    if (!query.trim()) return MOCK_SEARCH_GROUPS;
+    if (!query.trim()) return groups;
     const q = query.toLowerCase();
-    return MOCK_SEARCH_GROUPS.filter(
+    return groups.filter(
       (g) =>
         g.name.toLowerCase().includes(q) ||
         g.company?.toLowerCase().includes(q) ||

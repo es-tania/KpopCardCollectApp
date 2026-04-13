@@ -255,13 +255,19 @@ export const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
               />
             )}
             {album.versions && album.versions.length > 0 && (
-              <InfoRow
-                icon={
+              <View style={versionStyles.container}>
+                <View style={infoStyles.iconWrap}>
                   <Hash size={13} color={Colors.textMuted} strokeWidth={1.6} />
-                }
-                label="Versions"
-                value={album.versions.join(", ")}
-              />
+                </View>
+                <Text style={versionStyles.label}>Versions</Text>
+                <View style={versionStyles.chips}>
+                  {album.versions.map((version) => (
+                    <View key={version} style={versionStyles.chip}>
+                      <Text style={versionStyles.chipText}>{version}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
             )}
             {album.category && (
               <InfoRow
@@ -448,5 +454,38 @@ const styles = StyleSheet.create({
     height: 0.5,
     backgroundColor: Colors.border,
     marginBottom: Theme.spacing.xs,
+  },
+});
+
+const versionStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: Theme.spacing.sm,
+    paddingVertical: 5,
+  },
+  chips: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 5,
+    justifyContent: "flex-end",
+  },
+  chip: {
+    backgroundColor: Colors.surface2,
+    borderRadius: Theme.borderRadius.full,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  chipText: {
+    fontSize: Theme.fontSize.xs + 1,
+    color: Colors.textMuted,
+  },
+  label: {
+    fontSize: Theme.fontSize.base,
+    color: Colors.textMuted,
+    marginTop: 0,
   },
 });

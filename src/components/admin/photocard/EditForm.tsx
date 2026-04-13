@@ -5,12 +5,14 @@ import {
   SHOP_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
-import { MOCK_ALBUMS, MOCK_MEMBERS } from "@/src/data";
+import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import {
   PhotocardEditFormState,
   PhotocardWithDetails,
   SelectOption,
 } from "@/src/types";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { useState } from "react";
 import {
   Image,
@@ -24,12 +26,14 @@ import { FormField } from "../../ui/FormField";
 import { FormImagePicker } from "../../ui/FormImagePicker";
 import { FormSelect } from "../../ui/FormSelect";
 import { FormSubmitButton } from "../../ui/FormSubmitButton";
+import { ProgressIndicator } from "../../ui/ProgressIndicator";
 
 interface EditFormProps {
   card: PhotocardWithDetails;
   onSave: (data: PhotocardEditFormState) => void;
   onCancel: () => void;
   loading: boolean;
+  progress: string | null;
 }
 
 export const EditForm: React.FC<EditFormProps> = ({
@@ -37,29 +41,36 @@ export const EditForm: React.FC<EditFormProps> = ({
   onSave,
   onCancel,
   loading,
+  progress,
 }) => {
   const [form, setForm] = useState<PhotocardEditFormState>({
     type: card.type,
     version: card.version ?? "",
     shopName: card.shopName ?? "",
     rarity: card.rarity ?? "common",
-    imageUri: "",
-    backImageUri: "",
     memberId: card.memberId,
     albumId: card.albumId,
+    imageUri: "",
+    backImageUri: "",
+    removeImage: false,
+    removeBackImage: false,
   });
+  const { albums } = useAlbums(card.groupId);
+  const { members } = useGroupMembers(card.groupId);
 
   const set = (key: keyof PhotocardEditFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   // Options album et membre liés au groupe de la carte
-  const albumOptions: SelectOption[] = MOCK_ALBUMS.filter(
-    (a) => a.groupId === card.groupId,
-  ).map((a) => ({ key: a.id, label: a.title }));
+  const albumOptions: SelectOption[] = albums.map((a) => ({
+    key: a.id,
+    label: a.title,
+  }));
 
-  const memberOptions: SelectOption[] = MOCK_MEMBERS.filter(
-    (m) => m.groupId === card.groupId,
-  ).map((m) => ({ key: m.id, label: m.stageName }));
+  const memberOptions: SelectOption[] = members.map((m) => ({
+    key: m.id,
+    label: m.stageName,
+  }));
 
   return (
     <ScrollView
@@ -91,18 +102,40 @@ export const EditForm: React.FC<EditFormProps> = ({
       <View style={editStyles.section}>
         <Text style={editStyles.sectionTitle}>Images</Text>
         <FormImagePicker
-          label="Recto (laisser vide pour ne pas modifier)"
-          imageUri={form.imageUri}
-          onPick={() => set("imageUri")("https://picsum.photos/400/600")}
-          onRemove={() => set("imageUri")("")}
+          label="Recto"
+          imageUri={form.imageUri || (card.imageUrl as any)?.uri || ""}
+          onPick={() =>
+            pickLocalImage((uri) => {
+              set("imageUri")(uri);
+              setForm((prev) => ({ ...prev, removeImage: false }));
+            })
+          }
+          onRemove={() =>
+            setForm((prev) => ({
+              ...prev,
+              imageUri: "",
+              removeImage: true,
+            }))
+          }
+          aspectRatio={2 / 3}
         />
         <FormImagePicker
           label="Verso (optionnel)"
-          imageUri={form.backImageUri}
+          imageUri={form.backImageUri || (card.backImageUrl as any)?.uri || ""}
           onPick={() =>
-            set("backImageUri")("https://picsum.photos/400/600?blur=1")
+            pickLocalImage((uri) => {
+              set("backImageUri")(uri);
+              setForm((prev) => ({ ...prev, removeBackImage: false }));
+            })
           }
-          onRemove={() => set("backImageUri")("")}
+          onRemove={() =>
+            setForm((prev) => ({
+              ...prev,
+              backImageUri: "",
+              removeBackImage: true,
+            }))
+          }
+          aspectRatio={2 / 3}
         />
       </View>
 
@@ -165,6 +198,7 @@ export const EditForm: React.FC<EditFormProps> = ({
             loading={loading}
           />
         </View>
+        <ProgressIndicator message={progress} />
       </View>
     </ScrollView>
   );

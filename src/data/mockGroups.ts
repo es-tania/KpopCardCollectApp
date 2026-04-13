@@ -2,7 +2,7 @@ import { Group } from "../types";
 
 export const MOCK_GROUPS: Group[] = [
   {
-    id: "g1",
+    id: "68c8f6c4-cb13-43be-bc96-b0c29edc19ff",
     name: "P1Harmony",
     koreanName: "피원하모니",
     generation: "4th gen",
@@ -19,7 +19,7 @@ export const MOCK_GROUPS: Group[] = [
     bannerUrl: require("@/assets/images/p1h.png"),
   },
   {
-    id: "g2",
+    id: "f3c289a2-f69c-48a0-8637-5308e52a20fc",
     name: "Stray Kids",
     koreanName: "스트레이 키즈",
     generation: "3rd gen",

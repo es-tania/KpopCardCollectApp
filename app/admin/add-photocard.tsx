@@ -1,16 +1,19 @@
+import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
   SHOP_OPTIONS,
 } from "@/src/constants/options";
-import {
-  PhotocardFormErrors,
-  PhotocardFormState,
-  SelectOption,
-} from "@/src/types";
+import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { useGroups } from "@/src/hooks/group/useGroups";
+import { useAddPhotocard } from "@/src/hooks/photocard/useAddPhotocard";
+import { useAuthStore } from "@/src/store/authStore";
+import { PhotocardFormState, SelectOption } from "@/src/types";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Sparkles } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -26,81 +29,114 @@ import { FormSelect } from "../../src/components/ui/FormSelect";
 import { FormSubmitButton } from "../../src/components/ui/FormSubmitButton";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { MOCK_ALBUMS } from "../../src/data/mockAlbums";
-import { MOCK_GROUPS } from "../../src/data/mockGroups";
-import { MOCK_MEMBERS } from "../../src/data/mockMembers";
 
 // ─── Formulaire ───────────────────────────────────────────────────────────────
 
 const INITIAL_FORM: PhotocardFormState = {
   groupId: "",
+  groupName: "",
   albumId: "",
   memberId: "",
+  memberName: "",
   type: "",
   version: "",
+  shopName: "",
   eventName: "",
   rarity: "common",
   imageUri: "",
   backImageUri: "",
-  shopName: "",
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardScreen() {
+  const { isAdmin } = useAuthStore();
   const { groupId: preGroupId, memberId: preMemberId } = useLocalSearchParams<{
     groupId?: string;
     memberId?: string;
   }>();
+  const { groups } = useGroups();
+
   const [form, setForm] = useState<PhotocardFormState>({
     ...INITIAL_FORM,
-    // Pré-remplit depuis les params de route (venant du scan)
     groupId: preGroupId ?? "",
     memberId: preMemberId ?? "",
   });
-  const [errors, setErrors] = useState<PhotocardFormErrors>({});
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof PhotocardFormState, string>>
+  >({});
   const [aiDetecting, setAiDetecting] = useState(false);
+
+  const { loading, progress, error, submit } = useAddPhotocard(() => {
+    Alert.alert(
+      "✅ Succès",
+      isAdmin
+        ? `Photocard ajoutée et approuvée !`
+        : `Photocard soumise ! Elle sera visible après validation par un admin.`,
+      [{ text: "OK", onPress: () => router.back() }],
+    );
+  });
+  useEffect(() => {
+    if (error) Alert.alert("Erreur", error);
+  }, [error]);
 
   const set = (key: keyof PhotocardFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
+  const { albums } = useAlbums(form.groupId || undefined);
+  const { members } = useGroupMembers(form.groupId || null);
+
   // Options dynamiques selon les sélections
-  const groupOptions: SelectOption[] = MOCK_GROUPS.map((g) => ({
+  const groupOptions: SelectOption[] = groups.map((g) => ({
     key: g.id,
     label: g.name,
   }));
 
-  const albumOptions: SelectOption[] = MOCK_ALBUMS.filter(
-    (a) => !form.groupId || a.groupId === form.groupId,
-  ).map((a) => ({ key: a.id, label: a.title }));
+  const albumOptions: SelectOption[] = albums.map((a) => ({
+    key: a.id,
+    label: a.title,
+  }));
 
-  const memberOptions: SelectOption[] = MOCK_MEMBERS.filter(
-    (m) => !form.groupId || m.groupId === form.groupId,
-  ).map((m) => ({ key: m.id, label: m.stageName }));
+  const memberOptions: SelectOption[] = members.map((m) => ({
+    key: m.id,
+    label: m.stageName,
+  }));
+
+  const handleSelectGroup = (groupId: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    setForm((prev) => ({
+      ...prev,
+      groupId,
+      groupName: group?.name ?? "",
+      albumId: "",
+      memberId: "",
+      memberName: "",
+    }));
+  };
+
+  const handleSelectMember = (memberId: string) => {
+    const member = members.find((m) => m.id === memberId);
+    setForm((prev) => ({
+      ...prev,
+      memberId,
+      memberName: member?.stageName ?? "",
+    }));
+  };
 
   // Simulation détection IA
   const handleAiDetect = async () => {
     if (!form.imageUri) {
-      Alert.alert("Image requise", "Ajoute d'abord une image de la carte.");
+      Alert.alert("Image requise", "Ajoute d'abord une image.");
       return;
     }
     setAiDetecting(true);
     await new Promise((r) => setTimeout(r, 1500));
-    // Simulation : pré-remplit avec des données détectées
-    setForm((prev) => ({
-      ...prev,
-      groupId: "g1",
-      memberId: "m1",
-      albumId: "a1",
-      type: "normal",
-    }));
     setAiDetecting(false);
-    Alert.alert("✨ IA", "Membre détecté : Keeho (P1Harmony — UNIQUE)");
+    Alert.alert("✨ IA", "Détection simulée — à implémenter.");
   };
 
   const validate = (): boolean => {
-    const e: PhotocardFormErrors = {};
+    const e: Partial<Record<keyof PhotocardFormState, string>> = {};
     if (!form.groupId) e.groupId = "Groupe requis";
     if (!form.albumId) e.albumId = "Album requis";
     if (!form.memberId) e.memberId = "Membre requis";
@@ -112,12 +148,7 @@ export default function AddPhotocardScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    Alert.alert("✅ Succès", "Photocard ajoutée avec succès !", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
+    await submit(form, isAdmin);
   };
 
   return (
@@ -143,18 +174,18 @@ export default function AddPhotocardScreen() {
           <FormImagePicker
             label="Recto"
             imageUri={form.imageUri}
-            onPick={() => set("imageUri")("https://picsum.photos/400/600")}
+            onPick={() => pickLocalImage((uri) => set("imageUri")(uri))}
             onRemove={() => set("imageUri")("")}
             required
             error={errors.imageUri}
+            aspectRatio={2 / 3}
           />
           <FormImagePicker
             label="Verso (optionnel)"
             imageUri={form.backImageUri}
-            onPick={() =>
-              set("backImageUri")("https://picsum.photos/400/600?blur=1")
-            }
+            onPick={() => pickLocalImage((uri) => set("backImageUri")(uri))}
             onRemove={() => set("backImageUri")("")}
+            aspectRatio={2 / 3}
           />
 
           {/* Bouton IA */}
@@ -178,11 +209,7 @@ export default function AddPhotocardScreen() {
             label="Groupe"
             options={groupOptions}
             value={form.groupId}
-            onChange={(v) => {
-              set("groupId")(v);
-              set("albumId")("");
-              set("memberId")("");
-            }}
+            onChange={handleSelectGroup}
             required
             error={errors.groupId}
           />
@@ -198,7 +225,7 @@ export default function AddPhotocardScreen() {
             label="Membre"
             options={memberOptions}
             value={form.memberId}
-            onChange={set("memberId")}
+            onChange={handleSelectMember}
             required
             error={errors.memberId}
           />
@@ -232,7 +259,7 @@ export default function AddPhotocardScreen() {
           {form.shopName === "other" && (
             <FormField
               label="Précise le shop"
-              value={form.eventName}
+              value={form.shopName}
               onChangeText={set("eventName")}
               placeholder="ex: Nom du shop..."
             />
@@ -250,6 +277,7 @@ export default function AddPhotocardScreen() {
           onPress={handleSubmit}
           loading={loading}
         />
+        <ProgressIndicator message={progress} />
       </ScrollView>
     </SafeAreaView>
   );

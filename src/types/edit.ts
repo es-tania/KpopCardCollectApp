@@ -20,10 +20,12 @@ export interface PhotocardEditFormState {
   version: string;
   shopName: string;
   rarity: string;
-  imageUri: string;
-  backImageUri: string;
   memberId: string;
   albumId: string;
+  imageUri: string;
+  backImageUri: string;
+  removeImage: boolean;
+  removeBackImage: boolean;
 }
 
 export interface GroupEditFormState {

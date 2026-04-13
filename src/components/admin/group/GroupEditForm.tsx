@@ -6,7 +6,7 @@ import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
-import { useGroupMembers } from "@/src/hooks/useGroupMembers";
+import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import {
   Group,
   GroupEditFormState,
@@ -14,7 +14,7 @@ import {
   MemberFormErrors,
   MemberFormState,
 } from "@/src/types";
-import * as ImagePicker from "expo-image-picker";
+import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { Plus, UserPlus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -29,6 +29,7 @@ import {
 } from "react-native";
 import { MemberFormCard, newMemberForm } from "../../member/MemberFormCard";
 import { FormDatePicker } from "../../ui/FormDatePicker";
+import { ProgressIndicator } from "../../ui/ProgressIndicator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -41,23 +42,6 @@ interface GroupEditFormProps {
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
-
-const pickLocalImage = async (
-  onPicked: (uri: string) => void,
-  aspect?: [number, number],
-) => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) return;
-
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: aspect ?? [1, 1],
-    quality: 0.85,
-  });
-
-  if (!result.canceled) onPicked(result.assets[0].uri);
-};
 
 export const GroupEditForm: React.FC<GroupEditFormProps> = ({
   group,
@@ -300,7 +284,7 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
                 set("logoUri")(uri);
                 setForm((prev) => ({ ...prev, removeLogo: false })); // annule la suppression si on repick
               },
-              [1, 1],
+              { aspect: [1, 1] },
             )
           }
           onRemove={() =>
@@ -322,7 +306,7 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
                 set("bannerUri")(uri);
                 setForm((prev) => ({ ...prev, removeBanner: false }));
               },
-              [8, 4],
+              { aspect: [8, 4] },
             )
           }
           onRemove={() =>
@@ -440,12 +424,7 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
       </View>
 
       {/* ── Progression ── */}
-      {progress && (
-        <View style={styles.progressWrap}>
-          <ActivityIndicator size="small" color={Colors.accent} />
-          <Text style={styles.progressText}>{progress}</Text>
-        </View>
-      )}
+      <ProgressIndicator message={progress} />
 
       {/* ── Actions ── */}
       <View style={styles.btnGroup}>
@@ -614,20 +593,6 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.medium,
   },
   saveBtn: { flex: 1 },
-  progressWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Theme.spacing.sm,
-    backgroundColor: Colors.surface,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: Colors.borderActive,
-    padding: Theme.spacing.md,
-  },
-  progressText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.accent,
-  },
 });
 
 const memberSectionStyles = StyleSheet.create({

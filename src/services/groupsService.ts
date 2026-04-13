@@ -56,6 +56,31 @@ export const groupsService = {
 
     if (error) throw error;
   },
+
+  getWithUserStats: async (userId: string): Promise<Group[]> => {
+    const { data, error } = await supabase
+      .from("groups")
+      .select(
+        `
+      *,
+      user_group_progress!inner (
+        owned_photocards,
+        wishlist_photocards,
+        favorite_photocards,
+        completion_pct
+      )
+    `,
+      )
+      .eq("user_group_progress.user_id", userId);
+
+    if (error) throw error;
+    return data.map((d: any) => ({
+      ...mapGroup(d),
+      ownedPhotocards: d.user_group_progress?.owned_photocards ?? 0,
+      wishlistPhotocards: d.user_group_progress?.wishlist_photocards ?? 0,
+      completionPercentage: d.user_group_progress?.completion_pct ?? 0,
+    }));
+  },
 };
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
@@ -72,8 +97,16 @@ const mapGroup = (data: any): Group => ({
   status: data.status ?? "active",
   generation: data.generation,
   fandomName: data.fandom_name,
-  totalAlbums: data.group_stats?.total_albums,
-  totalPhotocards: data.group_stats?.total_photocards ?? 0,
+  memberCount: data.member_count ?? 0,
+  totalAlbums: data.total_albums ?? 0,
+  totalPhotocards: data.total_photocards ?? 0,
+  ownedPhotocards: data.owned_photocards ?? 0,
+  wishlistPhotocards: data.wishlist_photocards ?? 0,
+  favoritePhotocards: data.favorite_photocards ?? 0,
+  completionPercentage:
+    data.total_photocards > 0
+      ? Math.round((data.owned_photocards / data.total_photocards) * 100)
+      : 0,
   createdAt: data.created_at,
 });
 

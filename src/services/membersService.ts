@@ -71,6 +71,9 @@ const mapMember = (data: any): Member => ({
   position: data.positions ?? [],
   birthDate: data.birth_date,
   tags: data.tags ?? [],
+  totalPhotocards: data.total_photocards ?? 0,
+  ownedPhotocards: data.owned_photocards ?? 0,
+  wishlistPhotocards: data.wishlist_photocards ?? 0,
   createdAt: data.created_at,
 });
 

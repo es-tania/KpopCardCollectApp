@@ -1,8 +1,8 @@
 import { AdminSearchBar, GroupManageRow } from "@/src/components/admin";
 import { GroupEditForm } from "@/src/components/admin/group/GroupEditForm";
 import { STATUS_FILTER_OPTIONS } from "@/src/constants/options";
-import { useEditGroup } from "@/src/hooks/useEditGroup";
-import { useGroups } from "@/src/hooks/useGroups";
+import { useEditGroup } from "@/src/hooks/group/useEditGroup";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { groupsService } from "@/src/services";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
