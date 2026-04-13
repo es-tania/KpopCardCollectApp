@@ -1,7 +1,6 @@
 import { AdminSearchBar, AlbumManageRow } from "@/src/components/admin";
 import { AlbumEditForm } from "@/src/components/admin/album/AlbumEditForm";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
-import { MOCK_GROUPS } from "@/src/data";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useEditAlbum } from "@/src/hooks/album/useEditAlbum";
 import { useGroups } from "@/src/hooks/group/useGroups";
@@ -259,7 +258,7 @@ export default function EditAlbumScreen() {
               <Text style={styles.countNum}>{filteredAlbums.length}</Text> album
               {filteredAlbums.length !== 1 ? "s" : ""}
               {selectedGroupId &&
-                ` · ${MOCK_GROUPS.find((g) => g.id === selectedGroupId)?.name}`}
+                ` · ${groups.find((g) => g.id === selectedGroupId)?.name}`}
             </Text>
           </View>
 

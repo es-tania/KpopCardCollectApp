@@ -1,6 +1,5 @@
 import { AdminSearchBar } from "@/src/components/admin";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
-import { EditForm } from "@/src/components/admin/photocard/EditForm";
 import { PhotocardManageRow } from "@/src/components/admin/photocard/PhotocardManageRow";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
@@ -10,7 +9,7 @@ import { useEditPhotocard } from "@/src/hooks/photocard/useEditPhotocard";
 import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { photocardsService, storageService } from "@/src/services";
 import { extractUrl } from "@/src/utils/extractUrl";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
 import React, {
   useCallback,
@@ -31,11 +30,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import {
-  PhotocardEditFormState,
-  PhotocardWithDetails,
-  ViewMode,
-} from "../../src/types";
+import { PhotocardWithDetails, ViewMode } from "../../src/types";
 
 // ─── Helpers suppression ──────────────────────────────────────────────────────
 
@@ -53,6 +48,7 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function EditPhotocardScreen() {
+  const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
   );
@@ -61,7 +57,6 @@ export default function EditPhotocardScreen() {
   const [previewCard, setPreviewCard] = useState<PhotocardWithDetails | null>(
     null,
   );
-  const [saving, setSaving] = useState(false);
   const [showFilters, setShowFilters] = useState(true);
 
   // ── Filtres ─────────────────────────────────────────────────────────────
@@ -92,6 +87,18 @@ export default function EditPhotocardScreen() {
   useEffect(() => {
     if (error) Alert.alert("Erreur", error);
   }, [error]);
+
+  useEffect(() => {
+    if (!preselectedId) return;
+
+    // Charge la carte directement depuis la BDD
+    photocardsService.getById(preselectedId).then((card) => {
+      if (card) {
+        setSelectedCard(card);
+        setViewMode("edit");
+      }
+    });
+  }, [preselectedId]);
 
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
@@ -158,8 +165,10 @@ export default function EditPhotocardScreen() {
   }, []);
 
   const handleSelectCard = useCallback((card: PhotocardWithDetails) => {
-    setSelectedCard(card);
-    setViewMode("edit");
+    router.push({
+      pathname: "/edit-photocard/[id]",
+      params: { id: card.id },
+    });
   }, []);
 
   const handlePreviewCard = useCallback((card: PhotocardWithDetails) => {
@@ -206,33 +215,9 @@ export default function EditPhotocardScreen() {
     [refetch],
   );
 
-  const handleSave = useCallback(
-    async (data: PhotocardEditFormState) => {
-      if (!selectedCard) return;
-      await submit(selectedCard.id, data, selectedCard);
-    },
-    [selectedCard, submit],
-  );
-
-  const handleCancel = useCallback(() => {
-    setViewMode("search");
-    setSelectedCard(null);
-  }, []);
-
   const handleBack = useCallback(() => {
-    if (viewMode === "edit") {
-      Alert.alert(
-        "Abandonner les modifications ?",
-        "Les changements non sauvegardés seront perdus.",
-        [
-          { text: "Continuer l'édition", style: "cancel" },
-          { text: "Abandonner", style: "destructive", onPress: handleCancel },
-        ],
-      );
-    } else {
-      router.back();
-    }
-  }, [viewMode, handleCancel]);
+    router.back();
+  }, []);
 
   // ── Titre navbar ─────────────────────────────────────────────────────────
 
@@ -364,17 +349,6 @@ export default function EditPhotocardScreen() {
             showsVerticalScrollIndicator={false}
           />
         </>
-      )}
-
-      {/* ── MODE EDIT ── */}
-      {viewMode === "edit" && selectedCard && (
-        <EditForm
-          card={selectedCard}
-          onSave={handleSave}
-          onCancel={handleCancel}
-          loading={saving}
-          progress={progress}
-        />
       )}
 
       {/* Modal aperçu au long press (optionnel) */}

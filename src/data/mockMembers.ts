@@ -7,11 +7,11 @@ export const MOCK_MEMBERS: Member[] = [
     stageName: "Keeho",
     realName: "Kim Sanggyun",
     koreanName: "김상균",
-    position: ["Main Vocal"],
+    position: ["Main Vocalist"],
     birthDate: "2001-09-27",
     totalPhotocards: 38,
     ownedPhotocards: 10,
-    photoUrl: require("@/assets/images/keeho.jpg"),
+    photoUrl: undefined,
   },
   {
     id: "m2",
@@ -23,7 +23,7 @@ export const MOCK_MEMBERS: Member[] = [
     birthDate: "2000-07-01",
     totalPhotocards: 35,
     ownedPhotocards: 8,
-    photoUrl: require("@/assets/images/theo.jpg"),
+    photoUrl: undefined,
   },
   {
     id: "m3",
@@ -35,7 +35,7 @@ export const MOCK_MEMBERS: Member[] = [
     birthDate: "2002-03-06",
     totalPhotocards: 36,
     ownedPhotocards: 7,
-    photoUrl: require("@/assets/images/intak.jpg"),
+    photoUrl: undefined,
   },
   {
     id: "m4",
@@ -43,11 +43,11 @@ export const MOCK_MEMBERS: Member[] = [
     stageName: "Jiung",
     realName: "Lee Minsu",
     koreanName: "이민수",
-    position: ["Lead Vocal"],
+    position: ["Lead Vocalist"],
     birthDate: "2000-02-17",
     totalPhotocards: 35,
     ownedPhotocards: 9,
-    photoUrl: require("@/assets/images/jiung.jpg"),
+    photoUrl: undefined,
   },
   {
     id: "m5",
@@ -59,7 +59,7 @@ export const MOCK_MEMBERS: Member[] = [
     birthDate: "2003-10-04",
     totalPhotocards: 33,
     ownedPhotocards: 7,
-    photoUrl: require("@/assets/images/jongseob.jpg"),
+    photoUrl: undefined,
   },
   {
     id: "m6",
@@ -71,6 +71,6 @@ export const MOCK_MEMBERS: Member[] = [
     birthDate: "2003-11-14",
     totalPhotocards: 33,
     ownedPhotocards: 6,
-    photoUrl: require("@/assets/images/soul.jpg"),
+    photoUrl: undefined,
   },
 ];

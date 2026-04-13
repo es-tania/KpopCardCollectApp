@@ -15,8 +15,8 @@ export const MOCK_GROUPS: Group[] = [
     wishlistPhotocards: 12,
     favoritePhotocards: 8,
     totalAlbums: 7,
-    logoUrl: require("@/assets/images/p1h_logo.png"),
-    bannerUrl: require("@/assets/images/p1h.png"),
+    logoUrl: undefined,
+    bannerUrl: undefined,
   },
   {
     id: "f3c289a2-f69c-48a0-8637-5308e52a20fc",
@@ -32,7 +32,7 @@ export const MOCK_GROUPS: Group[] = [
     wishlistPhotocards: 20,
     favoritePhotocards: 15,
     totalAlbums: 12,
-    logoUrl: require("@/assets/images/straykids_logo.jpg"),
-    bannerUrl: require("@/assets/images/p1h.png"),
+    logoUrl: undefined,
+    bannerUrl: undefined,
   },
 ];

@@ -3,10 +3,13 @@ import {
   SUBMISSION_STATUS_LABELS,
 } from "@/src/constants/options";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { useAuthStore } from "@/src/store/authStore";
 import { getShopLabel } from "@/src/utils/getShopLabel";
+import { router } from "expo-router";
 import {
   Calendar,
   Check,
+  Edit2,
   Hash,
   Layers,
   Plus,
@@ -98,6 +101,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   visible,
   onClose,
 }) => {
+  const { isAdmin } = useAuthStore();
   const {
     collectionIds,
     favoriteIds,
@@ -134,9 +138,25 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
           <Text style={styles.navTitle} numberOfLines={1}>
             {card.memberName} — {card.albumTitle}
           </Text>
-          <TouchableOpacity style={styles.closeBtn}>
-            <Share size={20} color={Colors.text} strokeWidth={1.8} />
-          </TouchableOpacity>
+          <View style={styles.navRight}>
+            <TouchableOpacity style={styles.closeBtn}>
+              <Share size={20} color={Colors.text} strokeWidth={1.8} />
+            </TouchableOpacity>
+            {isAdmin && (
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => {
+                  onClose();
+                  router.push({
+                    pathname: "/edit-photocard/[id]",
+                    params: { id: card.id },
+                  });
+                }}
+              >
+                <Edit2 size={18} color={Colors.accent} strokeWidth={1.6} />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <ScrollView
@@ -362,6 +382,11 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: "center",
     marginHorizontal: Theme.spacing.sm,
+  },
+  navRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Theme.spacing.sm,
   },
 
   // Scroll

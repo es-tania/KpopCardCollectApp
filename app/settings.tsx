@@ -1,37 +1,37 @@
 import {
-    SettingsAvatarEditor,
-    SettingsRow,
-    SettingsSection,
+  SettingsAvatarEditor,
+  SettingsRow,
+  SettingsSection,
 } from "@/src/components/settings";
 import { MOCK_USER } from "@/src/data/mockUser";
 import { router } from "expo-router";
 import {
-    Bell,
-    ChevronLeft,
-    Eye,
-    Globe,
-    Heart,
-    HelpCircle,
-    Info,
-    KeyRound,
-    Languages,
-    Lock,
-    LogOut,
-    Mail,
-    Moon,
-    Shield,
-    Smartphone,
-    Trash2,
-    User,
+  Bell,
+  ChevronLeft,
+  Eye,
+  Globe,
+  Heart,
+  HelpCircle,
+  Info,
+  KeyRound,
+  Languages,
+  Lock,
+  LogOut,
+  Mail,
+  Moon,
+  Shield,
+  Smartphone,
+  Trash2,
+  User,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../src/constants/colors";

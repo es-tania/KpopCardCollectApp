@@ -35,6 +35,17 @@ export const photocardsService = {
     return data.map(mapPhotocard);
   },
 
+  getById: async (id: string): Promise<PhotocardWithDetails | null> => {
+    const { data, error } = await supabase
+      .from("photocards_with_details")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) return null;
+    return mapPhotocard(data);
+  },
+
   getPending: async (): Promise<PhotocardWithDetails[]> => {
     const { data, error } = await supabase
       .from("photocards_with_details")
