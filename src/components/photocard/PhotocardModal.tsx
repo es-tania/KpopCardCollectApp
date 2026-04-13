@@ -2,6 +2,8 @@ import {
   PHOTOCARD_TYPE_LABELS,
   SUBMISSION_STATUS_LABELS,
 } from "@/src/constants/options";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { getShopLabel } from "@/src/utils/getShopLabel";
 import {
   Calendar,
   Check,
@@ -87,9 +89,6 @@ interface PhotocardModalProps {
   card: PhotocardWithDetails | null;
   visible: boolean;
   onClose: () => void;
-  onPressFavorite?: () => void;
-  onPressWishlist?: () => void;
-  onPressCollection?: () => void;
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -98,11 +97,22 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   card,
   visible,
   onClose,
-  onPressFavorite,
-  onPressWishlist,
-  onPressCollection,
 }) => {
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useUserCollection();
+
   if (!card) return null;
+
+  // États calculés depuis les Sets
+  const isInCollection = collectionIds.has(card.id);
+  const isFavorite = favoriteIds.has(card.id);
+  const isWishlisted = wishlistIds.has(card.id);
 
   const typeLabel = PHOTOCARD_TYPE_LABELS[card.type] ?? card.type;
   const isSpecialType = card.type !== "normal";
@@ -165,26 +175,23 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
           <View style={styles.actions}>
             {/* Favori */}
             <TouchableOpacity
-              style={[
-                styles.actionBtn,
-                card.isFavorite && styles.actionBtnActive,
-              ]}
-              onPress={onPressFavorite}
+              style={[styles.actionBtn, isFavorite && styles.actionBtnActive]}
+              onPress={() => toggleFavorite(card.id)}
               activeOpacity={0.75}
             >
               <Star
                 size={18}
-                color={card.isFavorite ? "#DAA520" : Colors.textMuted}
-                fill={card.isFavorite ? "#DAA520" : "transparent"}
+                color={isFavorite ? "#DAA520" : Colors.textMuted}
+                fill={isFavorite ? "#DAA520" : "transparent"}
                 strokeWidth={1.8}
               />
               <Text
                 style={[
                   styles.actionLabel,
-                  card.isFavorite && styles.actionLabelFav,
+                  isFavorite && styles.actionLabelFav,
                 ]}
               >
-                {card.isFavorite ? "Favori" : "Ajouter aux favoris"}
+                {isFavorite ? "Favori" : "Favoris"}
               </Text>
             </TouchableOpacity>
 
@@ -192,37 +199,36 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                card.isWishlisted && styles.actionBtnWishActive,
+                isWishlisted && styles.actionBtnWishActive,
               ]}
-              onPress={onPressWishlist}
+              onPress={() => toggleWishlist(card.id)}
               activeOpacity={0.75}
             >
               <ShoppingCart
                 size={18}
-                color={card.isWishlisted ? Colors.accent : Colors.textMuted}
-                fill={card.isWishlisted ? Colors.accent : "transparent"}
+                color={isWishlisted ? Colors.accent : Colors.textMuted}
+                fill={isWishlisted ? Colors.accent : "transparent"}
                 strokeWidth={1.8}
               />
               <Text
                 style={[
                   styles.actionLabel,
-                  card.isWishlisted && styles.actionLabelWish,
+                  isWishlisted && styles.actionLabelWish,
                 ]}
               >
-                {card.isWishlisted ? "Souhaitée" : "Wishlist"}
+                {isWishlisted ? "Souhaitée" : "Wishlist"}
               </Text>
             </TouchableOpacity>
-
             {/* Collection */}
             <TouchableOpacity
               style={[
                 styles.actionBtn,
-                card.isInCollection && styles.actionBtnCollActive,
+                isInCollection && styles.actionBtnCollActive,
               ]}
-              onPress={onPressCollection}
+              onPress={() => toggleCollection(card.id)}
               activeOpacity={0.75}
             >
-              {card.isInCollection ? (
+              {isInCollection ? (
                 <Check size={18} color={Colors.accent} strokeWidth={2.2} />
               ) : (
                 <Plus size={18} color={Colors.textMuted} strokeWidth={2} />
@@ -230,10 +236,10 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
               <Text
                 style={[
                   styles.actionLabel,
-                  card.isInCollection && styles.actionLabelColl,
+                  isInCollection && styles.actionLabelColl,
                 ]}
               >
-                {card.isInCollection ? "Collectée" : "Ma collection"}
+                {isInCollection ? "Collectée" : "Collection"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -289,7 +295,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
                   <Tag size={14} color={Colors.textMuted} strokeWidth={1.6} />
                 }
                 label="Shop"
-                value={card.shopName}
+                value={getShopLabel(card.shopName)}
               />
             )}
             {card.rarity && (

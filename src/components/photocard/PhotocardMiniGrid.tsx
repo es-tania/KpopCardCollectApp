@@ -1,6 +1,4 @@
-import {
-  PHOTOCARD_FILTER_OPTIONS
-} from "@/src/constants/options";
+import { PHOTOCARD_FILTER_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import React, { useMemo, useState } from "react";
 import {
@@ -107,9 +105,6 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
         card={selectedCard}
         visible={selectedCard !== null}
         onClose={() => setSelectedCard(null)}
-        onPressFavorite={() => console.log("toggle fav", selectedCard?.id)}
-        onPressWishlist={() => console.log("toggle wish", selectedCard?.id)}
-        onPressCollection={() => console.log("toggle coll", selectedCard?.id)}
       />
     </View>
   );

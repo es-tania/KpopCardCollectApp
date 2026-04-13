@@ -40,9 +40,6 @@ export const RecentCardsCarousel: React.FC<RecentCardsCarouselProps> = ({
         card={selectedCard}
         visible={selectedCard !== null}
         onClose={() => setSelectedCard(null)}
-        onPressFavorite={() => console.log("toggle fav", selectedCard?.id)}
-        onPressWishlist={() => console.log("toggle wish", selectedCard?.id)}
-        onPressCollection={() => console.log("toggle coll", selectedCard?.id)}
       />
     </ScrollView>
   );

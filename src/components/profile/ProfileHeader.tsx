@@ -21,7 +21,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
     <TouchableOpacity style={styles.avatarWrap} onPress={onPressAvatar}>
       {user.avatarUrl ? (
         <Image
-          source={user.avatarUrl as any}
+          source={{ uri: user.avatarUrl }}
           style={styles.avatar}
           resizeMode="cover"
         />

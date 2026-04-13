@@ -22,7 +22,7 @@ export const SettingsAvatarEditor: React.FC<SettingsAvatarEditorProps> = ({
     >
       {user.avatarUrl ? (
         <Image
-          source={user.avatarUrl}
+          source={{ uri: user.avatarUrl }}
           style={styles.avatar}
           resizeMode="cover"
         />

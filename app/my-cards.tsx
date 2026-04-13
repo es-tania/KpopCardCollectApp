@@ -1,14 +1,23 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
 import { ALL_KEY } from "@/src/constants/key";
-import { MOCK_PHOTOCARDS } from "@/src/data/mockPhotocards";
 import { useGroups } from "@/src/hooks/group/useGroups";
-import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
+import { useFetchOnFocus } from "@/src/hooks/useFetchOnFocus";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
-import { CardMode } from "@/src/types";
+import { supabase } from "@/src/lib/supabase";
+import { useAuthStore } from "@/src/store/authStore";
+import { useCollectionStore } from "@/src/store/collectionStore";
+import { CardMode, PhotocardWithDetails } from "@/src/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Grid3x3, SlidersHorizontal } from "lucide-react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
+  ActivityIndicator,
   Animated,
   ScrollView,
   StyleSheet,
@@ -20,48 +29,116 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PhotocardMiniGrid } from "../src/components/photocard/PhotocardMiniGrid";
 import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
+import { mapPhotocard } from "../src/services/photocardsService";
 
 // ─── Config par mode ──────────────────────────────────────────────────────────
 
 const MODE_CONFIG: Record<
   CardMode,
-  { title: string; emptyText: string; accentColor: string }
+  { title: string; emptyText: string; accentColor: string; table: string }
 > = {
   collection: {
     title: "Toute ma collection",
     emptyText: "Ta collection est vide pour l'instant",
     accentColor: Colors.accent,
+    table: "user_collection",
   },
   favorites: {
     title: "Mes favoris",
     emptyText: "Aucune carte en favori pour l'instant",
     accentColor: "#DAA520",
+    table: "user_favorites",
   },
   wishlist: {
     title: "Ma wishlist",
     emptyText: "Ta wishlist est vide pour l'instant",
     accentColor: Colors.accent,
+    table: "user_wishlist",
   },
 };
-
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function MyCardsScreen() {
+  const { user } = useAuthStore();
   const { groups } = useGroups(true);
+  const { scrollRef, scrollToTop } = useScrollToTop();
+
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useCollectionStore();
+
   const { mode: rawMode } = useLocalSearchParams<{ mode?: string }>();
   const mode: CardMode =
     rawMode === "favorites" || rawMode === "wishlist" ? rawMode : "collection";
-  const { scrollRef, scrollToTop } = useScrollToTop();
+  const config = MODE_CONFIG[mode];
 
-  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
-    usePhotocardActions();
-
+  // ── State ─────────────────────────────────────────────────────────────
+  const [cards, setCards] = useState<PhotocardWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string>(ALL_KEY);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Animation du panneau de filtres
   const filterHeight = useRef(new Animated.Value(0)).current;
-  const config = MODE_CONFIG[mode];
+
+  // ── Fetch depuis Supabase ─────────────────────────────────────────────
+
+  const fetchCards = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from(config.table)
+        .select(
+          `
+          photocard_id,
+          photocards_with_details (*)
+        `,
+        )
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+
+      const mapped = (data ?? [])
+        .map((d: any) => d.photocards_with_details)
+        .filter(Boolean)
+        .map((d: any) => ({
+          ...mapPhotocard(d),
+          isInCollection: collectionIds.has(d.id),
+          isFavorite: favoriteIds.has(d.id),
+          isWishlisted: wishlistIds.has(d.id),
+        }));
+
+      setCards(mapped);
+    } catch (err: any) {
+      console.error("fetchCards error:", err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user, mode, collectionIds, favoriteIds, wishlistIds]);
+
+  useEffect(() => {
+    fetchCards();
+  }, [mode, user]);
+  useFetchOnFocus(fetchCards);
+
+  // ── Groupes présents dans les cartes ─────────────────────────────────
+
+  const groupsInCards = useMemo(() => {
+    const groupIds = new Set(cards.map((c) => c.groupId));
+    return groups.filter((g) => groupIds.has(g.id));
+  }, [cards, groups]);
+
+  // ── Filtre par groupe ─────────────────────────────────────────────────
+
+  const filteredCards = useMemo(() => {
+    if (selectedGroupId === ALL_KEY) return cards;
+    return cards.filter((c) => c.groupId === selectedGroupId);
+  }, [cards, selectedGroupId]);
 
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
@@ -73,30 +150,6 @@ export default function MyCardsScreen() {
     }).start();
   }, [showFilters, filterHeight]);
 
-  // Cartes selon le mode
-  const modeCards = useMemo(() => {
-    switch (mode) {
-      case "favorites":
-        return MOCK_PHOTOCARDS.filter((c) => c.isFavorite);
-      case "wishlist":
-        return MOCK_PHOTOCARDS.filter((c) => c.isWishlisted);
-      default:
-        return MOCK_PHOTOCARDS.filter((c) => c.isInCollection);
-    }
-  }, [mode]);
-
-  // Groupes présents dans la collection
-  const groupsInCards = useMemo(() => {
-    const groupIds = new Set(modeCards.map((c) => c.groupId));
-    return groups.filter((g) => groupIds.has(g.id));
-  }, [modeCards]);
-
-  // Filtre par groupe
-  const filteredCards = useMemo(() => {
-    if (selectedGroupId === ALL_KEY) return modeCards;
-    return modeCards.filter((c) => c.groupId === selectedGroupId);
-  }, [modeCards, selectedGroupId]);
-
   const handleSelectGroup = useCallback(
     (id: string) => {
       setSelectedGroupId(id);
@@ -105,10 +158,35 @@ export default function MyCardsScreen() {
     [scrollToTop],
   );
 
-  // Nom du groupe sélectionné pour le header
   const selectedGroupName = useMemo(
     () => groupsInCards.find((g) => g.id === selectedGroupId)?.name ?? null,
     [selectedGroupId, groupsInCards],
+  );
+
+  // ── Handlers toggle — re-fetch après toggle ───────────────────────────
+
+  const handleToggleCollection = useCallback(
+    async (cardId: string) => {
+      await toggleCollection(user!.id, cardId);
+      fetchCards();
+    },
+    [toggleCollection, user, fetchCards],
+  );
+
+  const handleToggleFavorite = useCallback(
+    async (cardId: string) => {
+      await toggleFavorite(user!.id, cardId);
+      fetchCards();
+    },
+    [toggleFavorite, user, fetchCards],
+  );
+
+  const handleToggleWishlist = useCallback(
+    async (cardId: string) => {
+      await toggleWishlist(user!.id, cardId);
+      fetchCards();
+    },
+    [toggleWishlist, user, fetchCards],
   );
 
   return (
@@ -169,7 +247,12 @@ export default function MyCardsScreen() {
       </View>
 
       {/* ── Grille ── */}
-      {filteredCards.length === 0 ? (
+      {/* ── Contenu ── */}
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} />
+        </View>
+      ) : filteredCards.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🃏</Text>
           <Text style={styles.emptyTitle}>Aucune carte</Text>
@@ -286,6 +369,11 @@ const styles = StyleSheet.create({
   infoCount: {
     color: Colors.accent,
     fontWeight: Theme.fontWeight.medium,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Empty state

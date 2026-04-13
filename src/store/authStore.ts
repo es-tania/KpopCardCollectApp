@@ -2,6 +2,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 import { authService } from "../services";
+import { useCollectionStore } from "./collectionStore";
 
 interface AuthState {
   session: Session | null;
@@ -52,6 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     await authService.signOut();
+    useCollectionStore.getState().reset(); // ← vide la collection au logout
     set({ session: null, user: null, isAdmin: false });
   },
 }));

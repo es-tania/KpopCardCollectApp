@@ -1,10 +1,12 @@
 import { GroupAlphaList } from "@/src/components/group";
-import { useGroups } from "@/src/hooks/group/useGroups";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { useCollectionStore } from "@/src/store/collectionStore";
 import { router } from "expo-router";
 import { ChevronLeft, Heart, Search } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
-  Image,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,122 +17,40 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
-import { MOCK_GROUPS } from "../src/data/mockGroups";
-import { Group } from "../src/types";
-
-// ─── Mock groupes favoris (à remplacer par appel API) ─────────────────────────
-
-const MOCK_FOLLOWED_GROUPS: Group[] = MOCK_GROUPS;
-
-// ─── Sous-composant : ligne de groupe ─────────────────────────────────────────
-
-interface GroupRowProps {
-  group: Group;
-  onPress: () => void;
-}
-
-const GroupRow: React.FC<GroupRowProps> = ({ group, onPress }) => {
-  const completionPct =
-    group.totalPhotocards > 0
-      ? Math.round(((group.ownedPhotocards ?? 0) / group.totalPhotocards) * 100)
-      : 0;
-
-  return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.75}>
-      {/* Logo */}
-      <View style={styles.logoWrap}>
-        {group.logoUrl ? (
-          <Image
-            source={group.logoUrl as any}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        ) : (
-          <Text style={styles.logoInitials}>
-            {group.name
-              .split(" ")
-              .map((w) => w[0])
-              .join("")
-              .toUpperCase()
-              .slice(0, 2)}
-          </Text>
-        )}
-      </View>
-
-      {/* Infos */}
-      <View style={styles.info}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{group.name}</Text>
-          {group.koreanName && (
-            <Text style={styles.koreanName}>{group.koreanName}</Text>
-          )}
-        </View>
-
-        <View style={styles.metaRow}>
-          {group.company && <Text style={styles.meta}>{group.company}</Text>}
-          {group.generation && (
-            <>
-              <Text style={styles.metaDot}>·</Text>
-              <Text style={styles.meta}>{group.generation}</Text>
-            </>
-          )}
-          {group.status && group.status !== "active" && (
-            <>
-              <Text style={styles.metaDot}>·</Text>
-              <Text
-                style={[
-                  styles.meta,
-                  group.status === "disbanded" && { color: Colors.danger },
-                  group.status === "hiatus" && { color: Colors.warning },
-                ]}
-              >
-                {group.status === "disbanded" ? "Disbandé" : "Hiatus"}
-              </Text>
-            </>
-          )}
-        </View>
-
-        {/* Barre de progression */}
-        <View style={styles.progressRow}>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                { width: `${completionPct}%` as any },
-              ]}
-            />
-          </View>
-          <Text style={styles.progressText}>
-            {group.ownedPhotocards ?? 0}/{group.totalPhotocards}
-          </Text>
-          <Text style={styles.progressPct}>{completionPct}%</Text>
-        </View>
-      </View>
-
-      {/* Chevron */}
-      <Text style={styles.chevron}>›</Text>
-    </TouchableOpacity>
-  );
-};
-
-// ─── Lettre de séparation alphabétique ───────────────────────────────────────
-
-const AlphaHeader: React.FC<{ letter: string }> = ({ letter }) => (
-  <View style={styles.alphaHeader}>
-    <Text style={styles.alphaText}>{letter}</Text>
-  </View>
-);
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function MyGroupsScreen() {
   const [query, setQuery] = useState("");
-  const { groups } = useGroups(true);
 
-  // Filtre + tri alphabétique
+  // ── Data BDD ──────────────────────────────────────────────────────────
+  const { followedGroups, loading } = useFollowedGroups();
+  const { collectionIds } = useCollectionStore();
+
+  // Toutes les photocards pour calculer la progression
+  const { photocards } = usePhotocards({});
+
+  // ── Enrichit les groupes avec les stats de collection ─────────────────
+  const enrichedGroups = useMemo(() => {
+    return followedGroups.map((group) => {
+      const groupCards = photocards.filter((c) => c.groupId === group.id);
+      const owned = groupCards.filter((c) => collectionIds.has(c.id)).length;
+
+      return {
+        ...group,
+        ownedPhotocards: owned,
+        completionPercentage:
+          group.totalPhotocards > 0
+            ? Math.round((owned / group.totalPhotocards) * 100)
+            : 0,
+      };
+    });
+  }, [followedGroups, photocards, collectionIds]);
+
+  // ── Filtre + tri alphabétique ─────────────────────────────────────────
   const filteredGroups = useMemo(() => {
     const q = query.toLowerCase().trim();
-    return [...groups]
+    return [...enrichedGroups]
       .filter(
         (g) =>
           !q ||
@@ -139,22 +59,7 @@ export default function MyGroupsScreen() {
           g.company?.toLowerCase().includes(q),
       )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [query]);
-
-  // Groupes par lettre pour les séparateurs alphabétiques
-  const groupedByLetter = useMemo(() => {
-    const map = new Map<string, Group[]>();
-    filteredGroups.forEach((g) => {
-      const letter = g.name[0].toUpperCase();
-      if (!map.has(letter)) map.set(letter, []);
-      map.get(letter)!.push(g);
-    });
-    return map;
-  }, [filteredGroups]);
-
-  const handlePressGroup = (groupId: string) => {
-    router.push(`/group/${groupId}`);
-  };
+  }, [enrichedGroups, query]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -203,7 +108,11 @@ export default function MyGroupsScreen() {
       </View>
 
       {/* ── Liste ── */}
-      {filteredGroups.length === 0 ? (
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} />
+        </View>
+      ) : filteredGroups.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyEmoji}>🎵</Text>
           <Text style={styles.emptyTitle}>
@@ -227,7 +136,7 @@ export default function MyGroupsScreen() {
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           <GroupAlphaList
             groups={filteredGroups}
-            onPressGroup={handlePressGroup}
+            onPressGroup={(id) => router.push(`/group/${id}`)}
           />
           <View style={styles.bottomPad} />
         </ScrollView>
@@ -431,6 +340,11 @@ const styles = StyleSheet.create({
   },
 
   // État vide
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   emptyState: {
     flex: 1,
     alignItems: "center",

@@ -88,6 +88,29 @@ export default function MemberScreen() {
     }));
   }, [photocards, collectionIds, favoriteIds, wishlistIds]);
 
+  // Albums enrichis avec les stats de l'utilisateur pour ce membre
+  const albumsWithStats = useMemo(() => {
+    return albums.map((album) => {
+      const albumCards = enrichedPhotocards.filter(
+        (c) => c.albumId === album.id,
+      );
+      return {
+        ...album,
+        totalPhotocards: albumCards.length,
+        ownedPhotocards: albumCards.filter((c) => c.isInCollection).length,
+        wishlistPhotocards: albumCards.filter((c) => c.isWishlisted).length,
+        completionPercentage:
+          albumCards.length > 0
+            ? Math.round(
+                (albumCards.filter((c) => c.isInCollection).length /
+                  albumCards.length) *
+                  100,
+              )
+            : 0,
+      };
+    });
+  }, [albums, enrichedPhotocards]);
+
   // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
     let cards = enrichedPhotocards;
@@ -237,7 +260,10 @@ export default function MemberScreen() {
                 style={styles.sectionLoading}
               />
             ) : (
-              <AlbumGrid albums={albums} onPressAlbum={handleSelectAlbum} />
+              <AlbumGrid
+                albums={albumsWithStats}
+                onPressAlbum={handleSelectAlbum}
+              />
             )}
           </>
         ) : (

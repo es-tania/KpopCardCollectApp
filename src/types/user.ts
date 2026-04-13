@@ -1,4 +1,3 @@
-import { ImageSourcePropType } from "react-native";
 
 export type UserRole = "user" | "admin";
 
@@ -7,6 +6,6 @@ export interface User {
   username: string;
   email: string;
   role: UserRole;
-  avatarUrl?: ImageSourcePropType;
+  avatarUrl?: string;
   createdAt: string;
 }

@@ -1,11 +1,17 @@
 import { Colors } from "@/src/constants/colors";
 import { useAuth } from "@/src/hooks/useAuth";
+import { useCollectionStore } from "@/src/store/collectionStore";
 import { router, Stack } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, StatusBar, View } from "react-native";
 
 export default function RootLayout() {
-  const { isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
+  const initStore = useCollectionStore((s) => s.init);
+
+  useEffect(() => {
+    if (user) initStore(user.id);
+  }, [user]);
 
   useEffect(() => {
     if (loading) return;

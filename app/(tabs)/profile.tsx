@@ -1,4 +1,10 @@
-import { useGroups } from "@/src/hooks/group/useGroups";
+import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { supabase } from "@/src/lib/supabase";
+import { storageService } from "@/src/services";
+import { buildStoragePath } from "@/src/services/storageService";
+import { useAuthStore } from "@/src/store/authStore";
+import { useCollectionStore } from "@/src/store/collectionStore";
+import { User } from "@/src/types";
 import { router } from "expo-router";
 import {
   Download,
@@ -9,8 +15,14 @@ import {
   Star,
   Users,
 } from "lucide-react-native";
-import React, { useCallback } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ProfileHeader,
@@ -19,29 +31,123 @@ import {
   ProfileStats,
 } from "../../src/components/profile";
 import { Colors } from "../../src/constants/colors";
-import { MOCK_USER } from "../../src/data/mockUser";
 
 export default function ProfileScreen() {
-  const { groups } = useGroups(true);
-  const user = MOCK_USER;
+  const { user: authUser, isAdmin, signOut } = useAuthStore();
+  const { followedGroups } = useFollowedGroups();
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    loading: collectionLoading,
+  } = useCollectionStore();
+
+  // ── Profil utilisateur depuis Supabase ────────────────────────────────
+  const [profile, setProfile] = useState<User | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authUser) return;
+
+    supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", authUser.id)
+      .single()
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setProfile({
+            id: data.id,
+            username: data.username,
+            email: authUser.email ?? "",
+            role: data.role,
+            avatarUrl: data.avatar_url ?? undefined,
+            createdAt: data.created_at,
+          });
+        }
+        setProfileLoading(false);
+      });
+  }, [authUser]);
 
   const stats = [
-    { label: "Photocards", value: 130, color: Colors.accent },
-    { label: "Favoris", value: 28, color: "#DAA520" },
-    { label: "Souhaits", value: 54, color: Colors.accent },
-    { label: "Groupes", value: 2 },
+    {
+      label: "Photocards",
+      value: collectionIds.size,
+      color: Colors.accent,
+    },
+    {
+      label: "Favoris",
+      value: favoriteIds.size,
+      color: "#DAA520",
+    },
+    {
+      label: "Souhaits",
+      value: wishlistIds.size,
+      color: Colors.accent,
+    },
+    {
+      label: "Groupes",
+      value: followedGroups.length,
+      color: Colors.textMuted,
+    },
   ];
-
   const handlePressSettings = useCallback(() => {
-    // TODO: naviguer vers les paramètres
-    // Alert.alert("Paramètres", "À venir");
     router.push("/settings");
   }, []);
 
   const handlePressAvatar = useCallback(() => {
-    // TODO: changer l'avatar
-    Alert.alert("Avatar", "Changer la photo de profil");
-  }, []);
+    Alert.alert("Photo de profil", "Choisir une option", [
+      {
+        text: "Depuis la galerie",
+        onPress: async () => {
+          if (!authUser) return;
+          try {
+            const url = await storageService.pickAndUpload(
+              "avatars",
+              buildStoragePath.avatar(authUser.id),
+              { aspectRatio: [1, 1] },
+            );
+            if (!url) return;
+
+            // Met à jour en BDD
+            await supabase
+              .from("profiles")
+              .update({ avatar_url: url })
+              .eq("id", authUser.id);
+
+            // Met à jour le state local
+            setProfile((prev) => (prev ? { ...prev, avatarUrl: url } : prev));
+          } catch (err: any) {
+            Alert.alert("Erreur", err.message);
+          }
+        },
+      },
+      {
+        text: "Supprimer la photo",
+        style: "destructive",
+        onPress: async () => {
+          if (!authUser || !profile?.avatarUrl) return;
+          try {
+            // Supprime du bucket
+            await storageService.deleteFromUrl("avatars", profile.avatarUrl);
+
+            // Met à jour en BDD
+            await supabase
+              .from("profiles")
+              .update({ avatar_url: null })
+              .eq("id", authUser.id);
+
+            setProfile((prev) =>
+              prev ? { ...prev, avatarUrl: undefined } : prev,
+            );
+          } catch (err: any) {
+            Alert.alert("Erreur", err.message);
+          }
+        },
+      },
+      { text: "Annuler", style: "cancel" },
+    ]);
+  }, [authUser, profile]);
 
   const handleLogout = useCallback(() => {
     Alert.alert("Déconnexion", "Es-tu sûre de vouloir te déconnecter ?", [
@@ -49,41 +155,52 @@ export default function ProfileScreen() {
       {
         text: "Déconnecter",
         style: "destructive",
-        onPress: () => {
-          // TODO: appel API logout + navigation vers login
-          // console.log("logout");
+        onPress: async () => {
+          await signOut();
+          useCollectionStore.getState().reset();
           router.replace("/(auth)/login");
         },
       },
     ]);
-  }, []);
+  }, [signOut]);
+
+  if (profileLoading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!profile) return null;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Header ── */}
         <ProfileHeader
-          user={user}
+          user={profile}
           onPressSettings={handlePressSettings}
           onPressAvatar={handlePressAvatar}
         />
 
         {/* ── Stats ── */}
-        <ProfileStats stats={stats} />
+        <ProfileStats stats={stats} loading={collectionLoading} />
 
         {/* ── Ma Collection ── */}
         <ProfileSectionTitle title="Ma collection" />
         <ProfileMenuRow
           icon={<Users size={17} color={Colors.accent} strokeWidth={1.6} />}
           label="Mes groupes"
-          sublabel="P1Harmony, Stray Kids"
-          badge={2}
+          badge={followedGroups.length}
           onPress={() => router.push("/my-groups")}
         />
         <ProfileMenuRow
           icon={<Grid3x3 size={17} color={Colors.accent} strokeWidth={1.6} />}
           label="Toutes mes photocards"
-          badge={130}
+          badge={collectionIds.size}
           onPress={() => router.push("/my-cards")}
         />
         <ProfileMenuRow
@@ -97,7 +214,7 @@ export default function ProfileScreen() {
         <ProfileMenuRow
           icon={<Star size={17} color="#DAA520" strokeWidth={1.6} />}
           label="Favoris"
-          badge={28}
+          badge={favoriteIds.size}
           onPress={() => router.push("/my-cards?mode=favorites")}
         />
         <ProfileMenuRow
@@ -105,19 +222,13 @@ export default function ProfileScreen() {
             <ShoppingBasket size={17} color={Colors.accent} strokeWidth={1.6} />
           }
           label="Liste de souhaits"
-          badge={54}
+          badge={wishlistIds.size}
           onPress={() => router.push("/my-cards?mode=wishlist")}
         />
-        {/* <ProfileMenuRow
-          icon={<List size={17} color={Colors.textMuted} strokeWidth={1.6} />}
-          label="Doubles"
-          badge={7}
-          onPress={() => console.log("doubles")}
-        /> */}
 
         {/* ── Compte ── */}
         <ProfileSectionTitle title="Compte" />
-        {user.role === "admin" && (
+        {isAdmin && (
           <ProfileMenuRow
             icon={
               <ShieldCheck size={17} color={Colors.accent} strokeWidth={1.6} />
@@ -144,6 +255,11 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
+  },
+  loadingWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scroll: {
     flex: 1,

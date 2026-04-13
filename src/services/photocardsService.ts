@@ -212,7 +212,7 @@ export const photocardsService = {
   },
 };
 
-const mapPhotocard = (data: any): PhotocardWithDetails => ({
+export const mapPhotocard = (data: any): PhotocardWithDetails => ({
   id: data.id,
   memberId: data.member_id,
   albumId: data.album_id,

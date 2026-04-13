@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 
@@ -11,23 +11,31 @@ interface Stat {
 
 interface ProfileStatsProps {
   stats: Stat[];
+  loading?: boolean;
 }
 
-export const ProfileStats: React.FC<ProfileStatsProps> = ({ stats }) => (
+export const ProfileStats: React.FC<ProfileStatsProps> = ({
+  stats,
+  loading = false,
+}) => (
   <View style={styles.container}>
-    {stats.map((stat, i) => (
-      <React.Fragment key={stat.label}>
-        <View style={styles.statItem}>
-          <Text
-            style={[styles.statNum, stat.color ? { color: stat.color } : {}]}
-          >
-            {stat.value}
-          </Text>
-          <Text style={styles.statLabel}>{stat.label}</Text>
-        </View>
-        {i < stats.length - 1 && <View style={styles.divider} />}
-      </React.Fragment>
-    ))}
+    {loading ? (
+      <ActivityIndicator color={Colors.accent} />
+    ) : (
+      stats.map((stat, i) => (
+        <React.Fragment key={stat.label}>
+          <View style={styles.statItem}>
+            <Text
+              style={[styles.statNum, stat.color ? { color: stat.color } : {}]}
+            >
+              {stat.value}
+            </Text>
+            <Text style={styles.statLabel}>{stat.label}</Text>
+          </View>
+          {i < stats.length - 1 && <View style={styles.divider} />}
+        </React.Fragment>
+      ))
+    )}
   </View>
 );
 

@@ -33,14 +33,7 @@ export default function SearchScreen() {
   const { groups: allGroups, loading: groupsLoading } = useGroups();
   const { results, loading, query, search, clear } = useSearch();
   const { followedIds, toggleFollow } = useFollowedGroups();
-  const {
-    collectionIds,
-    favoriteIds,
-    wishlistIds,
-    toggleCollection,
-    toggleFavorite,
-    toggleWishlist,
-  } = useUserCollection();
+  const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
 
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -204,11 +197,6 @@ export default function SearchScreen() {
         card={selectedCard}
         visible={selectedCard !== null}
         onClose={() => setSelectedCard(null)}
-        onToggleCollection={() =>
-          selectedCard && toggleCollection(selectedCard.id)
-        }
-        onToggleFavorite={() => selectedCard && toggleFavorite(selectedCard.id)}
-        onToggleWishlist={() => selectedCard && toggleWishlist(selectedCard.id)}
       />
     </SafeAreaView>
   );
