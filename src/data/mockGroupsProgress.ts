@@ -1,6 +1,6 @@
-import { GroupWithProgress } from "../types";
+import { Group } from "../types";
 
-export const MOCK_GROUPS_PROGRESS: GroupWithProgress[] = [
+export const MOCK_GROUPS_PROGRESS: Group[] = [
   {
     id: "g1",
     name: "P1Harmony",

@@ -1,6 +1,7 @@
 import { collectionService } from "@/src/services/collectionService";
 import { useAuthStore } from "@/src/store/authStore";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "./useFetchOnFocus";
 
 export const useUserCollection = () => {
   const { user } = useAuthStore();
@@ -30,9 +31,7 @@ export const useUserCollection = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   // ── Toggles ──────────────────────────────────────────────────────────
 

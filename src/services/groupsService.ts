@@ -85,18 +85,18 @@ export const groupsService = {
 
 // ─── Mappers ──────────────────────────────────────────────────────────────────
 
-const mapGroup = (data: any): Group => ({
+export const mapGroup = (data: any): Group => ({
   id: data.id,
   name: data.name,
-  koreanName: data.korean_name,
+  koreanName: data.korean_name ?? undefined,
   logoUrl: data.logo_url ? { uri: data.logo_url } : undefined,
   bannerUrl: data.banner_url ? { uri: data.banner_url } : undefined,
-  company: data.company,
-  debutDate: data.debut_date,
-  disbandDate: data.disband_date,
+  company: data.company ?? undefined,
+  debutDate: data.debut_date ?? undefined,
+  disbandDate: data.disband_date ?? undefined,
   status: data.status ?? "active",
-  generation: data.generation,
-  fandomName: data.fandom_name,
+  generation: data.generation ?? undefined,
+  fandomName: data.fandom_name ?? undefined,
   memberCount: data.member_count ?? 0,
   totalAlbums: data.total_albums ?? 0,
   totalPhotocards: data.total_photocards ?? 0,

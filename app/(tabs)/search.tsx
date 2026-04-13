@@ -1,374 +1,244 @@
-import { useGroups } from "@/src/hooks/group/useGroups";
-import { router } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import { GroupAlphaList } from "@/src/components/group";
+import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import {
-  Alert,
-  SafeAreaView,
+  SearchAlbumResult,
+  SearchBar,
+  SearchGroupResult,
+  SearchMemberResult,
+  SearchPhotocardResult,
+  SearchSectionHeader,
+} from "@/src/components/search";
+import { Theme } from "@/src/constants/theme";
+import { useGroups } from "@/src/hooks/group/useGroups";
+import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { useSearch } from "@/src/hooks/useSearch";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { router } from "expo-router";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
-import { GroupCard } from "../../src/components/group/GroupCard";
-import { ScanResultCard } from "../../src/components/search/ScanResultCard";
-import { SectionLabel } from "../../src/components/ui/SectionLabel";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
-import { Theme } from "../../src/constants/theme";
-import { ScanState } from "../../src/types";
-
-// ─── Composant SearchBar ─────────────────────────────────────────────────────
-
-interface SearchBarProps {
-  value: string;
-  onChangeText: (text: string) => void;
-  onClear: () => void;
-}
-
-const SearchBar: React.FC<SearchBarProps> = ({
-  value,
-  onChangeText,
-  onClear,
-}) => (
-  <View style={styles.searchBar}>
-    <Text style={styles.searchIcon}>🔍</Text>
-    <TextInput
-      style={styles.searchInput}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder="Chercher un groupe, un membre…"
-      placeholderTextColor={Colors.textMuted}
-      returnKeyType="search"
-      autoCorrect={false}
-      autoCapitalize="none"
-    />
-    {value.length > 0 && (
-      <TouchableOpacity onPress={onClear}>
-        <Text style={styles.clearIcon}>✕</Text>
-      </TouchableOpacity>
-    )}
-  </View>
-);
-
-// ─── Composant ScanBanner ────────────────────────────────────────────────────
-
-interface ScanBannerProps {
-  onPress: () => void;
-}
-
-const ScanBanner: React.FC<ScanBannerProps> = ({ onPress }) => (
-  <TouchableOpacity
-    style={styles.scanBanner}
-    onPress={onPress}
-    activeOpacity={0.8}
-  >
-    <View style={styles.scanBannerLeft}>
-      <Text style={styles.scanBannerTitle}>📷 Scanner une photocard</Text>
-      <Text style={styles.scanBannerSub}>
-        L'IA identifie la carte et la recherche dans la base de données
-      </Text>
-    </View>
-    <Text style={styles.scanArrow}>›</Text>
-  </TouchableOpacity>
-);
-
-// ─── Page principale ─────────────────────────────────────────────────────────
+import { PhotocardWithDetails } from "../../src/types";
 
 export default function SearchScreen() {
-  const { groups } = useGroups();
-  const [query, setQuery] = useState("");
-  const [scanState, setScanState] = useState<ScanState>({ status: "idle" });
+  const inputRef = useRef<TextInput>(null);
 
-  // Filtrage des groupes en temps réel
-  const filteredGroups = useMemo(() => {
-    if (!query.trim()) return groups;
-    const q = query.toLowerCase();
-    return groups.filter(
-      (g) =>
-        g.name.toLowerCase().includes(q) ||
-        g.company?.toLowerCase().includes(q) ||
-        g.generation?.toLowerCase().includes(q),
-    );
-  }, [query]);
+  const { groups: allGroups, loading: groupsLoading } = useGroups();
+  const { results, loading, query, search, clear } = useSearch();
+  const { followedIds, toggleFollow } = useFollowedGroups();
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useUserCollection();
 
-  const handlePressGroup = useCallback((groupId: string) => {
-    router.push(`/group/${groupId}`);
-  }, []);
+  const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
+    null,
+  );
 
-  const handlePressScan = useCallback(() => {
-    router.push("/scan");
-    // TODO: ouvrir la caméra avec expo-camera
-    // Simulation pour la démo
-    // Alert.alert(
-    //   "Scanner une carte",
-    //   "La caméra s'ouvrira ici (expo-camera). Simulation d'un résultat...",
-    //   [
-    //     {
-    //       text: 'Simuler "Trouvée"',
-    //       onPress: () =>
-    //         setScanState({
-    //           status: "found",
-    //           card: {
-    //             id: "pc1",
-    //             memberId: "m1",
-    //             albumId: "a1",
-    //             groupId: "g1",
-    //             type: "normal",
-    //             status: "approved",
-    //             memberName: "Keeho",
-    //             albumTitle: "ALARM",
-    //             groupName: "P1Harmony",
-    //             version: "A",
-    //             isInCollection: false,
-    //             isFavorite: false,
-    //             isWishlisted: false,
-    //           },
-    //         }),
-    //     },
-    //     {
-    //       text: 'Simuler "Inconnue"',
-    //       onPress: () => setScanState({ status: "not_found" }),
-    //     },
-    //     { text: "Annuler", style: "cancel" },
-    //   ],
-    // );
-  }, []);
+  // Debounce
+  const [inputValue, setInputValue] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleChangeText = useCallback(
+    (text: string) => {
+      setInputValue(text); // ← mise à jour immédiate de l'affichage
 
-  const handleAddToCollection = useCallback(() => {
-    // TODO: appel API
-    Alert.alert("✅ Ajoutée à ta collection !");
-    setScanState({ status: "idle" });
-  }, []);
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        search(text); // ← recherche après 300ms
+      }, 300);
+    },
+    [search],
+  );
 
-  const handleAddToWishlist = useCallback(() => {
-    // TODO: appel API
-    Alert.alert("🌟 Ajoutée à ta wishlist !");
-    setScanState({ status: "idle" });
-  }, []);
+  const handleClear = useCallback(() => {
+    setInputValue("");
+    clear();
+    inputRef.current?.clear();
+  }, [clear]);
 
-  const handleSubmitNew = useCallback(() => {
-    // Naviguer vers le formulaire de soumission
-    // router.push("/submit-card");
-  }, []);
+  const enrichedPhotocards = useMemo(
+    () =>
+      results.photocards.map((card) => ({
+        ...card,
+        isInCollection: collectionIds.has(card.id),
+        isFavorite: favoriteIds.has(card.id),
+        isWishlisted: wishlistIds.has(card.id),
+      })),
+    [results.photocards, collectionIds, favoriteIds, wishlistIds],
+  );
 
-  const handleDismissScan = useCallback(() => {
-    setScanState({ status: "idle" });
-  }, []);
-
-  const handleClearSearch = useCallback(() => {
-    setQuery("");
-  }, []);
+  const hasResults =
+    results.groups.length > 0 ||
+    results.members.length > 0 ||
+    results.albums.length > 0 ||
+    results.photocards.length > 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.bg} />
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <SearchBar
+        ref={inputRef}
+        value={inputValue}
+        onChangeText={handleChangeText}
+        onClear={handleClear}
+      />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>Recherche</Text>
-        <TouchableOpacity style={styles.iconBtn} onPress={handlePressScan}>
-          <Text style={styles.iconBtnText}>📷</Text>
-        </TouchableOpacity>
-      </View>
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} />
+        </View>
+      ) : !inputValue.trim() ? (
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+          <View style={styles.defaultHeader}>
+            <Text style={styles.defaultTitle}>Tous les groupes</Text>
+            <Text style={styles.defaultCount}>{allGroups.length}</Text>
+          </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Barre de recherche */}
-        <SearchBar
-          value={query}
-          onChangeText={setQuery}
-          onClear={handleClearSearch}
-        />
+          {groupsLoading ? (
+            <ActivityIndicator
+              color={Colors.accent}
+              style={styles.loadingCenter}
+            />
+          ) : (
+            <GroupAlphaList
+              groups={allGroups}
+              onPressGroup={(id) => router.push(`/group/${id}`)}
+            />
+          )}
 
-        {/* Bannière scan */}
-        <ScanBanner onPress={handlePressScan} />
-
-        {/* Résultat du scan */}
-        {scanState.status === "found" && (
-          <ScanResultCard
-            status="found"
-            card={scanState.card}
-            onAddToCollection={handleAddToCollection}
-            onAddToWishlist={handleAddToWishlist}
-            onDismiss={handleDismissScan}
-          />
-        )}
-        {scanState.status === "not_found" && (
-          <ScanResultCard
-            status="not_found"
-            onSubmitNew={handleSubmitNew}
-            onDismiss={handleDismissScan}
-          />
-        )}
-
-        {/* Liste des groupes */}
-        <SectionLabel
-          label={
-            query.trim()
-              ? `${filteredGroups.length} résultat${filteredGroups.length !== 1 ? "s" : ""}`
-              : "Tous les groupes"
-          }
-        />
-
-        {filteredGroups.length > 0 ? (
-          <View style={styles.groupGrid}>
-            {filteredGroups.map((group) => (
-              <View key={group.id} style={styles.groupGridItem}>
-                <GroupCard
+          <View style={styles.bottomPad} />
+        </ScrollView>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {results.groups.length > 0 && (
+            <>
+              <SearchSectionHeader
+                title="Groupes"
+                count={results.groups.length}
+              />
+              {results.groups.map((group) => (
+                <SearchGroupResult
+                  key={group.id}
                   group={group}
-                  onPress={() => handlePressGroup(group.id)}
+                  isFollowing={followedIds.has(group.id)}
+                  onPress={() => router.push(`/group/${group.id}`)}
+                  onFollow={() => toggleFollow(group.id)}
                 />
-              </View>
-            ))}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🔍</Text>
-            <Text style={styles.emptyText}>
-              Aucun groupe trouvé pour "{query}"
-            </Text>
-            <Text style={styles.emptySubText}>
-              Vérifie l'orthographe ou parcours tous les groupes
-            </Text>
-          </View>
-        )}
+              ))}
+            </>
+          )}
 
-        <View style={styles.bottomPad} />
-      </ScrollView>
+          {results.members.length > 0 && (
+            <>
+              <SearchSectionHeader
+                title="Membres"
+                count={results.members.length}
+              />
+              {results.members.map((member) => (
+                <SearchMemberResult
+                  key={member.id}
+                  member={member}
+                  onPress={() =>
+                    router.push(
+                      `/member/${member.id}?groupId=${member.groupId}`,
+                    )
+                  }
+                />
+              ))}
+            </>
+          )}
+
+          {results.albums.length > 0 && (
+            <>
+              <SearchSectionHeader
+                title="Albums"
+                count={results.albums.length}
+              />
+              {results.albums.map((album) => (
+                <SearchAlbumResult
+                  key={album.id}
+                  album={album}
+                  onPress={() =>
+                    router.push(`/album/${album.id}?groupId=${album.groupId}`)
+                  }
+                />
+              ))}
+            </>
+          )}
+
+          {enrichedPhotocards.length > 0 && (
+            <>
+              <SearchSectionHeader
+                title="Photocards"
+                count={enrichedPhotocards.length}
+              />
+              {enrichedPhotocards.map((card) => (
+                <SearchPhotocardResult
+                  key={card.id}
+                  card={card}
+                  onPress={() => setSelectedCard(card)}
+                />
+              ))}
+            </>
+          )}
+
+          <View style={styles.bottomPad} />
+        </ScrollView>
+      )}
+
+      <PhotocardModal
+        card={selectedCard}
+        visible={selectedCard !== null}
+        onClose={() => setSelectedCard(null)}
+        onToggleCollection={() =>
+          selectedCard && toggleCollection(selectedCard.id)
+        }
+        onToggleFavorite={() => selectedCard && toggleFavorite(selectedCard.id)}
+        onToggleWishlist={() => selectedCard && toggleWishlist(selectedCard.id)}
+      />
     </SafeAreaView>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-  header: {
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  scroll: { flex: 1 },
+  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
+  bottomPad: { height: 40 },
+  defaultHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Theme.spacing.xl,
-    paddingTop: Theme.spacing.md,
-    paddingBottom: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
   },
-  title: {
-    fontSize: Theme.fontSize.xxl,
+  defaultTitle: {
+    fontSize: Theme.fontSize.base,
     fontWeight: Theme.fontWeight.medium,
     color: Colors.text,
   },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconBtnText: {
-    fontSize: 16,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: Theme.spacing.lg,
-  },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.surface,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    borderRadius: Theme.borderRadius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 12,
-  },
-  searchIcon: {
-    fontSize: 14,
-    color: Colors.textMuted,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: Theme.fontSize.base,
-    color: Colors.text,
-    padding: 0,
-  },
-  clearIcon: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    padding: 4,
-  },
-  scanBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "rgba(125, 211, 240, 0.05)",
-    borderWidth: 0.5,
-    borderColor: "rgba(125, 211, 240, 0.2)",
-    borderRadius: Theme.borderRadius.md,
-    padding: 12,
-    marginBottom: 4,
-  },
-  scanBannerLeft: {
-    flex: 1,
-    gap: 4,
-  },
-  scanBannerTitle: {
-    fontSize: Theme.fontSize.md,
+  defaultCount: {
+    fontSize: Theme.fontSize.sm + 1,
     color: Colors.accent,
     fontWeight: Theme.fontWeight.medium,
   },
-  scanBannerSub: {
-    fontSize: Theme.fontSize.md,
-    color: Colors.textMuted,
-    lineHeight: 16,
-  },
-  scanArrow: {
-    fontSize: 18,
-    color: Colors.textMuted,
-    marginLeft: 8,
-  },
-  groupGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  groupGridItem: {
-    width: "48%",
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyEmoji: {
-    fontSize: 36,
-    marginBottom: 4,
-  },
-  emptyText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.text,
-    textAlign: "center",
-  },
-  emptySubText: {
-    fontSize: Theme.fontSize.md,
-    color: Colors.textMuted,
-    textAlign: "center",
-  },
-  bottomPad: {
-    height: 24,
+  loadingCenter: {
+    paddingVertical: Theme.spacing.xl,
   },
 });

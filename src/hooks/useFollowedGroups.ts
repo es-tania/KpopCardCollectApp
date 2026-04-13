@@ -1,7 +1,8 @@
 import { collectionService } from "@/src/services/collectionService";
 import { useAuthStore } from "@/src/store/authStore";
 import { Group } from "@/src/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "./useFetchOnFocus";
 
 export const useFollowedGroups = () => {
   const { user } = useAuthStore();
@@ -24,9 +25,7 @@ export const useFollowedGroups = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   const toggleFollow = useCallback(
     async (groupId: string) => {

@@ -1,3 +1,4 @@
+import { GroupAlphaList } from "@/src/components/group";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { router } from "expo-router";
 import { ChevronLeft, Heart, Search } from "lucide-react-native";
@@ -224,18 +225,10 @@ export default function MyGroupsScreen() {
         </View>
       ) : (
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-          {Array.from(groupedByLetter.entries()).map(([letter, groups]) => (
-            <View key={letter}>
-              <AlphaHeader letter={letter} />
-              {groups.map((group) => (
-                <GroupRow
-                  key={group.id}
-                  group={group}
-                  onPress={() => handlePressGroup(group.id)}
-                />
-              ))}
-            </View>
-          ))}
+          <GroupAlphaList
+            groups={filteredGroups}
+            onPressGroup={handlePressGroup}
+          />
           <View style={styles.bottomPad} />
         </ScrollView>
       )}

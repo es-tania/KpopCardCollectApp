@@ -1,10 +1,18 @@
 import { router } from "expo-router";
-import React, { useCallback } from "react";
-import { ScrollView, StatusBar, StyleSheet, View } from "react-native";
+import React, { useCallback, useMemo } from "react";
+import {
+  ActivityIndicator,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from "react-native";
 
-import { MOCK_GROUPS_PROGRESS, MOCK_PHOTOCARDS } from "@/src/data";
 import { useGroups } from "@/src/hooks/group/useGroups";
-import { usePhotocardActions } from "@/src/hooks/usePhotocardActions";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { useRecentPhotocards } from "@/src/hooks/useRecentPhotocards";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CollectionProgress } from "../../src/components/home/CollectionProgress";
 import { FollowedGroupsRow } from "../../src/components/home/FollowedGroupsRow";
@@ -17,10 +25,51 @@ import { Theme } from "../../src/constants/theme";
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const { groups } = useGroups(true);
+  // ── Data BDD ──────────────────────────────────────────────────────────
+  const { followedGroups, loading: followedLoading } = useFollowedGroups();
+  const { groups, loading: groupsLoading } = useGroups(true);
+  const { photocards, loading: photocardsLoading } = useRecentPhotocards(10);
+  const followedGroupIds = followedGroups.map((g) => g.id).join(",");
+  const { photocards: allPhotocards } = usePhotocards({});
 
-  const { handleToggleFavorite, handleToggleWishlist, handleToggleCollection } =
-    usePhotocardActions();
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useUserCollection();
+
+  // ── Photocards enrichies ──────────────────────────────────────────────
+  const enrichedPhotocards = photocards.map((card) => ({
+    ...card,
+    isInCollection: collectionIds.has(card.id),
+    isFavorite: favoriteIds.has(card.id),
+    isWishlisted: wishlistIds.has(card.id),
+  }));
+
+  // ── Progression — uniquement les groupes suivis ───────────────────────
+  const followedGroupsWithProgress = useMemo(() => {
+    return followedGroups.map((group) => {
+      // Photocards de ce groupe
+      const groupCards = allPhotocards.filter((c) => c.groupId === group.id);
+
+      const owned = groupCards.filter((c) => collectionIds.has(c.id)).length;
+
+      const wishlisted = groupCards.filter((c) => wishlistIds.has(c.id)).length;
+
+      return {
+        ...group,
+        ownedPhotocards: owned,
+        wishlistPhotocards: wishlisted,
+        completionPercentage:
+          group.totalPhotocards > 0
+            ? Math.round((owned / group.totalPhotocards) * 100)
+            : 0,
+      };
+    });
+  }, [followedGroups, allPhotocards, collectionIds, wishlistIds]);
 
   const handlePressGroup = useCallback((groupId: string) => {
     router.push(`/group/${groupId}`);
@@ -42,28 +91,49 @@ export default function HomeScreen() {
       >
         {/* Groupes suivis */}
         <SectionLabel label="Groupes suivis" />
-        <FollowedGroupsRow
-          groups={groups}
-          onPressGroup={handlePressGroup}
-          onPressAdd={handlePressAddGroup}
-        />
+        {followedLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <FollowedGroupsRow
+            groups={followedGroups}
+            onPressGroup={handlePressGroup}
+            onPressAdd={handlePressAddGroup}
+          />
+        )}
 
         <GlowDivider />
 
         {/* Derniers ajouts */}
         <SectionLabel label="Derniers ajouts" />
-        <RecentCardsCarousel
-          cards={MOCK_PHOTOCARDS}
-          onPressFavorite={handleToggleFavorite}
-          onPressWishlist={handleToggleWishlist}
-          onPressCollection={handleToggleCollection}
-        />
+        {photocardsLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <RecentCardsCarousel
+            cards={enrichedPhotocards}
+            onPressFavorite={(id) => toggleFavorite(id)}
+            onPressWishlist={(id) => toggleWishlist(id)}
+            onPressCollection={(id) => toggleCollection(id)}
+          />
+        )}
 
         <GlowDivider />
 
         {/* Progression collection */}
         <SectionLabel label="Progression de ma collection" />
-        <CollectionProgress groups={MOCK_GROUPS_PROGRESS} />
+        {groupsLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <CollectionProgress groups={followedGroupsWithProgress} />
+        )}
 
         {/* Padding bas */}
         <View style={styles.bottomPad} />
@@ -77,6 +147,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bg,
     paddingTop: Theme.spacing.lg,
+  },
+  sectionLoading: {
+    paddingVertical: Theme.spacing.xl,
   },
   header: {
     flexDirection: "row",

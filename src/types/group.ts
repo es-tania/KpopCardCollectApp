@@ -40,10 +40,3 @@ export interface Group {
   // 📅 Métadonnées
   createdAt?: string;
 }
-
-export interface GroupWithProgress extends Group {
-  collectedCount: number;
-  totalCount: number;
-
-  completionPercentage: number;
-}

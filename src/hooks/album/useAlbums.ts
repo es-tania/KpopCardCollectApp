@@ -1,6 +1,7 @@
 import { albumsService } from "@/src/services/albumsService";
 import { Album } from "@/src/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface UseAlbumsResult {
   albums: Album[];
@@ -29,9 +30,7 @@ export const useAlbums = (groupId?: string): UseAlbumsResult => {
     }
   }, [groupId]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   return { albums, loading, error, refetch: fetch };
 };

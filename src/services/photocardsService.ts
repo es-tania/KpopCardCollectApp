@@ -46,6 +46,85 @@ export const photocardsService = {
     return data.map(mapPhotocard);
   },
 
+  getRecent: async (limit: number = 10): Promise<PhotocardWithDetails[]> => {
+    const { data, error } = await supabase
+      .from("photocards_with_details")
+      .select("*")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    return data.map(mapPhotocard);
+  },
+
+  getRecentByUser: async (
+    userId: string,
+    limit: number = 10,
+  ): Promise<PhotocardWithDetails[]> => {
+    // Récupère les IDs des cartes de l'utilisateur (collection + favoris + wishlist)
+    const [collection, favorites, wishlist] = await Promise.all([
+      supabase
+        .from("user_collection")
+        .select("photocard_id, added_at")
+        .eq("user_id", userId)
+        .order("added_at", { ascending: false })
+        .limit(limit),
+      supabase
+        .from("user_favorites")
+        .select("photocard_id, added_at")
+        .eq("user_id", userId)
+        .order("added_at", { ascending: false })
+        .limit(limit),
+      supabase
+        .from("user_wishlist")
+        .select("photocard_id, added_at")
+        .eq("user_id", userId)
+        .order("added_at", { ascending: false })
+        .limit(limit),
+    ]);
+
+    if (collection.error) throw collection.error;
+    if (favorites.error) throw favorites.error;
+    if (wishlist.error) throw wishlist.error;
+
+    // Fusionne et déduplique en gardant la date la plus récente
+    const cardMap = new Map<string, string>();
+
+    [
+      ...(collection.data ?? []),
+      ...(favorites.data ?? []),
+      ...(wishlist.data ?? []),
+    ].forEach((item) => {
+      const existing = cardMap.get(item.photocard_id);
+      if (!existing || item.added_at > existing) {
+        cardMap.set(item.photocard_id, item.added_at);
+      }
+    });
+
+    if (cardMap.size === 0) return [];
+
+    // Trie par date décroissante et prend les N premiers
+    const sortedIds = [...cardMap.entries()]
+      .sort((a, b) => b[1].localeCompare(a[1]))
+      .slice(0, limit)
+      .map(([id]) => id);
+
+    // Fetch les détails des photocards
+    const { data, error } = await supabase
+      .from("photocards_with_details")
+      .select("*")
+      .in("id", sortedIds);
+
+    if (error) throw error;
+
+    // Retrie dans le bon ordre (Supabase ne garantit pas l'ordre avec .in())
+    return sortedIds
+      .map((id) => data.find((d: any) => d.id === id))
+      .filter(Boolean)
+      .map(mapPhotocard);
+  },
+
   submit: async (
     data: Partial<PhotocardWithDetails>,
     isAdmin: boolean = false,

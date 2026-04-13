@@ -1,6 +1,7 @@
 import { photocardsService } from "@/src/services/photocardsService";
 import { PhotocardWithDetails } from "@/src/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface UsePhotocardsResult {
   photocards: PhotocardWithDetails[];
@@ -41,9 +42,7 @@ export const usePhotocards = (filters?: {
     }
   }, [filters?.groupId, filters?.albumId, filters?.memberId]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   return { photocards, loading, error, refetch: fetch };
 };

@@ -1,7 +1,8 @@
 import { groupsService } from "@/src/services/groupsService";
 import { useAuthStore } from "@/src/store/authStore";
 import { Group } from "@/src/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface UseGroupsResult {
   groups: Group[];
@@ -32,9 +33,7 @@ export const useGroups = (withUserStats: boolean = false): UseGroupsResult => {
     }
   }, [withUserStats, user]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   return { groups, loading, error, refetch: fetch };
 };

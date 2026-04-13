@@ -1,6 +1,7 @@
 import { groupsService } from "@/src/services/groupsService";
 import { Group } from "@/src/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "./useFetchOnFocus";
 
 export const useGroup = (groupId: string) => {
   const [group, setGroup] = useState<Group | null>(null);
@@ -20,9 +21,7 @@ export const useGroup = (groupId: string) => {
     }
   }, [groupId]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   return { group, loading, error, refetch: fetch };
 };

@@ -1,5 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { PhotocardWithDetails } from "../types";
+import { mapGroup } from "./groupsService";
 
 export const collectionService = {
   // ── Collection ────────────────────────────────────────────────────────
@@ -135,7 +136,7 @@ export const collectionService = {
       .eq("user_id", userId);
 
     if (error) throw error;
-    return data.map((d: any) => d.groups);
+    return data.map((d: any) => mapGroup(d.groups));
   },
 
   toggleFollowGroup: async (

@@ -1,6 +1,7 @@
 import { membersService } from "@/src/services/membersService";
 import { Member } from "@/src/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface UseGroupMembersResult {
   members: Member[];
@@ -31,9 +32,7 @@ export const useGroupMembers = (
     }
   }, [groupId]);
 
-  useEffect(() => {
-    fetch();
-  }, [fetch]);
+  useFetchOnFocus(fetch);
 
   const deleteMember = useCallback(async (memberId: string) => {
     await membersService.delete(memberId);

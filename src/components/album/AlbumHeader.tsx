@@ -486,6 +486,5 @@ const versionStyles = StyleSheet.create({
   label: {
     fontSize: Theme.fontSize.base,
     color: Colors.textMuted,
-    marginTop: 0,
   },
 });

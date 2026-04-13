@@ -1,18 +1,25 @@
+import { Group } from "@/src/types";
 import React from "react";
 import { View } from "react-native";
 import { Colors } from "../../constants/colors";
-import { GroupWithProgress } from "../../types";
 import { ProgressBar } from "../ui/ProgressBar";
 
 interface CollectionProgressProps {
-  groups: GroupWithProgress[];
+  groups: Group[];
 }
 
 export const CollectionProgress: React.FC<CollectionProgressProps> = ({
   groups,
 }) => {
-  const totalCollected = groups.reduce((acc, g) => acc + g.collectedCount, 0);
-  const totalCards = groups.reduce((acc, g) => acc + g.totalPhotocards, 0);
+  const totalCollected = groups.reduce(
+    (acc, g) => acc + (g.ownedPhotocards ?? 0),
+    0,
+  );
+
+  const totalCards = groups.reduce(
+    (acc, g) => acc + (g.totalPhotocards ?? 0),
+    0,
+  );
 
   return (
     <View>
@@ -20,8 +27,8 @@ export const CollectionProgress: React.FC<CollectionProgressProps> = ({
         <ProgressBar
           key={group.id}
           label={group.name}
-          current={group.collectedCount}
-          total={group.totalPhotocards}
+          current={group.ownedPhotocards ?? 0}
+          total={group.totalPhotocards ?? 0}
         />
       ))}
       <ProgressBar
