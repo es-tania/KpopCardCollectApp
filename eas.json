@@ -4,11 +4,17 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "preview": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://bkmhpscswxzghqjmmxme.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_POSu9Unl9rbiaPaEokbsJw_cA61xx97"
+      }
+    },
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
       "distribution": "internal"
     },
     "production": {

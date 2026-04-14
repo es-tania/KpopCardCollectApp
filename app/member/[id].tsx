@@ -3,7 +3,7 @@ import { PhotocardMiniGrid } from "@/src/components/photocard";
 import { FILTER_OPTIONS } from "@/src/constants/options/filterOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { router, useLocalSearchParams } from "expo-router";
@@ -18,9 +18,6 @@ import React, {
 import {
   ActivityIndicator,
   Image,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -45,7 +42,6 @@ export default function MemberScreen() {
   }>();
 
   // ── UI state ──────────────────────────────────────────────────────────
-  // Membre actif (celui sur lequel on a cliqué + possibilité d'en changer)
   const [activeMemberId, setActiveMemberId] = useState<string>(id ?? "");
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
@@ -58,8 +54,9 @@ export default function MemberScreen() {
   const { albums, loading: albumsLoading } = useAlbums(groupId);
 
   // Photocards du membre actif
-  const { photocards, loading: photocardsLoading } = usePhotocards({
+  const { photocards, loading: photocardsLoading } = usePaginatedPhotocards({
     memberId: activeMemberId,
+    albumId: selectedAlbum?.id ?? undefined,
   });
 
   // États collection/favoris/wishlist
@@ -114,13 +111,9 @@ export default function MemberScreen() {
   // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
     let cards = enrichedPhotocards;
-
-    // Filtre par album sélectionné
     if (selectedAlbum) {
       cards = cards.filter((c) => c.albumId === selectedAlbum.id);
     }
-
-    // Filtre par état
     switch (activeFilter) {
       case "collection":
         return cards.filter((c) => c.isInCollection);
@@ -140,60 +133,102 @@ export default function MemberScreen() {
       setSelectedAlbum(null);
       setActiveFilter("all");
       albumsScrollY.current = 0;
-      scrollToTop();
+      // scrollToTop();
     }
   }, [id]);
 
-  // ── Scroll handler ────────────────────────────────────────────────────
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if (isAlbumsViewActive.current) {
-        albumsScrollY.current = e.nativeEvent.contentOffset.y;
-      }
-    },
-    [selectedAlbum],
-  );
-
   // ── Handlers ──────────────────────────────────────────────────────────
-  const handleSelectAlbum = useCallback(
-    (album: Album) => {
-      isAlbumsViewActive.current = false;
-      setSelectedAlbum((prev) => (prev?.id === album.id ? null : album));
-      scrollToTop();
-    },
-    [scrollToTop],
-  );
+  const handleSelectAlbum = useCallback((album: Album) => {
+    isAlbumsViewActive.current = false;
+    setSelectedAlbum((prev) => (prev?.id === album.id ? null : album));
+  }, []);
 
   const handleBackToAlbums = useCallback(() => {
     isAlbumsViewActive.current = true;
     setSelectedAlbum(null);
-    // setTimeout pour attendre le re-render de la liste avant de scroller
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({
-        y: albumsScrollY.current,
-      });
-    }, 50);
-  }, [scrollRef]);
+  }, []);
 
   const handleSelectMember = useCallback(
     (member: Member) => {
       if (member.id === activeMemberId) return;
       setActiveMemberId(member.id);
+      setSelectedAlbum(null);
       setActiveFilter("all");
       albumsScrollY.current = 0;
-      scrollToTop();
     },
-    [activeMemberId, scrollToTop],
+    [activeMemberId],
   );
 
   const handlePressBack = useCallback(() => {
     router.back();
-    scrollToTop();
-  }, [groupId, scrollToTop]);
+  }, []);
 
   const handleExport = useCallback(() => {
     router.push(`/export?memberId=${activeMemberId}`);
-  }, []);
+  }, [activeMemberId]);
+
+  // ── Header pour le FlatList ───────────────────────────────────────────
+  const ListHeader = useMemo(
+    () => (
+      <>
+        {/* Header membre */}
+        {activeMember && <MemberHeader member={activeMember} />}
+
+        {/* Sélecteur membres */}
+        <View style={styles.membersSection}>
+          <SectionLabel label="Membres" style={styles.sectionLabel} />
+          <MembersList
+            members={members}
+            selectedId={activeMemberId}
+            onPressMember={handleSelectMember}
+          />
+        </View>
+
+        {/* Filtres */}
+        <View style={styles.filtersRow}>
+          <FilterPills
+            options={FILTER_OPTIONS}
+            selected={activeFilter}
+            onSelect={(k) => setActiveFilter(k as FilterKey)}
+          />
+        </View>
+
+        {/* Albums ou bannière album sélectionné */}
+        {!selectedAlbum && (
+          <>
+            <SectionLabel
+              label="Choisissez un album"
+              style={styles.sectionLabel}
+            />
+            {albumsLoading ? (
+              <ActivityIndicator
+                color={Colors.accent}
+                style={styles.sectionLoading}
+              />
+            ) : (
+              <AlbumGrid
+                albums={albumsWithStats}
+                onPressAlbum={handleSelectAlbum}
+              />
+            )}
+          </>
+        )}
+      </>
+    ),
+    [
+      activeMember,
+      members,
+      activeMemberId,
+      handleSelectMember,
+      activeFilter,
+      selectedAlbum,
+      albumsLoading,
+      albumsWithStats,
+      handleSelectAlbum,
+      handleBackToAlbums,
+      filteredCards.length,
+    ],
+  );
 
   // ── Loading ───────────────────────────────────────────────────────────
   if (membersLoading) {
@@ -218,112 +253,59 @@ export default function MemberScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      >
-        {/* ── Header membre ── */}
-        {activeMember && <MemberHeader member={activeMember} />}
-
-        {/* ── Sélecteur membres (scroll horizontal) ── */}
-        <View style={styles.membersSection}>
-          <SectionLabel label="Membres" style={styles.sectionLabel} />
-          <MembersList
-            members={members}
-            selectedId={activeMemberId}
-            onPressMember={handleSelectMember}
-          />
-        </View>
-
-        {/* ── Filtres ── */}
-        <View style={styles.filtersRow}>
-          <FilterPills
-            options={FILTER_OPTIONS}
-            selected={activeFilter}
-            onSelect={(k) => setActiveFilter(k as FilterKey)}
-          />
-        </View>
-
-        {/* ── Albums ou photocards ── */}
-        {!selectedAlbum ? (
-          <>
-            <SectionLabel
-              label={"Choisissez un album"}
-              style={styles.sectionLabel}
+      {selectedAlbum && (
+        <TouchableOpacity
+          style={styles.albumBanner}
+          onPress={handleBackToAlbums}
+          activeOpacity={0.8}
+        >
+          {selectedAlbum.coverUrl && (
+            <Image
+              source={selectedAlbum.coverUrl as any}
+              style={styles.albumBannerCover}
+              resizeMode="cover"
             />
-            {albumsLoading ? (
-              <ActivityIndicator
-                color={Colors.accent}
-                style={styles.sectionLoading}
-              />
-            ) : (
-              <AlbumGrid
-                albums={albumsWithStats}
-                onPressAlbum={handleSelectAlbum}
-              />
-            )}
-          </>
-        ) : (
-          <>
-            {/* Album sélectionné — bannière */}
-            <TouchableOpacity
-              style={styles.albumBanner}
-              onPress={handleBackToAlbums}
-              activeOpacity={0.8}
-            >
-              {selectedAlbum.coverUrl && (
-                <Image
-                  source={selectedAlbum.coverUrl as any}
-                  style={styles.albumBannerCover}
-                  resizeMode="cover"
+          )}
+          <View style={styles.albumBannerInfo}>
+            <Text style={styles.albumBannerTitle}>{selectedAlbum.title}</Text>
+            <Text style={styles.albumBannerSub}>
+              Appuie pour changer d'album
+            </Text>
+          </View>
+          <ChevronLeft size={20} color={Colors.text} strokeWidth={1.6} />
+        </TouchableOpacity>
+      )}
+
+      {/* ── Contenu — FlatList gère tout ── */}
+      {!selectedAlbum ? (
+        <PhotocardMiniGrid
+          cards={[]}
+          ListHeaderComponent={ListHeader}
+          hideEmpty
+        />
+      ) : photocardsLoading ? (
+        <>
+          {/* Header + spinner */}
+          <PhotocardMiniGrid
+            cards={[]}
+            ListHeaderComponent={
+              <>
+                {ListHeader}
+                <ActivityIndicator
+                  color={Colors.accent}
+                  style={styles.sectionLoading}
                 />
-              )}
-              <View style={styles.albumBannerInfo}>
-                <Text style={styles.albumBannerTitle}>
-                  {selectedAlbum.title}
-                </Text>
-                <Text style={styles.albumBannerSub}>
-                  Appuie pour changer d'album
-                </Text>
-              </View>
-              <ChevronLeft size={20} color={Colors.text} strokeWidth={1.6} />
-            </TouchableOpacity>
-
-            {/* Compteur */}
-            <SectionLabel
-              label={`${filteredCards.length} photocard${filteredCards.length !== 1 ? "s" : ""}`}
-              style={styles.sectionLabel}
-            />
-
-            {/* Grille photocards */}
-            {photocardsLoading ? (
-              <ActivityIndicator
-                color={Colors.accent}
-                style={styles.sectionLoading}
-              />
-            ) : filteredCards.length > 0 ? (
-              <PhotocardMiniGrid
-                cards={filteredCards}
-                onPressFavorite={(id) => toggleFavorite(id)}
-                onPressWishlist={(id) => toggleWishlist(id)}
-                onPressCollection={(id) => toggleCollection(id)}
-              />
-            ) : (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🃏</Text>
-                <Text style={styles.emptyText}>
-                  Aucune photocard pour ce filtre
-                </Text>
-              </View>
-            )}
-          </>
-        )}
-
-        <View style={styles.bottomPad} />
-      </ScrollView>
+              </>
+            }
+          />
+        </>
+      ) : (
+        // Mode photocards — FlatList avec infinite scroll
+        <PhotocardMiniGrid
+          cards={filteredCards}
+          ListHeaderComponent={ListHeader}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -388,13 +370,14 @@ const styles = StyleSheet.create({
     paddingBottom: Theme.spacing.sm,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
+    marginBottom: Theme.spacing.md,
   },
   albumBanner: {
     flexDirection: "row",
     alignItems: "center",
     gap: Theme.spacing.md,
     marginHorizontal: Theme.spacing.lg,
-    marginTop: Theme.spacing.md,
+    marginVertical: Theme.spacing.md,
     padding: Theme.spacing.sm,
     backgroundColor: Colors.surface,
     borderRadius: Theme.borderRadius.md,

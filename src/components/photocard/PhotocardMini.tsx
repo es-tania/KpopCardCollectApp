@@ -1,4 +1,5 @@
 import { PHOTOCARD_TYPE_LABELS } from "@/src/constants/options";
+import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { Check, Plus, ShoppingBasket, Star } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -16,13 +17,13 @@ interface PhotocardMiniProps {
 
 export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
   card,
-  onPressFavorite,
-  onPressWishlist,
-  onPressCollection,
   onPress,
 }) => {
   const typeLabel = PHOTOCARD_TYPE_LABELS[card.type];
   const isSpecialType = card.type !== "normal";
+
+  const { toggleCollection, toggleFavorite, toggleWishlist } =
+    useUserCollection();
 
   return (
     <TouchableOpacity
@@ -57,7 +58,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
           {/* Infos bas */}
           <View style={styles.infoOverlay}>
             <Text style={styles.albumTitle} numberOfLines={1}>
-              {card.version ? `${card.version}` : ""}
+              {card.version ? `${card.version}` : "-"}
             </Text>
             <Text style={styles.memberName} numberOfLines={1}>
               {card.albumTitle}
@@ -71,7 +72,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.actionBtn}
-          onPress={onPressFavorite}
+          onPress={(id) => toggleFavorite(card.id)}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <Star
@@ -84,7 +85,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
 
         <TouchableOpacity
           style={styles.actionBtn}
-          onPress={onPressWishlist}
+          onPress={(id) => toggleWishlist(card.id)}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           <ShoppingBasket
@@ -101,7 +102,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
             styles.collectionBtn,
             card.isInCollection && styles.collectionBtnActive,
           ]}
-          onPress={onPressCollection}
+          onPress={(id) => toggleCollection(card.id)}
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         >
           {card.isInCollection ? (
@@ -117,7 +118,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    width: "31%",
+    // width: "31%",
     backgroundColor: Colors.surface,
     borderRadius: Theme.borderRadius.md,
     borderWidth: 0.5,

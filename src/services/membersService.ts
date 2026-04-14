@@ -24,6 +24,41 @@ export const membersService = {
     return mapMember(data);
   },
 
+  getMembersWithAlbumStats: async (
+    groupId: string,
+    albumId: string,
+  ): Promise<Member[]> => {
+    // ── 1. Charge les membres du groupe ───────────────────────────────────
+    const { data: membersData, error: membersError } = await supabase
+      .from("members")
+      .select("*")
+      .eq("group_id", groupId)
+      .order("stage_name");
+
+    // ── 2. Compte les photocards par membre pour cet album ────────────────
+    const { data: pcData, error: pcError } = await supabase
+      .from("photocards")
+      .select("member_id")
+      .eq("album_id", albumId)
+      .eq("status", "approved");
+
+    if (pcError) throw pcError;
+
+    const counts: Record<string, number> = {};
+    (pcData ?? []).forEach((p: any) => {
+      counts[p.member_id] = (counts[p.member_id] ?? 0) + 1;
+    });
+
+    // ── 3. Fusionne et filtre ─────────────────────────────────────────────
+    return (membersData ?? [])
+      .map(mapMember)
+      .filter((m) => counts[m.id] !== undefined)
+      .map((m) => ({
+        ...m,
+        totalPhotocards: counts[m.id] ?? 0,
+      }));
+  },
+
   create: async (data: Partial<Member>): Promise<Member> => {
     const { data: created, error } = await supabase
       .from("members")
@@ -61,7 +96,7 @@ const extractUrl = (source: any): string | null | undefined => {
   return undefined;
 };
 
-const mapMember = (data: any): Member => ({
+export const mapMember = (data: any): Member => ({
   id: data.id,
   groupId: data.group_id,
   stageName: data.stage_name,

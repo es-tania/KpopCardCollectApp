@@ -1,16 +1,14 @@
 import { PhotocardMiniGrid } from "@/src/components/photocard";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { useAlbum } from "@/src/hooks/useAlbum";
+import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Download } from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -42,25 +40,31 @@ export default function AlbumScreen() {
 
   // ── Data BDD ──────────────────────────────────────────────────────────
   const { album, loading: albumLoading } = useAlbum(id);
-  const { members, loading: membersLoading } = useGroupMembers(groupId);
-  const { photocards, loading: photocardsLoading } = usePhotocards({
-    albumId: id,
-  });
+  const { membersWithStats, loading: membersLoading } = useGroupMembers(
+    groupId,
+    id,
+  );
 
   const {
-    collectionIds,
-    favoriteIds,
-    wishlistIds,
-    toggleCollection,
-    toggleFavorite,
-    toggleWishlist,
-  } = useUserCollection();
+    photocards,
+    loading: photocardsLoading,
+    loadingMore,
+    hasMore,
+    loadMore,
+  } = usePaginatedPhotocards({
+    albumId: id,
+    memberId:
+      selectedMemberId !== ALL_MEMBERS_ID ? selectedMemberId : undefined,
+  });
+
+  const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
+
+  const cooldownRef = useRef(false);
 
   // ── Membres présents dans cet album ───────────────────────────────────
   const albumMembers = useMemo(() => {
-    const memberIdsInAlbum = new Set(photocards.map((c) => c.memberId));
-    return members.filter((m) => memberIdsInAlbum.has(m.id));
-  }, [photocards, members]);
+    return membersWithStats;
+  }, [membersWithStats]);
 
   // ── Photocards enrichies ──────────────────────────────────────────────
   const enrichedPhotocards = useMemo(() => {
@@ -74,25 +78,17 @@ export default function AlbumScreen() {
 
   // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
-    let cards = enrichedPhotocards;
-
-    // Filtre par membre
-    if (selectedMemberId !== ALL_MEMBERS_ID) {
-      cards = cards.filter((c) => c.memberId === selectedMemberId);
-    }
-
-    // Filtre par état
     switch (activeFilter) {
       case "collection":
-        return cards.filter((c) => c.isInCollection);
+        return enrichedPhotocards.filter((c) => c.isInCollection);
       case "favorites":
-        return cards.filter((c) => c.isFavorite);
+        return enrichedPhotocards.filter((c) => c.isFavorite);
       case "wishlist":
-        return cards.filter((c) => c.isWishlisted);
+        return enrichedPhotocards.filter((c) => c.isWishlisted);
       default:
-        return cards;
+        return enrichedPhotocards;
     }
-  }, [enrichedPhotocards, selectedMemberId, activeFilter]);
+  }, [enrichedPhotocards, activeFilter]);
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -122,7 +118,29 @@ export default function AlbumScreen() {
     router.push(`/export?albumId=${id}`);
   }, [id]);
 
-  if (albumLoading) {
+  const handleScroll = useCallback(
+    ({ nativeEvent }: any) => {
+      const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+      const distanceFromBottom =
+        contentSize.height - layoutMeasurement.height - contentOffset.y;
+
+      if (
+        distanceFromBottom < 300 &&
+        hasMore &&
+        !loadingMore &&
+        !cooldownRef.current
+      ) {
+        cooldownRef.current = true;
+        loadMore();
+        setTimeout(() => {
+          cooldownRef.current = false;
+        }, 800);
+      }
+    },
+    [hasMore, loadingMore, loadMore],
+  );
+
+  if (albumLoading || membersLoading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <View style={styles.loadingWrap}>
@@ -144,81 +162,34 @@ export default function AlbumScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header album */}
-        {album && <AlbumHeader album={album} />}
-
-        {/* Sélecteur membres */}
-        <SectionLabel label="Membres" style={styles.sectionLabel} />
-        {membersLoading ? (
-          <ActivityIndicator
-            color={Colors.accent}
-            style={styles.sectionLoading}
-          />
-        ) : (
-          <AlbumMembersSelector
-            members={albumMembers.map((m) => {
-              const memberCards = enrichedPhotocards.filter(
-                (c) => c.memberId === m.id,
-              );
-              return {
-                ...m,
-                // Stats spécifiques à cet album
-                totalPhotocards: memberCards.length,
-                ownedPhotocards: memberCards.filter((c) => c.isInCollection)
-                  .length,
-                wishlistPhotocards: memberCards.filter((c) => c.isWishlisted)
-                  .length,
-              };
-            })}
-            selectedMemberId={selectedMemberId}
-            onSelectAll={handleSelectAll}
-            onSelectMember={handleSelectMember}
-          />
-        )}
-
-        {/* Filtres */}
-        <View style={styles.filtersRow}>
-          <FilterPills
-            options={FILTER_OPTIONS}
-            selected={activeFilter}
-            onSelect={(k) => setActiveFilter(k as FilterKey)}
-          />
-        </View>
-
-        {/* Photocards */}
-        <SectionLabel
-          label={`${filteredCards.length} photocard${filteredCards.length !== 1 ? "s" : ""}`}
-          style={styles.sectionLabel}
-        />
-
-        {photocardsLoading ? (
-          <ActivityIndicator
-            color={Colors.accent}
-            style={styles.sectionLoading}
-          />
-        ) : filteredCards.length > 0 ? (
-          <PhotocardMiniGrid
-            cards={filteredCards}
-            onPressFavorite={(cardId) => toggleFavorite(cardId)}
-            onPressWishlist={(cardId) => toggleWishlist(cardId)}
-            onPressCollection={(cardId) => toggleCollection(cardId)}
-          />
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🃏</Text>
-            <Text style={styles.emptyText}>
-              Aucune photocard pour ce filtre
-            </Text>
-          </View>
-        )}
-
-        <View style={styles.bottomPad} />
-      </ScrollView>
+      <PhotocardMiniGrid
+        cards={filteredCards}
+        loadingMore={loadingMore}
+        onEndReached={loadMore}
+        ListHeaderComponent={
+          <>
+            {album && <AlbumHeader album={album} />}
+            <SectionLabel label="Membres" style={styles.sectionLabel} />
+            <AlbumMembersSelector
+              members={albumMembers}
+              selectedMemberId={selectedMemberId}
+              onSelectAll={handleSelectAll}
+              onSelectMember={handleSelectMember}
+            />
+            <View style={styles.filtersRow}>
+              <FilterPills
+                options={FILTER_OPTIONS}
+                selected={activeFilter}
+                onSelect={(k) => setActiveFilter(k as FilterKey)}
+              />
+            </View>
+            <SectionLabel
+              label={`${filteredCards.length} photocard${filteredCards.length !== 1 ? "s" : ""}`}
+              style={styles.sectionLabel}
+            />
+          </>
+        }
+      />
     </SafeAreaView>
   );
 }

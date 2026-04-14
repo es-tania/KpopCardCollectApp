@@ -19,7 +19,6 @@ import React, {
 import {
   ActivityIndicator,
   Animated,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -63,14 +62,7 @@ export default function MyCardsScreen() {
   const { groups } = useGroups(true);
   const { scrollRef, scrollToTop } = useScrollToTop();
 
-  const {
-    collectionIds,
-    favoriteIds,
-    wishlistIds,
-    toggleCollection,
-    toggleFavorite,
-    toggleWishlist,
-  } = useCollectionStore();
+  const { collectionIds, favoriteIds, wishlistIds } = useCollectionStore();
 
   const { mode: rawMode } = useLocalSearchParams<{ mode?: string }>();
   const mode: CardMode =
@@ -93,33 +85,28 @@ export default function MyCardsScreen() {
     try {
       const { data, error } = await supabase
         .from(config.table)
-        .select(
-          `
-          photocard_id,
-          photocards_with_details (*)
-        `,
-        )
+        .select(`photocard_id, photocards_with_details (*)`)
         .eq("user_id", user.id);
 
       if (error) throw error;
 
-      const mapped = (data ?? [])
-        .map((d: any) => d.photocards_with_details)
-        .filter(Boolean)
-        .map((d: any) => ({
-          ...mapPhotocard(d),
-          isInCollection: collectionIds.has(d.id),
-          isFavorite: favoriteIds.has(d.id),
-          isWishlisted: wishlistIds.has(d.id),
-        }));
-
-      setCards(mapped);
+      setCards(
+        (data ?? [])
+          .map((d: any) => d.photocards_with_details)
+          .filter(Boolean)
+          .map((d: any) => ({
+            ...mapPhotocard(d),
+            isInCollection: collectionIds.has(d.id),
+            isFavorite: favoriteIds.has(d.id),
+            isWishlisted: wishlistIds.has(d.id),
+          })),
+      );
     } catch (err: any) {
       console.error("fetchCards error:", err.message);
     } finally {
       setLoading(false);
     }
-  }, [user, mode, collectionIds, favoriteIds, wishlistIds]);
+  }, [user, mode]);
 
   useEffect(() => {
     fetchCards();
@@ -140,6 +127,12 @@ export default function MyCardsScreen() {
     return cards.filter((c) => c.groupId === selectedGroupId);
   }, [cards, selectedGroupId]);
 
+  const selectedGroupName = useMemo(
+    () => groupsInCards.find((g) => g.id === selectedGroupId)?.name ?? null,
+    [selectedGroupId, groupsInCards],
+  );
+
+  // ── Handlers ──────────────────────────────────────────────────────────
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
     Animated.spring(filterHeight, {
@@ -150,44 +143,9 @@ export default function MyCardsScreen() {
     }).start();
   }, [showFilters, filterHeight]);
 
-  const handleSelectGroup = useCallback(
-    (id: string) => {
-      setSelectedGroupId(id);
-      scrollToTop();
-    },
-    [scrollToTop],
-  );
-
-  const selectedGroupName = useMemo(
-    () => groupsInCards.find((g) => g.id === selectedGroupId)?.name ?? null,
-    [selectedGroupId, groupsInCards],
-  );
-
-  // ── Handlers toggle — re-fetch après toggle ───────────────────────────
-
-  const handleToggleCollection = useCallback(
-    async (cardId: string) => {
-      await toggleCollection(user!.id, cardId);
-      fetchCards();
-    },
-    [toggleCollection, user, fetchCards],
-  );
-
-  const handleToggleFavorite = useCallback(
-    async (cardId: string) => {
-      await toggleFavorite(user!.id, cardId);
-      fetchCards();
-    },
-    [toggleFavorite, user, fetchCards],
-  );
-
-  const handleToggleWishlist = useCallback(
-    async (cardId: string) => {
-      await toggleWishlist(user!.id, cardId);
-      fetchCards();
-    },
-    [toggleWishlist, user, fetchCards],
-  );
+  const handleSelectGroup = useCallback((id: string) => {
+    setSelectedGroupId(id);
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -211,7 +169,7 @@ export default function MyCardsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Panneau filtres (animé) ── */}
+      {/* Panneau filtres animé */}
       <Animated.View
         style={[
           styles.filtersPanel,
@@ -234,58 +192,49 @@ export default function MyCardsScreen() {
         </View>
       </Animated.View>
 
-      {/* ── Barre d'info ── */}
-      <View style={styles.infoBar}>
-        <Grid3x3 size={13} color={Colors.textMuted} strokeWidth={1.6} />
-        <Text style={styles.infoText}>
-          <Text style={[styles.infoCount, { color: config.accentColor }]}>
-            {filteredCards.length}
-          </Text>{" "}
-          photocard{filteredCards.length !== 1 ? "s" : ""}
-          {selectedGroupName ? ` · ${selectedGroupName}` : ""}
-        </Text>
-      </View>
-
-      {/* ── Grille ── */}
       {/* ── Contenu ── */}
       {loading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={Colors.accent} />
         </View>
       ) : filteredCards.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🃏</Text>
-          <Text style={styles.emptyTitle}>Aucune carte</Text>
-          <Text style={styles.emptySubtitle}>
-            {selectedGroupId !== ALL_KEY
-              ? "Aucune carte pour ce groupe"
-              : config.emptyText}
-          </Text>
-          {selectedGroupId !== ALL_KEY && (
-            <TouchableOpacity
-              style={styles.resetBtn}
-              onPress={() => handleSelectGroup(ALL_KEY)}
-            >
-              <Text style={styles.resetBtnText}>
-                Voir toutes les photocards
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>🃏</Text>
+            <Text style={styles.emptyTitle}>Aucune carte</Text>
+            <Text style={styles.emptySubtitle}>
+              {selectedGroupId !== ALL_KEY
+                ? "Aucune carte pour ce groupe"
+                : config.emptyText}
+            </Text>
+            {selectedGroupId !== ALL_KEY && (
+              <TouchableOpacity
+                style={styles.resetBtn}
+                onPress={() => handleSelectGroup(ALL_KEY)}
+              >
+                <Text style={styles.resetBtnText}>
+                  Voir toutes les photocards
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </>
       ) : (
-        <ScrollView
-          ref={scrollRef}
-          style={styles.scroll}
-          showsVerticalScrollIndicator={false}
-        >
-          <PhotocardMiniGrid
-            cards={filteredCards}
-            onPressFavorite={handleToggleFavorite}
-            onPressWishlist={handleToggleWishlist}
-            onPressCollection={handleToggleCollection}
-          />
-          <View style={styles.bottomPad} />
-        </ScrollView>
+        <PhotocardMiniGrid
+          cards={filteredCards}
+          ListHeaderComponent={
+            <View style={styles.infoBar}>
+              <Grid3x3 size={13} color={Colors.textMuted} strokeWidth={1.6} />
+              <Text style={styles.infoText}>
+                <Text style={[styles.infoCount, { color: config.accentColor }]}>
+                  {filteredCards.length}
+                </Text>{" "}
+                photocard{filteredCards.length !== 1 ? "s" : ""}
+                {selectedGroupName ? ` · ${selectedGroupName}` : ""}
+              </Text>
+            </View>
+          }
+        />
       )}
     </SafeAreaView>
   );
