@@ -27,6 +27,7 @@ export const membersService = {
   getMembersWithAlbumStats: async (
     groupId: string,
     albumId: string,
+    userId?: string,
   ): Promise<Member[]> => {
     // ── 1. Charge les membres du groupe ───────────────────────────────────
     const { data: membersData, error: membersError } = await supabase
@@ -35,28 +36,115 @@ export const membersService = {
       .eq("group_id", groupId)
       .order("stage_name");
 
+    if (membersError) throw membersError;
+
     // ── 2. Compte les photocards par membre pour cet album ────────────────
     const { data: pcData, error: pcError } = await supabase
       .from("photocards")
-      .select("member_id")
+      .select("id, member_id")
       .eq("album_id", albumId)
       .eq("status", "approved");
 
     if (pcError) throw pcError;
 
-    const counts: Record<string, number> = {};
+    // console.log("📦 Photocards dans l'album:", pcData?.length);
+
+    // Compte total par membre
+    const totalCounts: Record<string, number> = {};
+    const photocardIds: string[] = [];
+
     (pcData ?? []).forEach((p: any) => {
-      counts[p.member_id] = (counts[p.member_id] ?? 0) + 1;
+      totalCounts[p.member_id] = (totalCounts[p.member_id] ?? 0) + 1;
+      photocardIds.push(p.id);
     });
 
-    // ── 3. Fusionne et filtre ─────────────────────────────────────────────
+    // console.log(
+    //   "🎴 photocardIds:",
+    //   photocardIds.length,
+    //   photocardIds.slice(0, 3),
+    // );
+    console.log("👤 userId:", userId);
+
+    // ── 3. Cartes possédées par l'utilisateur pour cet album ──────────────
+    const ownedCounts: Record<string, number> = {};
+    const wishlistCounts: Record<string, number> = {};
+
+    if (userId && photocardIds.length > 0) {
+      // Cartes en collection
+      const { data: collectionData, error: collectionError } = await supabase
+        .from("user_collection")
+        .select("photocard_id")
+        .eq("user_id", userId)
+        .in("photocard_id", photocardIds);
+
+      // console.log(
+      //   "✅ Collection data:",
+      //   collectionData,
+      //   "error:",
+      //   collectionError,
+      // );
+
+      // Pour chaque carte possédée, trouve son membre
+      const ownedIds = new Set(
+        (collectionData ?? []).map((c: any) => c.photocard_id),
+      );
+
+      // console.log("✅ ownedIds:", [...ownedIds]);
+
+      (pcData ?? []).forEach((p: any) => {
+        if (ownedIds.has(p.id)) {
+          ownedCounts[p.member_id] = (ownedCounts[p.member_id] ?? 0) + 1;
+        }
+      });
+
+      // console.log("✅ ownedCounts:", ownedCounts);
+
+      // Cartes en wishlist
+      const { data: wishlistData, error: wishlistError } = await supabase
+        .from("user_wishlist")
+        .select("photocard_id")
+        .eq("user_id", userId)
+        .in("photocard_id", photocardIds);
+
+      // console.log("💫 Wishlist data:", wishlistData, "error:", wishlistError);
+
+      const wishlistedIds = new Set(
+        (wishlistData ?? []).map((w: any) => w.photocard_id),
+      );
+      (pcData ?? []).forEach((p: any) => {
+        if (wishlistedIds.has(p.id)) {
+          wishlistCounts[p.member_id] = (wishlistCounts[p.member_id] ?? 0) + 1;
+        }
+      });
+    } else {
+      console.log("⚠️ userId manquant ou photocardIds vide:", {
+        userId,
+        photocardIdsLength: photocardIds.length,
+      });
+    }
+
+    // ── 4. Fusionne tout ──────────────────────────────────────────────────
     return (membersData ?? [])
       .map(mapMember)
-      .filter((m) => counts[m.id] !== undefined)
-      .map((m) => ({
-        ...m,
-        totalPhotocards: counts[m.id] ?? 0,
-      }));
+      .filter((m) => totalCounts[m.id] !== undefined)
+      .map((m) => {
+        const total = totalCounts[m.id] ?? 0;
+        const owned = ownedCounts[m.id] ?? 0;
+        const wishlist = wishlistCounts[m.id] ?? 0;
+
+        console.log(
+          `👤 ${m.stageName}: total=${total} owned=${owned} wishlist=${wishlist}`,
+        );
+
+        return {
+          ...m,
+          totalPhotocards: total,
+          ownedPhotocards: owned,
+          wishlistPhotocards: wishlist,
+          completionPercentage:
+            total > 0 ? Math.round((owned / total) * 100) : 0,
+        };
+      });
   },
 
   create: async (data: Partial<Member>): Promise<Member> => {

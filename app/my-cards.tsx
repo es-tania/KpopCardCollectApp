@@ -2,7 +2,6 @@ import { GroupFilter } from "@/src/components/group/GroupFilter";
 import { ALL_KEY } from "@/src/constants/key";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { useFetchOnFocus } from "@/src/hooks/useFetchOnFocus";
-import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { supabase } from "@/src/lib/supabase";
 import { useAuthStore } from "@/src/store/authStore";
 import { useCollectionStore } from "@/src/store/collectionStore";
@@ -60,7 +59,6 @@ const MODE_CONFIG: Record<
 export default function MyCardsScreen() {
   const { user } = useAuthStore();
   const { groups } = useGroups(true);
-  const { scrollRef, scrollToTop } = useScrollToTop();
 
   const { collectionIds, favoriteIds, wishlistIds } = useCollectionStore();
 
@@ -122,10 +120,20 @@ export default function MyCardsScreen() {
 
   // ── Filtre par groupe ─────────────────────────────────────────────────
 
+  // ── Cartes enrichies depuis le store (toujours à jour) ────────────────
+  const enrichedCards = useMemo(() => {
+    return cards.map((card) => ({
+      ...card,
+      isInCollection: collectionIds.has(card.id),
+      isFavorite: favoriteIds.has(card.id),
+      isWishlisted: wishlistIds.has(card.id),
+    }));
+  }, [cards, collectionIds, favoriteIds, wishlistIds]);
+
   const filteredCards = useMemo(() => {
-    if (selectedGroupId === ALL_KEY) return cards;
-    return cards.filter((c) => c.groupId === selectedGroupId);
-  }, [cards, selectedGroupId]);
+    if (selectedGroupId === ALL_KEY) return enrichedCards;
+    return enrichedCards.filter((c) => c.groupId === selectedGroupId);
+  }, [enrichedCards, selectedGroupId]);
 
   const selectedGroupName = useMemo(
     () => groupsInCards.find((g) => g.id === selectedGroupId)?.name ?? null,

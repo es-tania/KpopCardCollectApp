@@ -4,6 +4,7 @@ import {
   buildStoragePath,
   storageService,
 } from "@/src/services/storageService";
+import { useCacheStore } from "@/src/store/cacheStore";
 import { GroupFormState, MemberFormState } from "@/src/types";
 import { useState } from "react";
 
@@ -25,6 +26,7 @@ export const useAddGroup = (onSuccess: () => void): UseAddGroupResult => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
+  const { invalidateAll } = useCacheStore();
 
   const submit = async (form: GroupFormState, members: MemberFormState[]) => {
     setLoading(true);
@@ -109,6 +111,8 @@ export const useAddGroup = (onSuccess: () => void): UseAddGroupResult => {
           photoUrl: photoUrl ? { uri: photoUrl } : undefined,
         });
       }
+
+      invalidateAll("groups:");
 
       setProgress(null);
       onSuccess();

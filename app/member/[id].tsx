@@ -60,14 +60,7 @@ export default function MemberScreen() {
   });
 
   // États collection/favoris/wishlist
-  const {
-    collectionIds,
-    favoriteIds,
-    wishlistIds,
-    toggleCollection,
-    toggleFavorite,
-    toggleWishlist,
-  } = useUserCollection();
+  const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
 
   // ── Membre actif ──────────────────────────────────────────────────────
   const activeMember = useMemo(
@@ -152,7 +145,7 @@ export default function MemberScreen() {
     (member: Member) => {
       if (member.id === activeMemberId) return;
       setActiveMemberId(member.id);
-      setSelectedAlbum(null);
+      // setSelectedAlbum(null);
       setActiveFilter("all");
       albumsScrollY.current = 0;
     },

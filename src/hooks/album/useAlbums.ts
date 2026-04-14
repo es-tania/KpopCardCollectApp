@@ -1,6 +1,8 @@
+import { CACHE_TTL } from "@/src/constants/cacheTtl";
 import { albumsService } from "@/src/services/albumsService";
 import { Album } from "@/src/types";
 import { useCallback, useState } from "react";
+import { useCache } from "../useCache";
 import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface UseAlbumsResult {
@@ -14,14 +16,21 @@ export const useAlbums = (groupId?: string): UseAlbumsResult => {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fetchWithCache, invalidate } = useCache();
 
   const fetch = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = groupId
-        ? await albumsService.getByGroup(groupId)
-        : await albumsService.getAll();
+      const cacheKey = `albums:${groupId}`;
+      const data = await fetchWithCache(
+        cacheKey,
+        async () =>
+          groupId
+            ? await albumsService.getByGroup(groupId)
+            : await albumsService.getAll(),
+        CACHE_TTL.albums,
+      );
       setAlbums(data);
     } catch (err: any) {
       setError(err.message);

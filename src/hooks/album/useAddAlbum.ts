@@ -3,6 +3,7 @@ import {
   buildStoragePath,
   storageService,
 } from "@/src/services/storageService";
+import { useCacheStore } from "@/src/store/cacheStore";
 import { AlbumFormState } from "@/src/types";
 import { useState } from "react";
 
@@ -17,6 +18,7 @@ export const useAddAlbum = (onSuccess: () => void): UseAddAlbumResult => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
+  const { invalidateAll } = useCacheStore();
 
   const submit = async (form: AlbumFormState) => {
     setLoading(true);
@@ -67,6 +69,7 @@ export const useAddAlbum = (onSuccess: () => void): UseAddAlbumResult => {
         coverUrl: coverUrl ? { uri: coverUrl } : undefined,
         totalPhotocards: 0,
       });
+      invalidateAll("albums:");
 
       setProgress(null);
       onSuccess();

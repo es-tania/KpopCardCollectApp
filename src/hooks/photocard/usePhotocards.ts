@@ -1,6 +1,8 @@
+import { CACHE_TTL } from "@/src/constants/cacheTtl";
 import { photocardsService } from "@/src/services/photocardsService";
 import { PhotocardWithDetails } from "@/src/types";
 import { useCallback, useState } from "react";
+import { useCache } from "../useCache";
 import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface UsePhotocardsResult {
@@ -19,20 +21,33 @@ export const usePhotocards = (filters?: {
   const [photocards, setPhotocards] = useState<PhotocardWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { fetchWithCache } = useCache();
 
   const fetch = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let data: PhotocardWithDetails[];
+      const cacheKey = [
+        "photocards",
+        filters?.groupId ?? "all",
+        filters?.albumId ?? "all",
+        filters?.memberId ?? "all",
+        filters?.status ?? "approved",
+      ].join(":");
 
-      if (filters?.albumId) {
-        data = await photocardsService.getByAlbum(filters.albumId);
-      } else if (filters?.memberId) {
-        data = await photocardsService.getByMember(filters.memberId);
-      } else {
-        data = await photocardsService.getAll();
-      }
+      const data = await fetchWithCache<PhotocardWithDetails[]>(
+        cacheKey,
+        async () => {
+          if (filters?.albumId) {
+            return photocardsService.getByAlbum(filters.albumId);
+          }
+          if (filters?.memberId) {
+            return photocardsService.getByMember(filters.memberId);
+          }
+          return photocardsService.getAll();
+        },
+        CACHE_TTL.photocards,
+      );
 
       setPhotocards(data);
     } catch (err: any) {

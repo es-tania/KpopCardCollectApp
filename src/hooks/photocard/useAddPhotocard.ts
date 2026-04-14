@@ -3,6 +3,7 @@ import {
   buildStoragePath,
   storageService,
 } from "@/src/services/storageService";
+import { useCacheStore } from "@/src/store/cacheStore";
 import { PhotocardFormState } from "@/src/types";
 import { useState } from "react";
 
@@ -19,6 +20,7 @@ export const useAddPhotocard = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<string | null>(null);
+  const { invalidateAll } = useCacheStore();
 
   const submit = async (form: PhotocardFormState, isAdmin: boolean = false) => {
     setLoading(true);
@@ -75,6 +77,7 @@ export const useAddPhotocard = (
         },
         isAdmin,
       );
+      invalidateAll("photocards:");
 
       setProgress(null);
       onSuccess();

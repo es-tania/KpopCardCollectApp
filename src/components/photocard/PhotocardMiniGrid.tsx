@@ -49,12 +49,17 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
 
   const flatListRef = useRef<FlatList>(null);
   const cooldown = useRef(false);
-  const prevCards = useRef(cards);
+  const prevCardsRef = useRef(cards);
+  const prevIdsRef = useRef(cards.map((c) => c.id).join(","));
 
   // ── Réinitialise le compteur si les cartes changent ───────────────────
-  if (prevCards.current !== cards) {
-    prevCards.current = cards;
+  const currentIds = cards.map((c) => c.id).join(",");
+  if (currentIds !== prevIdsRef.current) {
+    prevIdsRef.current = currentIds;
+    prevCardsRef.current = cards;
     setVisibleCount(LOCAL_PAGE);
+  } else {
+    prevCardsRef.current = cards;
   }
 
   // ── Types disponibles ─────────────────────────────────────────────────
