@@ -118,7 +118,7 @@ export default function GroupScreen() {
   }, [group, toggleFollow]);
 
   const handleExportWishlist = useCallback(() => {
-    router.push(`/export?groupId=${groupId}`);
+    // router.push(`/export?groupId=${groupId}`);
   }, [groupId]);
 
   const enrichedPhotocards = useMemo(() => {

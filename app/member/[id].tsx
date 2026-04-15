@@ -1,6 +1,9 @@
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid } from "@/src/components/photocard";
-import { FILTER_OPTIONS } from "@/src/constants/options/filterOptions";
+import {
+  FILTER_OPTIONS,
+  FilterKey,
+} from "@/src/constants/options/filterOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
@@ -30,7 +33,7 @@ import { FilterPills } from "../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { Album, FilterKey, Member } from "../../src/types";
+import { Album, Member } from "../../src/types";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -114,6 +117,10 @@ export default function MemberScreen() {
         return cards.filter((c) => c.isFavorite);
       case "wishlist":
         return cards.filter((c) => c.isWishlisted);
+      case "none":
+        return cards.filter(
+          (c) => !c.isInCollection && !c.isFavorite && !c.isWishlisted,
+        );
       default:
         return cards;
     }
@@ -126,7 +133,7 @@ export default function MemberScreen() {
       setSelectedAlbum(null);
       setActiveFilter("all");
       albumsScrollY.current = 0;
-      // scrollToTop();
+      scrollToTop();
     }
   }, [id]);
 
@@ -139,13 +146,13 @@ export default function MemberScreen() {
   const handleBackToAlbums = useCallback(() => {
     isAlbumsViewActive.current = true;
     setSelectedAlbum(null);
+    scrollToTop();
   }, []);
 
   const handleSelectMember = useCallback(
     (member: Member) => {
       if (member.id === activeMemberId) return;
       setActiveMemberId(member.id);
-      // setSelectedAlbum(null);
       setActiveFilter("all");
       albumsScrollY.current = 0;
     },

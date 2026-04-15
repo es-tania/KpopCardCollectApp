@@ -1,6 +1,7 @@
 import { MOCK_PENDING } from "@/src/data";
 import { router } from "expo-router";
 import {
+  Check,
   CheckCircle,
   ChevronLeft,
   Clock,
@@ -20,11 +21,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  AdminActionRow,
-  AdminPendingRow,
-  AdminSectionTitle,
-} from "../../src/components/admin";
+import { AdminActionRow, AdminSectionTitle } from "../../src/components/admin";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
@@ -117,6 +114,15 @@ export default function AdminScreen() {
           </View>
         </View>
 
+        {/* ── Soumissions ── */}
+        <AdminSectionTitle title={`Soumissions à valider`} />
+
+        <AdminActionRow
+          icon={<Check size={17} color="#DAA520" strokeWidth={1.6} />}
+          label="Tout voir"
+          onPress={() => router.push("/admin/submissions")}
+        />
+
         {/* ── Ajouter ── */}
         <AdminSectionTitle title="Ajouter" />
         <AdminActionRow
@@ -162,33 +168,6 @@ export default function AdminScreen() {
           label="Modifier un groupe"
           onPress={() => router.push("/admin/edit-group")}
         />
-
-        {/* ── Soumissions ── */}
-        <AdminSectionTitle
-          title={`Soumissions à valider (${pending.length})`}
-          actionLabel={pending.length > 0 ? "Tout voir" : undefined}
-          onAction={() => router.push("/admin/submissions")}
-        />
-
-        {pending.length === 0 ? (
-          <View style={styles.emptyPending}>
-            <CheckCircle size={28} color={Colors.accent} strokeWidth={1.4} />
-            <Text style={styles.emptyPendingText}>
-              Aucune soumission en attente
-            </Text>
-          </View>
-        ) : (
-          pending.map((item) => (
-            <AdminPendingRow
-              key={item.id}
-              card={item}
-              submittedBy={item.submittedBy}
-              submittedAt={item.submittedAt}
-              onApprove={() => handleApprove(item.id)}
-              onReject={() => handleReject(item.id)}
-            />
-          ))
-        )}
 
         <View style={styles.bottomPad} />
       </ScrollView>

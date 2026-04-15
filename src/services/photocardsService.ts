@@ -149,6 +149,7 @@ export const photocardsService = {
       shop_name: data.shopName ?? null,
       rarity: data.rarity ?? "common",
       status: isAdmin ? "approved" : "pending",
+      created_by: (await supabase.auth.getUser()).data.user?.id,
     };
 
     // ✅ Extrait les URLs depuis ImageSourcePropType
@@ -242,4 +243,5 @@ export const mapPhotocard = (data: any): PhotocardWithDetails => ({
   memberName: data.member_name,
   albumTitle: data.album_title,
   groupName: data.group_name,
+  createdBy: data.created_by,
 });

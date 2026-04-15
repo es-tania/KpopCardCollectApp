@@ -68,7 +68,12 @@ export default function EditPhotocardScreen() {
   // Animation filtres
   const filterAnim = useRef(new Animated.Value(1)).current;
 
-  const { photocards, loading: photocardsLoading, refetch } = usePhotocards();
+  const {
+    photocards,
+    loading: photocardsLoading,
+    refetch,
+    removeById,
+  } = usePhotocards();
   const { groups } = useGroups();
 
   const { loading, progress, error, submit } = useEditPhotocard(async () => {
@@ -175,45 +180,39 @@ export default function EditPhotocardScreen() {
     setPreviewCard(card);
   }, []);
 
-  const handleDeletePhotocard = useCallback(
-    (card: PhotocardWithDetails) => {
-      Alert.alert(
-        "Supprimer la photocard",
-        `Es-tu sûre de vouloir supprimer "${card.memberName} — ${card.albumTitle}" ? Cette action est irréversible.`,
-        [
-          { text: "Annuler", style: "cancel" },
-          {
-            text: "Supprimer",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                // Supprime les images du bucket
-                const imageUrl = extractUrl(card.imageUrl);
-                const backImageUrl = extractUrl(card.backImageUrl);
+  const handleDeletePhotocard = useCallback((card: PhotocardWithDetails) => {
+    Alert.alert(
+      "Supprimer la photocard",
+      `Es-tu sûre de vouloir supprimer "${card.memberName} — ${card.albumTitle}" ? Cette action est irréversible.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Supprime les images du bucket
+              const imageUrl = extractUrl(card.imageUrl);
+              const backImageUrl = extractUrl(card.backImageUrl);
 
-                if (imageUrl)
-                  await storageService.deleteFromUrl("photocards", imageUrl);
-                if (backImageUrl)
-                  await storageService.deleteFromUrl(
-                    "photocards",
-                    backImageUrl,
-                  );
+              if (imageUrl)
+                await storageService.deleteFromUrl("photocards", imageUrl);
+              if (backImageUrl)
+                await storageService.deleteFromUrl("photocards", backImageUrl);
 
-                // Supprime en BDD
-                await photocardsService.delete(card.id);
-                await refetch();
+              // Supprime en BDD
+              await photocardsService.delete(card.id);
+              removeById(card.id);
 
-                Alert.alert("✅ Supprimée", "Photocard supprimée.");
-              } catch (err: any) {
-                Alert.alert("Erreur", err.message);
-              }
-            },
+              Alert.alert("✅ Supprimée", "Photocard supprimée.");
+            } catch (err: any) {
+              Alert.alert("Erreur", err.message);
+            }
           },
-        ],
-      );
-    },
-    [refetch],
-  );
+        },
+      ],
+    );
+  }, []);
 
   const handleBack = useCallback(() => {
     router.back();

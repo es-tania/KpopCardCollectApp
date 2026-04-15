@@ -85,6 +85,10 @@ export default function AlbumScreen() {
         return enrichedPhotocards.filter((c) => c.isFavorite);
       case "wishlist":
         return enrichedPhotocards.filter((c) => c.isWishlisted);
+      case "none":
+        return enrichedPhotocards.filter(
+          (c) => !c.isInCollection && !c.isFavorite && !c.isWishlisted,
+        );
       default:
         return enrichedPhotocards;
     }

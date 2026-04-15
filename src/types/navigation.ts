@@ -1,7 +1,5 @@
 // ─── Filtres communs à plusieurs pages ────────────────────────────────────────
 
-export type FilterKey = "all" | "collection" | "favorites" | "wishlist";
-
 export type CardMode = "collection" | "favorites" | "wishlist";
 
 export type StatusFilter = "all" | "active" | "hiatus" | "disbanded";

@@ -7,9 +7,9 @@ import { useCollectionStore } from "@/src/store/collectionStore";
 import { User } from "@/src/types";
 import { router } from "expo-router";
 import {
-  Download,
   Grid3x3,
   LogOut,
+  Plus,
   ShieldCheck,
   ShoppingBasket,
   Star,
@@ -203,11 +203,11 @@ export default function ProfileScreen() {
           badge={collectionIds.size}
           onPress={() => router.push("/my-cards")}
         />
-        <ProfileMenuRow
+        {/* <ProfileMenuRow
           icon={<Download size={17} color={Colors.accent} strokeWidth={1.6} />}
           label="Exporter une wishlist"
           onPress={() => router.push("/export?mode=wishlist")}
-        />
+        /> */}
 
         {/* ── Listes ── */}
         <ProfileSectionTitle title="Mes listes" />
@@ -226,6 +226,22 @@ export default function ProfileScreen() {
           onPress={() => router.push("/my-cards?mode=wishlist")}
         />
 
+        <ProfileSectionTitle title="Contribuer" />
+        <ProfileMenuRow
+          icon={<Plus size={17} color={Colors.accent2} strokeWidth={1.6} />}
+          label="Proposer une photocard"
+          sublabel="Soumise à validation par un admin"
+          onPress={() =>
+            router.push("/admin/add-photocard?userSubmission=true")
+          }
+        />
+        <ProfileMenuRow
+          icon={<Grid3x3 size={17} color={Colors.accent2} strokeWidth={1.6} />}
+          label="Mes soumissions"
+          sublabel="Voir le statut de tes propositions"
+          onPress={() => router.push("/my-submissions")}
+        />
+
         {/* ── Compte ── */}
         <ProfileSectionTitle title="Compte" />
         {isAdmin && (
@@ -238,6 +254,7 @@ export default function ProfileScreen() {
             onPress={() => router.push("/admin")}
           />
         )}
+
         <ProfileMenuRow
           icon={<LogOut size={17} color={Colors.danger} strokeWidth={1.6} />}
           label="Déconnexion"

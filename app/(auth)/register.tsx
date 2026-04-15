@@ -1,9 +1,7 @@
 import {
-  AuthDivider,
   AuthFooter,
   AuthHeader,
-  PasswordField,
-  SocialButton,
+  PasswordField
 } from "@/src/components/auth";
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
@@ -127,14 +125,14 @@ export default function RegisterScreen() {
           />
 
           {/* Social */}
-          <View style={styles.socialSection}>
+          {/* <View style={styles.socialSection}>
             <SocialButton provider="google" onPress={handleGoogle} />
             {Platform.OS === "ios" && (
               <SocialButton provider="apple" onPress={handleApple} />
             )}
           </View>
 
-          <AuthDivider />
+          <AuthDivider /> */}
 
           {/* Formulaire */}
           <View style={styles.form}>

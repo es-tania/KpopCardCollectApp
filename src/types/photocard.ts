@@ -50,6 +50,7 @@ export interface PhotocardWithDetails extends Photocard {
   memberName: string;
   albumTitle: string;
   groupName: string;
+  createdBy: string;
 
   // 📊 États utilisateur
   isInCollection?: boolean;

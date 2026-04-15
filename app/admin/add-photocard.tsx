@@ -12,7 +12,7 @@ import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Sparkles } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
@@ -56,6 +56,10 @@ export default function AddPhotocardScreen() {
     memberId?: string;
   }>();
   const { groups } = useGroups();
+  const { userSubmission } = useLocalSearchParams<{
+    userSubmission?: string;
+  }>();
+  const isUserSubmission = userSubmission === "true";
 
   const [form, setForm] = useState<PhotocardFormState>({
     ...INITIAL_FORM,
@@ -148,8 +152,12 @@ export default function AddPhotocardScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    await submit(form, isAdmin);
+    await submit(form, isAdmin && !isUserSubmission);
   };
+
+  const screenTitle = isUserSubmission
+    ? "Proposer une photocard"
+    : "Ajouter une photocard";
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -158,7 +166,7 @@ export default function AddPhotocardScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Ajouter une photocard</Text>
+        <Text style={styles.navTitle}>{screenTitle}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -189,7 +197,7 @@ export default function AddPhotocardScreen() {
           />
 
           {/* Bouton IA */}
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={styles.aiBtn}
             onPress={handleAiDetect}
             disabled={aiDetecting}
@@ -199,7 +207,7 @@ export default function AddPhotocardScreen() {
             <Text style={styles.aiBtnText}>
               {aiDetecting ? "Détection en cours..." : "Détecter avec l'IA"}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* ── Identification ── */}

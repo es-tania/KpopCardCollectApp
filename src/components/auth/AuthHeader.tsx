@@ -11,9 +11,9 @@ interface AuthHeaderProps {
 export const AuthHeader: React.FC<AuthHeaderProps> = ({ title, subtitle }) => (
   <View style={styles.container}>
     {/* Logo app */}
-    <View style={styles.logoWrap}>
+    {/* <View style={styles.logoWrap}>
       <Text style={styles.logoText}>KV</Text>
-    </View>
+    </View> */}
     <Text style={styles.title}>{title}</Text>
     <Text style={styles.subtitle}>{subtitle}</Text>
   </View>

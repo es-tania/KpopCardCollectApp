@@ -1,5 +1,6 @@
 import { CACHE_TTL } from "@/src/constants/cacheTtl";
 import { photocardsService } from "@/src/services/photocardsService";
+import { useCacheStore } from "@/src/store/cacheStore";
 import { PhotocardWithDetails } from "@/src/types";
 import { useCallback, useState } from "react";
 import { useCache } from "../useCache";
@@ -10,6 +11,7 @@ interface UsePhotocardsResult {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  removeById: (id: string) => void;
 }
 
 export const usePhotocards = (filters?: {
@@ -57,7 +59,13 @@ export const usePhotocards = (filters?: {
     }
   }, [filters?.groupId, filters?.albumId, filters?.memberId]);
 
+  const removeById = useCallback((id: string) => {
+    setPhotocards((prev) => prev.filter((c) => c.id !== id));
+    // Invalide aussi le cache
+    useCacheStore.getState().invalidateAll("photocards:");
+  }, []);
+
   useFetchOnFocus(fetch);
 
-  return { photocards, loading, error, refetch: fetch };
+  return { photocards, loading, error, refetch: fetch, removeById };
 };
