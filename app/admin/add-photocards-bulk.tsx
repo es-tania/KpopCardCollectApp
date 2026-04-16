@@ -5,18 +5,18 @@ import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import { Colors } from "@/src/constants/colors";
 import {
-    PHOTOCARD_TYPE_OPTIONS,
-    RARITY_OPTIONS,
-    SHOP_OPTIONS,
+  PHOTOCARD_TYPE_OPTIONS,
+  RARITY_OPTIONS,
+  SHOP_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { useGroups } from "@/src/hooks/group/useGroups";
+import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import {
-    BulkFormState,
-    BulkPhotocard,
-    useBulkAddPhotocards,
+  BulkFormState,
+  BulkPhotocard,
+  useBulkAddPhotocards,
 } from "@/src/hooks/useBulkAddPhotocards";
 import { useAuthStore } from "@/src/store/authStore";
 import { SelectOption } from "@/src/types";
@@ -24,12 +24,12 @@ import { router } from "expo-router";
 import { ChevronLeft, Plus } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -57,8 +57,8 @@ const INITIAL_FORM: BulkFormState = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardsBulkScreen() {
-  const { isAdmin } = useAuthStore();
-  const { groups } = useGroups();
+  const { isAdmin, groupAdminIds } = useAuthStore();
+  const { groups } = useAccessibleGroups();
 
   const [form, setForm] = useState<BulkFormState>(INITIAL_FORM);
   const [photocards, setPhotocards] = useState<BulkPhotocard[]>([newCard()]);
@@ -69,6 +69,11 @@ export default function AddPhotocardsBulkScreen() {
 
   // Membres selon le groupe sélectionné
   const { members } = useGroupMembers(form.groupId || null);
+
+  const accessibleGroups = useMemo(() => {
+    if (isAdmin) return groups;
+    return groups.filter((g) => groupAdminIds.includes(g.id));
+  }, [groups, isAdmin, groupAdminIds]);
 
   const groupOptions: SelectOption[] = useMemo(
     () => groups.map((g) => ({ key: g.id, label: g.name })),
@@ -191,7 +196,8 @@ export default function AddPhotocardsBulkScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    await submit(form, photocards, isAdmin);
+    const isGroupAdmin = groupAdminIds.includes(form.groupId);
+    await submit(form, photocards, isAdmin || isGroupAdmin);
   };
 
   return (

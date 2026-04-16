@@ -3,6 +3,8 @@ import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useAlbum } from "@/src/hooks/useAlbum";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { useUserStats } from "@/src/hooks/useUserStats";
+import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Download } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -58,7 +60,8 @@ export default function AlbumScreen() {
   });
 
   const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
-
+  const albumStats = useUserStats({ albumId: id });
+  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
   const cooldownRef = useRef(false);
 
   // ── Membres présents dans cet album ───────────────────────────────────
@@ -78,21 +81,22 @@ export default function AlbumScreen() {
 
   // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
+    let cards = enrichedPhotocards.filter((c) => !deletedIds.has(c.id));
     switch (activeFilter) {
       case "collection":
-        return enrichedPhotocards.filter((c) => c.isInCollection);
+        return cards.filter((c) => c.isInCollection);
       case "favorites":
-        return enrichedPhotocards.filter((c) => c.isFavorite);
+        return cards.filter((c) => c.isFavorite);
       case "wishlist":
-        return enrichedPhotocards.filter((c) => c.isWishlisted);
+        return cards.filter((c) => c.isWishlisted);
       case "none":
-        return enrichedPhotocards.filter(
+        return cards.filter(
           (c) => !c.isInCollection && !c.isFavorite && !c.isWishlisted,
         );
       default:
-        return enrichedPhotocards;
+        return cards;
     }
-  }, [enrichedPhotocards, activeFilter]);
+  }, [enrichedPhotocards, activeFilter, deletedIds]);
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -172,7 +176,7 @@ export default function AlbumScreen() {
         onEndReached={loadMore}
         ListHeaderComponent={
           <>
-            {album && <AlbumHeader album={album} />}
+            {album && <AlbumHeader album={{ ...album, ...albumStats }} />}
             <SectionLabel label="Membres" style={styles.sectionLabel} />
             <AlbumMembersSelector
               members={albumMembers}

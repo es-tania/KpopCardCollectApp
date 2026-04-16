@@ -9,6 +9,8 @@ import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { useUserStats } from "@/src/hooks/useUserStats";
+import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
 import React, {
@@ -49,11 +51,13 @@ export default function MemberScreen() {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
+  const memberStats = useUserStats({ memberId: activeMemberId });
   const albumsScrollY = useRef<number>(0);
   const isAlbumsViewActive = useRef<boolean>(true);
 
   // ── Data BDD ──────────────────────────────────────────────────────────
-  const { members, loading: membersLoading } = useGroupMembers(groupId);
+  const { membersWithStats, loading: membersLoading } =
+    useGroupMembers(groupId);
   const { albums, loading: albumsLoading } = useAlbums(groupId);
 
   // Photocards du membre actif
@@ -65,10 +69,15 @@ export default function MemberScreen() {
   // États collection/favoris/wishlist
   const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
 
+  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
+
   // ── Membre actif ──────────────────────────────────────────────────────
   const activeMember = useMemo(
-    () => members.find((m) => m.id === activeMemberId) ?? members[0] ?? null,
-    [members, activeMemberId],
+    () =>
+      membersWithStats.find((m) => m.id === activeMemberId) ??
+      membersWithStats[0] ??
+      null,
+    [membersWithStats, activeMemberId],
   );
 
   // ── Photocards enrichies ──────────────────────────────────────────────
@@ -106,7 +115,7 @@ export default function MemberScreen() {
 
   // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
-    let cards = enrichedPhotocards;
+    let cards = enrichedPhotocards.filter((c) => !deletedIds.has(c.id));
     if (selectedAlbum) {
       cards = cards.filter((c) => c.albumId === selectedAlbum.id);
     }
@@ -124,7 +133,7 @@ export default function MemberScreen() {
       default:
         return cards;
     }
-  }, [enrichedPhotocards, selectedAlbum, activeFilter]);
+  }, [enrichedPhotocards, selectedAlbum, activeFilter, deletedIds]);
 
   // ── Sync id depuis les params ─────────────────────────────────────────
   useEffect(() => {
@@ -172,13 +181,15 @@ export default function MemberScreen() {
     () => (
       <>
         {/* Header membre */}
-        {activeMember && <MemberHeader member={activeMember} />}
+        {activeMember && (
+          <MemberHeader member={{ ...activeMember, ...memberStats }} />
+        )}
 
         {/* Sélecteur membres */}
         <View style={styles.membersSection}>
           <SectionLabel label="Membres" style={styles.sectionLabel} />
           <MembersList
-            members={members}
+            members={membersWithStats}
             selectedId={activeMemberId}
             onPressMember={handleSelectMember}
           />
@@ -217,7 +228,7 @@ export default function MemberScreen() {
     ),
     [
       activeMember,
-      members,
+      membersWithStats,
       activeMemberId,
       handleSelectMember,
       activeFilter,

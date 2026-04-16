@@ -5,6 +5,7 @@ import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useEditAlbum } from "@/src/hooks/album/useEditAlbum";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { albumsService, storageService } from "@/src/services";
+import { useAuthStore } from "@/src/store/authStore";
 import { extractUrl } from "@/src/utils/extractUrl";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
@@ -46,6 +47,7 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EditAlbumScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
   const { albums, loading: albumsLoading, refetch } = useAlbums();
   const [viewMode, setViewMode] = useState<ViewMode>("search");
@@ -99,28 +101,40 @@ export default function EditAlbumScreen() {
 
   // ── Options filtres ──────────────────────────────────────────────────────
 
+  const accessibleGroups = useMemo(
+    () => groups.filter((g) => isAdmin || groupAdminIds.includes(g.id)),
+    [groups, isAdmin, groupAdminIds],
+  );
+
   const groupOptions = useMemo(
-    () => groups.map((g) => ({ id: g.id, label: g.name, sublabel: g.company })),
-    [groups],
+    () =>
+      accessibleGroups.map((g) => ({
+        id: g.id,
+        label: g.name,
+        sublabel: g.company,
+      })),
+    [accessibleGroups],
   );
 
   // ── Albums filtrés ───────────────────────────────────────────────────────
 
   const filteredAlbums = useMemo(() => {
     return albums.filter((a) => {
+      // Filtre par droits d'accès
+      if (!isAdmin && !groupAdminIds.includes(a.groupId)) return false;
+
+      // Filtres de recherche existants
       if (selectedGroupId && a.groupId !== selectedGroupId) return false;
       if (query) {
         const q = query.toLowerCase();
         return (
           a.title.toLowerCase().includes(q) ||
-          a.koreanTitle?.toLowerCase().includes(q) ||
-          a.type.toLowerCase().includes(q) ||
-          a.eventName?.toLowerCase().includes(q)
+          a.groupName?.toLowerCase().includes(q)
         );
       }
       return true;
     });
-  }, [albums, selectedGroupId, query]);
+  }, [albums, isAdmin, groupAdminIds, selectedGroupId, query]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 

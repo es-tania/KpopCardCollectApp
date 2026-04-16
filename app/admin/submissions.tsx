@@ -1,7 +1,8 @@
 import { useSubmissions } from "@/src/hooks/useSubmissions";
+import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
 import { Check, ChevronLeft, Clock, Eye, X } from "lucide-react-native";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -195,6 +196,7 @@ const rowStyles = StyleSheet.create({
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function SubmissionsScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
   const [activeTab, setActiveTab] = useState<SubmissionStatus>("pending");
   const [previewCard, setPreviewCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -252,6 +254,11 @@ export default function SubmissionsScreen() {
     [reject],
   );
 
+  const accessibleSubmissions = useMemo(() => {
+    if (isAdmin) return submissions;
+    return submissions.filter((s) => groupAdminIds.includes(s.groupId));
+  }, [submissions, isAdmin, groupAdminIds]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       {/* ── Navbar ── */}
@@ -293,8 +300,9 @@ export default function SubmissionsScreen() {
       <View style={styles.countBar}>
         <Clock size={12} color={Colors.textMuted} strokeWidth={1.6} />
         <Text style={styles.countText}>
-          <Text style={styles.countNum}>{submissions.length}</Text> soumission
-          {submissions.length !== 1 ? "s" : ""}
+          <Text style={styles.countNum}>{accessibleSubmissions.length}</Text>{" "}
+          soumission
+          {accessibleSubmissions.length !== 1 ? "s" : ""}
         </Text>
       </View>
 
@@ -305,7 +313,7 @@ export default function SubmissionsScreen() {
         </View>
       ) : (
         <FlatList
-          data={submissions}
+          data={accessibleSubmissions}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <SubmissionRow

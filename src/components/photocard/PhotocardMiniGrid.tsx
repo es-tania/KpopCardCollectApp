@@ -1,5 +1,6 @@
 import { PHOTOCARD_FILTER_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
+import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -51,6 +52,7 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
   const cooldown = useRef(false);
   const prevCardsRef = useRef(cards);
   const prevIdsRef = useRef(cards.map((c) => c.id).join(","));
+  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
 
   // ── Réinitialise le compteur si les cartes changent ───────────────────
   const currentIds = cards.map((c) => c.id).join(",");
@@ -70,11 +72,16 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
     );
   }, [cards]);
 
+  const activeCards = useMemo(
+    () => cards.filter((c) => !deletedIds.has(c.id)),
+    [cards, deletedIds],
+  );
+
   // ── Cartes filtrées par type ──────────────────────────────────────────
   const typeFilteredCards = useMemo(() => {
-    if (activeType === "all") return cards;
-    return cards.filter((c) => c.type === activeType);
-  }, [cards, activeType]);
+    if (activeType === "all") return activeCards;
+    return activeCards.filter((c) => c.type === activeType);
+  }, [activeCards, activeType]);
 
   // ── Cartes visibles ───────────────────────────────────────────────────
   const visibleCards = useMemo(

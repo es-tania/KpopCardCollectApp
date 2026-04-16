@@ -1,11 +1,15 @@
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
 import { PhotocardWithDetails } from "@/src/types";
-import { Edit2, Eye, Trash2 } from "lucide-react-native";
+import { Check, Edit2, Eye, Trash2 } from "lucide-react-native";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface PhotocardManageRowProps {
   card: PhotocardWithDetails;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onSelect?: () => void;
+  onLongPress?: () => void;
   onPreview: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -13,11 +17,28 @@ interface PhotocardManageRowProps {
 
 export const PhotocardManageRow: React.FC<PhotocardManageRowProps> = ({
   card,
+  selectionMode = false,
+  selected = false,
+  onSelect,
+  onLongPress,
   onPreview,
   onEdit,
   onDelete,
 }) => (
-  <TouchableOpacity style={rowStyles.row} onPress={onEdit} activeOpacity={0.75}>
+  <TouchableOpacity
+    style={[rowStyles.row, selected && rowStyles.rowSelected]}
+    onPress={selectionMode ? onSelect : onPreview}
+    onLongPress={onLongPress}
+    activeOpacity={0.75}
+  >
+    {/* Checkbox en mode sélection */}
+    {selectionMode && (
+      <View
+        style={[rowStyles.checkbox, selected && rowStyles.checkboxSelected]}
+      >
+        {selected && <Check size={12} color={Colors.bg} strokeWidth={2.5} />}
+      </View>
+    )}
     <View style={rowStyles.imageWrap}>
       {card.imageUrl ? (
         <Image
@@ -41,17 +62,19 @@ export const PhotocardManageRow: React.FC<PhotocardManageRowProps> = ({
         {card.version ? ` · ${card.version}` : ""}
       </Text>
     </View>
-    <View style={rowStyles.editBadge}>
-      <TouchableOpacity style={rowStyles.editBtn} onPress={onEdit}>
-        <Edit2 size={14} color={Colors.accent} strokeWidth={1.8} />
-      </TouchableOpacity>
-      <TouchableOpacity style={rowStyles.editBtn} onPress={onPreview}>
-        <Eye size={14} color={Colors.accent} strokeWidth={1.8} />
-      </TouchableOpacity>
-      <TouchableOpacity style={rowStyles.deleteBtn} onPress={onDelete}>
-        <Trash2 size={14} color={Colors.danger} strokeWidth={1.8} />
-      </TouchableOpacity>
-    </View>
+    {!selectionMode && (
+      <View style={rowStyles.editBadge}>
+        <TouchableOpacity style={rowStyles.editBtn} onPress={onEdit}>
+          <Edit2 size={14} color={Colors.accent} strokeWidth={1.8} />
+        </TouchableOpacity>
+        <TouchableOpacity style={rowStyles.editBtn} onPress={onPreview}>
+          <Eye size={14} color={Colors.accent} strokeWidth={1.8} />
+        </TouchableOpacity>
+        <TouchableOpacity style={rowStyles.deleteBtn} onPress={onDelete}>
+          <Trash2 size={14} color={Colors.danger} strokeWidth={1.8} />
+        </TouchableOpacity>
+      </View>
+    )}
   </TouchableOpacity>
 );
 
@@ -115,5 +138,25 @@ const rowStyles = StyleSheet.create({
     borderColor: "rgba(240,112,112,0.3)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  rowSelected: {
+    backgroundColor: "rgba(145,126,255,0.08)",
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface2,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  checkboxSelected: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
 });

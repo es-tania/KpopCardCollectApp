@@ -33,7 +33,7 @@ import {
 import { Colors } from "../../src/constants/colors";
 
 export default function ProfileScreen() {
-  const { user: authUser, isAdmin, signOut } = useAuthStore();
+  const { user: authUser, isAdmin, isGroupAdmin, signOut } = useAuthStore();
   const { followedGroups } = useFollowedGroups();
   const {
     collectionIds,
@@ -244,13 +244,17 @@ export default function ProfileScreen() {
 
         {/* ── Compte ── */}
         <ProfileSectionTitle title="Compte" />
-        {isAdmin && (
+        {(isAdmin || isGroupAdmin) && (
           <ProfileMenuRow
             icon={
               <ShieldCheck size={17} color={Colors.accent} strokeWidth={1.6} />
             }
             label="Administration"
-            sublabel="Gérer les cartes et soumissions"
+            sublabel={
+              isAdmin
+                ? "Gérer les cartes et soumissions"
+                : "Gérer les cartes de tes groupes"
+            }
             onPress={() => router.push("/admin")}
           />
         )}

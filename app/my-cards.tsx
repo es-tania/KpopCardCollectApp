@@ -5,6 +5,7 @@ import { useFetchOnFocus } from "@/src/hooks/useFetchOnFocus";
 import { supabase } from "@/src/lib/supabase";
 import { useAuthStore } from "@/src/store/authStore";
 import { useCollectionStore } from "@/src/store/collectionStore";
+import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { CardMode, PhotocardWithDetails } from "@/src/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Grid3x3, SlidersHorizontal } from "lucide-react-native";
@@ -74,7 +75,7 @@ export default function MyCardsScreen() {
   const [showFilters, setShowFilters] = useState(false);
 
   const filterHeight = useRef(new Animated.Value(0)).current;
-
+  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
   // ── Fetch depuis Supabase ─────────────────────────────────────────────
 
   const fetchCards = useCallback(async () => {
@@ -131,9 +132,10 @@ export default function MyCardsScreen() {
   }, [cards, collectionIds, favoriteIds, wishlistIds]);
 
   const filteredCards = useMemo(() => {
-    if (selectedGroupId === ALL_KEY) return enrichedCards;
-    return enrichedCards.filter((c) => c.groupId === selectedGroupId);
-  }, [enrichedCards, selectedGroupId]);
+    let cards = enrichedCards.filter((c) => !deletedIds.has(c.id));
+    if (selectedGroupId === ALL_KEY) return cards;
+    return cards.filter((c) => c.groupId === selectedGroupId);
+  }, [enrichedCards, selectedGroupId, deletedIds]);
 
   const selectedGroupName = useMemo(
     () => groupsInCards.find((g) => g.id === selectedGroupId)?.name ?? null,

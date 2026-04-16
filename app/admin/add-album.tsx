@@ -6,7 +6,7 @@ import {
   YES_NO_OPTIONS,
 } from "@/src/constants/options";
 import { useAddAlbum } from "@/src/hooks/album/useAddAlbum";
-import { useGroups } from "@/src/hooks/group/useGroups";
+import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router } from "expo-router";
@@ -29,7 +29,7 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
 export default function AddAlbumScreen() {
-  const { groups } = useGroups();
+  const { groups } = useAccessibleGroups();
 
   const groupOptions: SelectOption[] = groups.map((g) => ({
     key: g.id,

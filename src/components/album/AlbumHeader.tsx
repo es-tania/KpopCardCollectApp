@@ -175,13 +175,13 @@ export const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
       <View style={styles.statsContainer}>
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statNum}>{album.ownedPhotocards ?? 0}</Text>
-            <Text style={styles.statLabel}>Collectées</Text>
+            <Text style={styles.statNum}>{album.totalPhotocards}</Text>
+            <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statNum}>{album.totalPhotocards}</Text>
-            <Text style={styles.statLabel}>Total</Text>
+            <Text style={styles.statNum}>{album.ownedPhotocards ?? 0}</Text>
+            <Text style={styles.statLabel}>Collectées</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>

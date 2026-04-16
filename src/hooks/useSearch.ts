@@ -23,7 +23,7 @@ export const useSearch = () => {
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  const search = useCallback(async (q: string) => {
+  const search = useCallback(async (q: string, userId?: string) => {
     setQuery(q);
 
     if (!q.trim()) {
@@ -65,6 +65,36 @@ export const useSearch = () => {
           .eq("status", "approved")
           .limit(10),
       ]);
+
+      if (userId && groups.data && groups.data.length > 0) {
+        const groupIds = groups.data.map((g: any) => g.id);
+
+        const { data: progressData } = await supabase
+          .from("user_group_progress")
+          .select("*")
+          .eq("user_id", userId)
+          .in("group_id", groupIds);
+
+        const progressMap: Record<string, any> = {};
+        (progressData ?? []).forEach((p: any) => {
+          progressMap[p.group_id] = p;
+        });
+
+        setResults((prev) => ({
+          ...prev,
+          groups: (groups.data ?? []).map((g: any) => ({
+            ...mapGroup(g),
+            ownedPhotocards: progressMap[g.id]?.owned_photocards ?? 0,
+            wishlistPhotocards: progressMap[g.id]?.wishlist_photocards ?? 0,
+            completionPercentage: progressMap[g.id]?.completion_pct ?? 0,
+          })),
+        }));
+      } else {
+        setResults((prev) => ({
+          ...prev,
+          groups: (groups.data ?? []).map(mapGroup),
+        }));
+      }
 
       setResults({
         groups: (groups.data ?? []).map(mapGroup),
@@ -143,4 +173,5 @@ const mapPhotocard = (data: any): PhotocardWithDetails => ({
   memberName: data.member_name,
   albumTitle: data.album_title,
   groupName: data.group_name,
+  createdBy: data.created_by,
 });

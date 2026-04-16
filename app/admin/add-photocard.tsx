@@ -6,14 +6,14 @@ import {
 } from "@/src/constants/options";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { useGroups } from "@/src/hooks/group/useGroups";
 import { useAddPhotocard } from "@/src/hooks/photocard/useAddPhotocard";
+import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -50,12 +50,12 @@ const INITIAL_FORM: PhotocardFormState = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardScreen() {
-  const { isAdmin } = useAuthStore();
+  const { isAdmin, groupAdminIds } = useAuthStore();
   const { groupId: preGroupId, memberId: preMemberId } = useLocalSearchParams<{
     groupId?: string;
     memberId?: string;
   }>();
-  const { groups } = useGroups();
+  const { groups } = useAccessibleGroups();
   const { userSubmission } = useLocalSearchParams<{
     userSubmission?: string;
   }>();
@@ -80,6 +80,7 @@ export default function AddPhotocardScreen() {
       [{ text: "OK", onPress: () => router.back() }],
     );
   });
+
   useEffect(() => {
     if (error) Alert.alert("Erreur", error);
   }, [error]);
@@ -89,6 +90,11 @@ export default function AddPhotocardScreen() {
 
   const { albums } = useAlbums(form.groupId || undefined);
   const { members } = useGroupMembers(form.groupId || null);
+
+  const accessibleGroups = useMemo(() => {
+    if (isAdmin) return groups;
+    return groups.filter((g) => groupAdminIds.includes(g.id));
+  }, [groups, isAdmin, groupAdminIds]);
 
   // Options dynamiques selon les sélections
   const groupOptions: SelectOption[] = groups.map((g) => ({
@@ -152,7 +158,8 @@ export default function AddPhotocardScreen() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    await submit(form, isAdmin && !isUserSubmission);
+    const isGroupAdmin = groupAdminIds.includes(form.groupId);
+    await submit(form, isAdmin || isGroupAdmin);
   };
 
   const screenTitle = isUserSubmission

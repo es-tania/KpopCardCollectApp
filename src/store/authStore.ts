@@ -8,52 +8,73 @@ interface AuthState {
   session: Session | null;
   user: User | null;
   isAdmin: boolean;
+  isGroupAdmin: boolean;
+  groupAdminIds: string[];
   loading: boolean;
   init: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
+// ── Helper — charge tout pour un user ────────────────────────────────────────
+const loadUserData = async (userId: string) => {
+  const [profileResult, groupAdminsResult] = await Promise.all([
+    supabase.from("profiles").select("role").eq("id", userId).single(),
+    supabase.from("group_admins").select("group_id").eq("user_id", userId),
+  ]);
+
+  const isAdmin = profileResult.data?.role === "admin";
+
+  const groupAdminIds = (groupAdminsResult.data ?? []).map(
+    (d: any) => d.group_id,
+  );
+  return { isAdmin, groupAdminIds, isGroupAdmin: groupAdminIds.length > 0 };
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   user: null,
   isAdmin: false,
+  isGroupAdmin: false,
+  groupAdminIds: [],
   loading: true,
 
   init: async () => {
-    // Récupère la session existante
+    // ── 1. Session existante ─────────────────────────────────────────
     const session = await authService.getSession();
     set({ session, user: session?.user ?? null, loading: false });
 
-    // Vérifie le rôle admin
     if (session?.user) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-      set({ isAdmin: data?.role === "admin" });
+      const userData = await loadUserData(session.user.id);
+      set(userData);
     }
 
-    // Écoute les changements
-    authService.onAuthStateChange(async (session) => {
-      set({ session, user: session?.user ?? null });
+    // ── 2. Écoute les changements ────────────────────────────────────
+    authService.onAuthStateChange(async (newSession) => {
+      set({ session: newSession, user: newSession?.user ?? null });
 
-      if (session?.user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-        set({ isAdmin: data?.role === "admin" });
+      if (newSession?.user) {
+        const userData = await loadUserData(newSession.user.id);
+        set(userData);
       } else {
-        set({ isAdmin: false });
+        // Logout — reset tout
+        set({
+          isAdmin: false,
+          isGroupAdmin: false,
+          groupAdminIds: [],
+        });
       }
     });
   },
 
   signOut: async () => {
     await authService.signOut();
-    useCollectionStore.getState().reset(); // ← vide la collection au logout
-    set({ session: null, user: null, isAdmin: false });
+    useCollectionStore.getState().reset();
+    set({
+      session: null,
+      user: null,
+      isAdmin: false,
+      isGroupAdmin: false,
+      groupAdminIds: [],
+    });
   },
 }));

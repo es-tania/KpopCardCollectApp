@@ -7,10 +7,19 @@ import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { useEditPhotocard } from "@/src/hooks/photocard/useEditPhotocard";
 import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { supabase } from "@/src/lib/supabase";
 import { photocardsService, storageService } from "@/src/services";
+import { useAuthStore } from "@/src/store/authStore";
+import { useCacheStore } from "@/src/store/cacheStore";
 import { extractUrl } from "@/src/utils/extractUrl";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Filter } from "lucide-react-native";
+import {
+  CheckSquare,
+  ChevronLeft,
+  Filter,
+  Trash2,
+  X,
+} from "lucide-react-native";
 import React, {
   useCallback,
   useEffect,
@@ -48,6 +57,7 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function EditPhotocardScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -64,6 +74,10 @@ export default function EditPhotocardScreen() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
+  // ── State sélection ───────────────────────────────────────────────────
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Animation filtres
   const filterAnim = useRef(new Animated.Value(1)).current;
@@ -118,8 +132,11 @@ export default function EditPhotocardScreen() {
   // ── Options des filtres ──────────────────────────────────────────────────
 
   const groupOptions = useMemo(
-    () => groups.map((g) => ({ id: g.id, label: g.name, sublabel: g.company })),
-    [groups],
+    () =>
+      groups
+        .filter((g) => isAdmin || groupAdminIds.includes(g.id))
+        .map((g) => ({ id: g.id, label: g.name, sublabel: g.company })),
+    [groups, isAdmin, groupAdminIds],
   );
 
   // Albums filtrés selon le groupe sélectionné
@@ -144,6 +161,8 @@ export default function EditPhotocardScreen() {
 
   const filteredCards = useMemo(() => {
     return photocards.filter((c) => {
+      if (!isAdmin && !groupAdminIds.includes(c.groupId)) return false;
+
       if (selectedGroupId && c.groupId !== selectedGroupId) return false;
       if (selectedAlbumId && c.albumId !== selectedAlbumId) return false;
       if (selectedMemberId && c.memberId !== selectedMemberId) return false;
@@ -159,7 +178,15 @@ export default function EditPhotocardScreen() {
       }
       return true;
     });
-  }, [photocards, selectedGroupId, selectedAlbumId, selectedMemberId, query]);
+  }, [
+    photocards,
+    isAdmin,
+    groupAdminIds,
+    selectedGroupId,
+    selectedAlbumId,
+    selectedMemberId,
+    query,
+  ]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -179,6 +206,82 @@ export default function EditPhotocardScreen() {
   const handlePreviewCard = useCallback((card: PhotocardWithDetails) => {
     setPreviewCard(card);
   }, []);
+
+  // ── Handlers sélection ────────────────────────────────────────────────
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleToggleSelectionMode = useCallback(() => {
+    setSelectionMode((v) => !v);
+    setSelectedIds(new Set());
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    setSelectedIds(new Set(filteredCards.map((c) => c.id)));
+  }, [filteredCards]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+
+    Alert.alert(
+      "Supprimer la sélection",
+      `Es-tu sûre de vouloir supprimer ${selectedIds.size} photocard${selectedIds.size > 1 ? "s" : ""} ? Cette action est irréversible.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: `Supprimer (${selectedIds.size})`,
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Supprime les images du bucket
+              const toDelete = filteredCards.filter((c) =>
+                selectedIds.has(c.id),
+              );
+
+              for (const card of toDelete) {
+                const imageUrl = extractUrl(card.imageUrl);
+                const backImageUrl = extractUrl(card.backImageUrl);
+                if (imageUrl)
+                  await storageService.deleteFromUrl("photocards", imageUrl);
+                if (backImageUrl)
+                  await storageService.deleteFromUrl(
+                    "photocards",
+                    backImageUrl,
+                  );
+              }
+
+              // Supprime en BDD
+              const { error } = await supabase
+                .from("photocards")
+                .delete()
+                .in("id", [...selectedIds]);
+
+              if (error) throw error;
+
+              // Retire du state local
+              selectedIds.forEach((id) => removeById(id));
+              useCacheStore.getState().invalidateAll("photocards:");
+
+              setSelectedIds(new Set());
+              setSelectionMode(false);
+
+              Alert.alert(
+                "✅ Supprimées",
+                `${toDelete.length} photocard${toDelete.length > 1 ? "s" : ""} supprimée${toDelete.length > 1 ? "s" : ""}.`,
+              );
+            } catch (err: any) {
+              Alert.alert("Erreur", err.message);
+            }
+          },
+        },
+      ],
+    );
+  }, [selectedIds, filteredCards, removeById]);
 
   const handleDeletePhotocard = useCallback((card: PhotocardWithDetails) => {
     Alert.alert(
@@ -233,21 +336,64 @@ export default function EditPhotocardScreen() {
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
         <Text style={styles.navTitle} numberOfLines={1}>
-          {navTitle}
+          {selectionMode
+            ? `${selectedIds.size} sélectionnée${selectedIds.size > 1 ? "s" : ""}`
+            : navTitle}
         </Text>
-        {viewMode === "search" && (
-          <TouchableOpacity
-            style={[styles.navBtn, showFilters && styles.navBtnActive]}
-            onPress={toggleFilters}
-          >
-            <Filter
-              size={17}
-              color={showFilters ? Colors.accent : Colors.text}
-              strokeWidth={1.6}
-            />
-          </TouchableOpacity>
+        {selectionMode ? (
+          // Mode sélection — boutons select all + delete
+          <View style={styles.navActions}>
+            <TouchableOpacity style={styles.navBtn} onPress={handleSelectAll}>
+              <Text style={styles.selectAllText}>Tout</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navBtn, styles.navBtnDanger]}
+              onPress={handleDeleteSelected}
+              disabled={selectedIds.size === 0}
+            >
+              <Trash2
+                size={16}
+                color={selectedIds.size > 0 ? Colors.danger : Colors.textMuted}
+                strokeWidth={1.8}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.navBtn}
+              onPress={handleToggleSelectionMode}
+            >
+              <X size={18} color={Colors.text} strokeWidth={1.8} />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          // Mode normal — boutons filter + sélection
+          <View style={styles.navActions}>
+            {viewMode === "search" && (
+              <>
+                <TouchableOpacity
+                  style={[styles.navBtn, showFilters && styles.navBtnActive]}
+                  onPress={toggleFilters}
+                >
+                  <Filter
+                    size={17}
+                    color={showFilters ? Colors.accent : Colors.text}
+                    strokeWidth={1.6}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.navBtn}
+                  onPress={handleToggleSelectionMode}
+                >
+                  <CheckSquare
+                    size={18}
+                    color={Colors.text}
+                    strokeWidth={1.8}
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+            {viewMode === "edit" && <View style={styles.navBtn} />}
+          </View>
         )}
-        {viewMode === "edit" && <View style={styles.navBtn} />}
       </View>
 
       {/* ── MODE SEARCH ── */}
@@ -331,6 +477,15 @@ export default function EditPhotocardScreen() {
             renderItem={({ item }) => (
               <PhotocardManageRow
                 card={item}
+                selectionMode={selectionMode}
+                selected={selectedIds.has(item.id)}
+                onSelect={() => handleToggleSelect(item.id)}
+                onLongPress={() => {
+                  if (!selectionMode) {
+                    setSelectionMode(true);
+                    setSelectedIds(new Set([item.id]));
+                  }
+                }}
                 onPreview={() => handlePreviewCard(item)}
                 onEdit={() => handleSelectCard(item)}
                 onDelete={() => handleDeletePhotocard(item)}
@@ -394,6 +549,20 @@ const styles = StyleSheet.create({
     color: Colors.text,
     textAlign: "center",
     marginHorizontal: Theme.spacing.sm,
+  },
+  navActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  navBtnDanger: {
+    borderColor: "rgba(240,112,112,0.3)",
+    backgroundColor: "rgba(240,112,112,0.08)",
+  },
+  selectAllText: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.accent,
+    fontWeight: Theme.fontWeight.medium,
   },
 
   // Filtres

@@ -2,8 +2,12 @@ import {
   PHOTOCARD_TYPE_LABELS,
   SUBMISSION_STATUS_LABELS,
 } from "@/src/constants/options";
+import { useIsGroupAdmin } from "@/src/hooks/useIsGroupAdmin";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
-import { useAuthStore } from "@/src/store/authStore";
+import { photocardsService, storageService } from "@/src/services";
+import { useCacheStore } from "@/src/store/cacheStore";
+import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
+import { extractUrl } from "@/src/utils/extractUrl";
 import { getShopLabel } from "@/src/utils/getShopLabel";
 import { router } from "expo-router";
 import {
@@ -17,10 +21,12 @@ import {
   ShoppingCart,
   Star,
   Tag,
+  Trash2,
   X,
 } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import {
+  Alert,
   Dimensions,
   Image,
   Modal,
@@ -101,7 +107,8 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   visible,
   onClose,
 }) => {
-  const { isAdmin } = useAuthStore();
+  const isGroupAdmin = useIsGroupAdmin(card?.groupId);
+
   const {
     collectionIds,
     favoriteIds,
@@ -110,6 +117,43 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
     toggleFavorite,
     toggleWishlist,
   } = useUserCollection();
+
+  const markDeleted = useDeletedCardsStore((s) => s.markDeleted);
+
+  const handleDelete = useCallback(() => {
+    if (!card) return;
+    Alert.alert(
+      "Supprimer la photocard",
+      `Supprimer la carte de ${card.memberName} ?`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const imageUrl = extractUrl(card.imageUrl);
+              const backImageUrl = extractUrl(card.backImageUrl);
+              if (imageUrl)
+                await storageService.deleteFromUrl("photocards", imageUrl);
+              if (backImageUrl)
+                await storageService.deleteFromUrl("photocards", backImageUrl);
+
+              await photocardsService.delete(card.id);
+              useCacheStore.getState().invalidateAll("photocards:");
+
+              markDeleted(card.id); // ← notifie toutes les pages
+
+              onClose();
+              Alert.alert("✅ Supprimée", "Photocard supprimée.");
+            } catch (err: any) {
+              Alert.alert("Erreur", err.message);
+            }
+          },
+        },
+      ],
+    );
+  }, [card, onClose, markDeleted]);
 
   if (!card) return null;
 
@@ -142,19 +186,30 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
             <TouchableOpacity style={styles.closeBtn}>
               <Share size={20} color={Colors.text} strokeWidth={1.8} />
             </TouchableOpacity>
-            {isAdmin && (
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => {
-                  onClose();
-                  router.push({
-                    pathname: "/edit-photocard/[id]",
-                    params: { id: card.id },
-                  });
-                }}
-              >
-                <Edit2 size={18} color={Colors.accent} strokeWidth={1.6} />
-              </TouchableOpacity>
+            {isGroupAdmin && (
+              <>
+                {/* Bouton éditer */}
+                <TouchableOpacity
+                  style={styles.closeBtn}
+                  onPress={() => {
+                    onClose();
+                    router.push({
+                      pathname: "/edit-photocard/[id]",
+                      params: { id: card.id },
+                    });
+                  }}
+                >
+                  <Edit2 size={17} color={Colors.accent} strokeWidth={1.6} />
+                </TouchableOpacity>
+
+                {/* Bouton supprimer */}
+                <TouchableOpacity
+                  style={[styles.closeBtn, styles.deleteBtnActive]}
+                  onPress={handleDelete}
+                >
+                  <Trash2 size={17} color={Colors.danger} strokeWidth={1.6} />
+                </TouchableOpacity>
+              </>
             )}
           </View>
         </View>
@@ -387,6 +442,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: Theme.spacing.sm,
+  },
+  deleteBtnActive: {
+    backgroundColor: "rgba(240,112,112,0.1)",
+    borderColor: "rgba(240,112,112,0.3)",
   },
 
   // Scroll

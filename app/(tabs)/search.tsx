@@ -10,9 +10,11 @@ import {
 } from "@/src/components/search";
 import { Theme } from "@/src/constants/theme";
 import { useGroups } from "@/src/hooks/group/useGroups";
+import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { useSearch } from "@/src/hooks/useSearch";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
@@ -28,12 +30,14 @@ import { Colors } from "../../src/constants/colors";
 import { PhotocardWithDetails } from "../../src/types";
 
 export default function SearchScreen() {
+  const { user } = useAuthStore();
   const inputRef = useRef<TextInput>(null);
 
-  const { groups: allGroups, loading: groupsLoading } = useGroups();
+  const { groups: allGroups, loading: groupsLoading } = useGroups(true);
   const { results, loading, query, search, clear } = useSearch();
   const { followedIds, toggleFollow } = useFollowedGroups();
   const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
+  const { photocards: allPhotocards } = usePhotocards({});
 
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -48,7 +52,7 @@ export default function SearchScreen() {
 
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
       debounceTimer.current = setTimeout(() => {
-        search(text); // ← recherche après 300ms
+        search(text, user?.id); // ← recherche après 300ms
       }, 300);
     },
     [search],
@@ -70,6 +74,27 @@ export default function SearchScreen() {
       })),
     [results.photocards, collectionIds, favoriteIds, wishlistIds],
   );
+
+  const enrichedGroups = useMemo(() => {
+    return results.groups.map((group) => {
+      const groupCards = allPhotocards.filter((c) => c.groupId === group.id);
+
+      const owned = groupCards.filter((c) => collectionIds.has(c.id)).length;
+      const wishlist = groupCards.filter((c) => wishlistIds.has(c.id)).length;
+
+      return {
+        ...group,
+        ownedPhotocards: owned,
+        wishlistPhotocards: wishlist,
+        favoritePhotocards: groupCards.filter((c) => favoriteIds.has(c.id))
+          .length,
+        completionPercentage:
+          group.totalPhotocards > 0
+            ? Math.round((owned / group.totalPhotocards) * 100)
+            : 0,
+      };
+    });
+  }, [results.groups, allPhotocards, collectionIds, favoriteIds, wishlistIds]);
 
   const hasResults =
     results.groups.length > 0 ||
@@ -117,23 +142,15 @@ export default function SearchScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {results.groups.length > 0 && (
-            <>
-              <SearchSectionHeader
-                title="Groupes"
-                count={results.groups.length}
-              />
-              {results.groups.map((group) => (
-                <SearchGroupResult
-                  key={group.id}
-                  group={group}
-                  isFollowing={followedIds.has(group.id)}
-                  onPress={() => router.push(`/group/${group.id}`)}
-                  onFollow={() => toggleFollow(group.id)}
-                />
-              ))}
-            </>
-          )}
+          {enrichedGroups.map((group) => (
+            <SearchGroupResult
+              key={group.id}
+              group={group}
+              isFollowing={followedIds.has(group.id)}
+              onPress={() => router.push(`/group/${group.id}`)}
+              onFollow={() => toggleFollow(group.id)}
+            />
+          ))}
 
           {results.members.length > 0 && (
             <>

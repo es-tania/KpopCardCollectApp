@@ -58,27 +58,35 @@ export const groupsService = {
   },
 
   getWithUserStats: async (userId: string): Promise<Group[]> => {
-    const { data, error } = await supabase
+    // ── 1. Tous les groupes ───────────────────────────────────────────
+    const { data: groupsData, error } = await supabase
       .from("groups")
-      .select(
-        `
-      *,
-      user_group_progress!inner (
-        owned_photocards,
-        wishlist_photocards,
-        favorite_photocards,
-        completion_pct
-      )
-    `,
-      )
-      .eq("user_group_progress.user_id", userId);
+      .select("*")
+      .order("name");
 
     if (error) throw error;
-    return data.map((d: any) => ({
-      ...mapGroup(d),
-      ownedPhotocards: d.user_group_progress?.owned_photocards ?? 0,
-      wishlistPhotocards: d.user_group_progress?.wishlist_photocards ?? 0,
-      completionPercentage: d.user_group_progress?.completion_pct ?? 0,
+
+    // ── 2. Stats utilisateur — seulement les groupes avec des données ──
+    const { data: progressData } = await supabase
+      .from("user_group_progress")
+      .select("*")
+      .eq("user_id", userId);
+
+    // Map group_id → stats
+    const progressMap: Record<string, any> = {};
+    (progressData ?? []).forEach((p: any) => {
+      progressMap[p.group_id] = p;
+    });
+
+    // ── 3. Fusionne — tous les groupes + stats si disponibles ──────────
+    return (groupsData ?? []).map((g: any) => ({
+      ...mapGroup(g),
+      // Si l'user a des stats pour ce groupe, les utilise
+      // Sinon → 0 (pas de cartes collectées)
+      ownedPhotocards: progressMap[g.id]?.owned_photocards ?? 0,
+      wishlistPhotocards: progressMap[g.id]?.wishlist_photocards ?? 0,
+      favoritePhotocards: progressMap[g.id]?.favorite_photocards ?? 0,
+      completionPercentage: progressMap[g.id]?.completion_pct ?? 0,
     }));
   },
 };

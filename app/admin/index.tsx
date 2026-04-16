@@ -1,15 +1,14 @@
 import { MOCK_PENDING } from "@/src/data";
+import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
 import {
   Check,
-  CheckCircle,
   ChevronLeft,
-  Clock,
   Disc3,
   Edit,
   ImagePlus,
-  Users,
-  XCircle,
+  UserCheck,
+  Users
 } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
@@ -40,6 +39,7 @@ const STATS = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminScreen() {
+  const { isAdmin } = useAuthStore();
   const [pending, setPending] = useState(MOCK_PENDING);
 
   const handleApprove = useCallback((id: string) => {
@@ -85,10 +85,10 @@ export default function AdminScreen() {
 
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Stats globales ── */}
-        <AdminSectionTitle title="Infos" />
+        {/* <AdminSectionTitle title="Infos" /> */}
 
         {/* Stats soumissions */}
-        <View style={styles.submissionStats}>
+        {/* <View style={styles.submissionStats}>
           <View style={styles.submissionStat}>
             <Clock size={14} color="#FAC775" strokeWidth={1.6} />
             <Text style={[styles.submissionNum, { color: "#FAC775" }]}>
@@ -112,7 +112,7 @@ export default function AdminScreen() {
             </Text>
             <Text style={styles.submissionLabel}>Refusées</Text>
           </View>
-        </View>
+        </View> */}
 
         {/* ── Soumissions ── */}
         <AdminSectionTitle title={`Soumissions à valider`} />
@@ -142,11 +142,14 @@ export default function AdminScreen() {
           label="Ajouter un album / event"
           onPress={() => router.push("/admin/add-album")}
         />
-        <AdminActionRow
-          icon={<Users size={17} color="#DAA520" strokeWidth={1.6} />}
-          label="Ajouter un groupe"
-          onPress={() => router.push("/admin/add-group")}
-        />
+
+        {isAdmin && (
+          <AdminActionRow
+            icon={<Users size={17} color="#DAA520" strokeWidth={1.6} />}
+            label="Ajouter un groupe"
+            onPress={() => router.push("/admin/add-group")}
+          />
+        )}
 
         {/* ── Gérer ── */}
         <AdminSectionTitle title="Gérer" />
@@ -163,11 +166,23 @@ export default function AdminScreen() {
           onPress={() => router.push("/admin/edit-album")}
         />
 
-        <AdminActionRow
-          icon={<Edit size={17} color="#DAA520" strokeWidth={1.6} />}
-          label="Modifier un groupe"
-          onPress={() => router.push("/admin/edit-group")}
-        />
+        {isAdmin && (
+          <>
+            <AdminActionRow
+              icon={<Edit size={17} color="#DAA520" strokeWidth={1.6} />}
+              label="Modifier un groupe"
+              onPress={() => router.push("/admin/edit-group")}
+            />
+            <AdminActionRow
+              icon={
+                <UserCheck size={17} color={Colors.accent} strokeWidth={1.6} />
+              }
+              label="Admins par groupe"
+              sublabel="Gérer les droits d'administration"
+              onPress={() => router.push("/admin/group-admins")}
+            />
+          </>
+        )}
 
         <View style={styles.bottomPad} />
       </ScrollView>

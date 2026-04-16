@@ -6,7 +6,8 @@ import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { useGroup } from "@/src/hooks/useGroup";
 import { useScrollToTop } from "@/src/hooks/useScrollToTop";
-import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { useUserStats } from "@/src/hooks/useUserStats";
+import { useCollectionStore } from "@/src/store/collectionStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Download, Heart } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -34,14 +35,16 @@ export default function GroupScreen() {
 
   // ── Data BDD ──────────────────────────────────────────────────────────
   const { group, loading: groupLoading } = useGroup(groupId);
-  const { members, loading: membersLoading } = useGroupMembers(groupId);
+  const { membersWithStats, loading: membersLoading } =
+    useGroupMembers(groupId);
   const { albums, loading: albumsLoading } = useAlbums(groupId);
   const { photocards, loading: photocardsLoading } = usePhotocards({ groupId });
 
   const { followedIds, toggleFollow } = useFollowedGroups();
-  const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
+  const { collectionIds, favoriteIds, wishlistIds } = useCollectionStore();
 
   // ── UI state ──────────────────────────────────────────────────────────
+  const groupStats = useUserStats({ groupId });
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
 
@@ -203,7 +206,7 @@ export default function GroupScreen() {
         scrollEventThrottle={16}
       >
         {/* En-tête groupe */}
-        <GroupHeader group={group} />
+        <GroupHeader group={{ ...group, ...groupStats }} />
 
         {/* Contenu onglet Membres */}
         <SectionLabel label="Membres" style={styles.sectionLabel} />
@@ -215,7 +218,7 @@ export default function GroupScreen() {
           />
         ) : (
           <MembersGrid
-            members={members}
+            members={membersWithStats}
             selectedId={selectedMember?.id}
             onPressMember={handlePressMember}
           />
