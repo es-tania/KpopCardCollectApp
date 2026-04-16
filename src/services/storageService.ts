@@ -54,16 +54,18 @@ export const buildStoragePath = {
     return `${groupFolder}/${albumSlug}_${Date.now()}.jpg`;
   },
 
-  // photocards/p1harmony/keeho/unique_a_1234567890.jpg
+  // photocards/p1harmony/keeho/albums/unique/unique_a_1234567890.jpg
   photocard: (
     groupName: string,
     memberName: string,
+    albumTitle: string,
     version?: string,
   ): string => {
     const groupFolder = slugify(groupName);
     const memberFolder = slugify(memberName);
+    const albumFolder = slugify(albumTitle);
     const versionSlug = version ? `${slugify(version)}_` : "";
-    return `${groupFolder}/${memberFolder}/${versionSlug}${Date.now()}.jpg`;
+    return `${groupFolder}/${memberFolder}/albums/${albumFolder}/${versionSlug}${Date.now()}.jpg`;
   },
 
   // avatars/user-id/avatar_1234567890.jpg
@@ -146,25 +148,19 @@ export const storageService = {
 
   // ── Supprime depuis une URL publique ──────────────────────────────────
   deleteFromUrl: async (bucket: StorageBucket, url: string): Promise<void> => {
-    console.log(`Tentative suppression — bucket: ${bucket}, url: ${url}`);
+    console.log(`🗑️ deleteFromUrl — bucket: ${bucket}`);
+    console.log(`🔗 URL: ${url}`);
 
     const path = extractPathFromUrl(url, bucket);
+    console.log(`📂 Path extrait: ${path}`);
 
     if (!path) {
-      console.warn(`Path non extrait depuis : ${url}`);
+      console.warn(`⚠️ Path non extrait depuis : ${url}`);
       return;
     }
 
-    console.log(`Suppression du fichier : ${bucket}/${path}`);
-
     const { data, error } = await supabase.storage.from(bucket).remove([path]);
-
-    if (error) {
-      console.error("Erreur suppression storage :", error);
-      throw new Error(`Suppression échouée : ${error.message}`);
-    }
-
-    console.log("Fichier supprimé :", data);
+    console.log(`✅ Résultat:`, data, error);
   },
 
   // ── URL publique depuis un path ───────────────────────────────────────

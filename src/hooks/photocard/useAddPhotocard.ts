@@ -36,6 +36,7 @@ export const useAddPhotocard = (
           buildStoragePath.photocard(
             form.groupName,
             form.memberName,
+            form.albumTitle,
             form.version || undefined,
           ),
           form.imageUri,
@@ -51,6 +52,7 @@ export const useAddPhotocard = (
           buildStoragePath.photocard(
             form.groupName,
             form.memberName,
+            form.albumTitle,
             `${form.version || "back"}_back`,
           ),
           form.backImageUri,

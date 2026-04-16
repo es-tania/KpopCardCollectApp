@@ -37,6 +37,7 @@ const INITIAL_FORM: PhotocardFormState = {
   groupName: "",
   albumId: "",
   memberId: "",
+  albumTitle: "",
   memberName: "",
   type: "",
   version: "",
@@ -119,6 +120,7 @@ export default function AddPhotocardScreen() {
       groupId,
       groupName: group?.name ?? "",
       albumId: "",
+      albumTitle: "",
       memberId: "",
       memberName: "",
     }));
@@ -160,6 +162,15 @@ export default function AddPhotocardScreen() {
     if (!validate()) return;
     const isGroupAdmin = groupAdminIds.includes(form.groupId);
     await submit(form, isAdmin || isGroupAdmin);
+  };
+
+  const handleSelectAlbum = (albumId: string) => {
+    const album = albums.find((a) => a.id === albumId);
+    setForm((prev) => ({
+      ...prev,
+      albumId,
+      albumTitle: album?.title ?? "", // ← récupère le titre
+    }));
   };
 
   const screenTitle = isUserSubmission
@@ -232,7 +243,7 @@ export default function AddPhotocardScreen() {
             label="Album / Event"
             options={albumOptions}
             value={form.albumId}
-            onChange={set("albumId")}
+            onChange={handleSelectAlbum}
             required
             error={errors.albumId}
           />

@@ -51,6 +51,7 @@ export const useEditPhotocard = (
           buildStoragePath.photocard(
             currentPhotocard.groupName,
             currentPhotocard.memberName,
+            currentPhotocard.albumTitle,
             form.version || undefined,
           ),
           form.imageUri,
@@ -74,6 +75,7 @@ export const useEditPhotocard = (
           buildStoragePath.photocard(
             currentPhotocard.groupName,
             currentPhotocard.memberName,
+            currentPhotocard.albumTitle,
             `${form.version || "back"}_back`,
           ),
           form.backImageUri,

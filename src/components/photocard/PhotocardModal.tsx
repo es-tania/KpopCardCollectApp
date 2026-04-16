@@ -2,12 +2,10 @@ import {
   PHOTOCARD_TYPE_LABELS,
   SUBMISSION_STATUS_LABELS,
 } from "@/src/constants/options";
+import { useDeletePhotocards } from "@/src/hooks/photocard/useDeletePhotocards";
 import { useIsGroupAdmin } from "@/src/hooks/useIsGroupAdmin";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
-import { photocardsService, storageService } from "@/src/services";
-import { useCacheStore } from "@/src/store/cacheStore";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
-import { extractUrl } from "@/src/utils/extractUrl";
 import { getShopLabel } from "@/src/utils/getShopLabel";
 import { router } from "expo-router";
 import {
@@ -26,7 +24,6 @@ import {
 } from "lucide-react-native";
 import React, { useCallback } from "react";
 import {
-  Alert,
   Dimensions,
   Image,
   Modal,
@@ -34,7 +31,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/colors";
@@ -109,6 +106,8 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
 }) => {
   const isGroupAdmin = useIsGroupAdmin(card?.groupId);
 
+  const { confirmDeleteOne } = useDeletePhotocards();
+
   const {
     collectionIds,
     favoriteIds,
@@ -122,38 +121,8 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
 
   const handleDelete = useCallback(() => {
     if (!card) return;
-    Alert.alert(
-      "Supprimer la photocard",
-      `Supprimer la carte de ${card.memberName} ?`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const imageUrl = extractUrl(card.imageUrl);
-              const backImageUrl = extractUrl(card.backImageUrl);
-              if (imageUrl)
-                await storageService.deleteFromUrl("photocards", imageUrl);
-              if (backImageUrl)
-                await storageService.deleteFromUrl("photocards", backImageUrl);
-
-              await photocardsService.delete(card.id);
-              useCacheStore.getState().invalidateAll("photocards:");
-
-              markDeleted(card.id); // ← notifie toutes les pages
-
-              onClose();
-              Alert.alert("✅ Supprimée", "Photocard supprimée.");
-            } catch (err: any) {
-              Alert.alert("Erreur", err.message);
-            }
-          },
-        },
-      ],
-    );
-  }, [card, onClose, markDeleted]);
+    confirmDeleteOne(card, () => onClose());
+  }, [card, confirmDeleteOne, onClose]);
 
   if (!card) return null;
 

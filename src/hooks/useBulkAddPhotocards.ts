@@ -1,7 +1,7 @@
 import { photocardsService } from "@/src/services/photocardsService";
 import {
-    buildStoragePath,
-    storageService,
+  buildStoragePath,
+  storageService,
 } from "@/src/services/storageService";
 import { useState } from "react";
 
@@ -65,6 +65,7 @@ export const useBulkAddPhotocards = (
             buildStoragePath.photocard(
               form.groupName,
               card.memberName,
+              form.albumTitle,
               form.version || undefined,
             ),
             card.imageUri,

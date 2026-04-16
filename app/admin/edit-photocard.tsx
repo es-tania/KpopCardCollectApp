@@ -5,13 +5,11 @@ import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useGroups } from "@/src/hooks/group/useGroups";
+import { useDeletePhotocards } from "@/src/hooks/photocard/useDeletePhotocards";
 import { useEditPhotocard } from "@/src/hooks/photocard/useEditPhotocard";
 import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
-import { supabase } from "@/src/lib/supabase";
-import { photocardsService, storageService } from "@/src/services";
+import { photocardsService } from "@/src/services";
 import { useAuthStore } from "@/src/store/authStore";
-import { useCacheStore } from "@/src/store/cacheStore";
-import { extractUrl } from "@/src/utils/extractUrl";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   CheckSquare,
@@ -58,6 +56,7 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
 
 export default function EditPhotocardScreen() {
   const { isAdmin, groupAdminIds } = useAuthStore();
+  const { confirmDeleteOne, confirmDeleteMany } = useDeletePhotocards();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -226,96 +225,27 @@ export default function EditPhotocardScreen() {
   }, [filteredCards]);
 
   const handleDeleteSelected = useCallback(() => {
-    if (selectedIds.size === 0) return;
+    const toDelete = filteredCards.filter((c) => selectedIds.has(c.id));
+    confirmDeleteMany(toDelete, () => {
+      toDelete.forEach((c) => removeById(c.id));
+      setSelectedIds(new Set());
+      setSelectionMode(false);
+      Alert.alert(
+        "✅ Supprimées",
+        `${toDelete.length} photocard${toDelete.length > 1 ? "s" : ""} supprimée${toDelete.length > 1 ? "s" : ""}.`,
+      );
+    });
+  }, [confirmDeleteMany, filteredCards, selectedIds, removeById]);
 
-    Alert.alert(
-      "Supprimer la sélection",
-      `Es-tu sûre de vouloir supprimer ${selectedIds.size} photocard${selectedIds.size > 1 ? "s" : ""} ? Cette action est irréversible.`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: `Supprimer (${selectedIds.size})`,
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Supprime les images du bucket
-              const toDelete = filteredCards.filter((c) =>
-                selectedIds.has(c.id),
-              );
-
-              for (const card of toDelete) {
-                const imageUrl = extractUrl(card.imageUrl);
-                const backImageUrl = extractUrl(card.backImageUrl);
-                if (imageUrl)
-                  await storageService.deleteFromUrl("photocards", imageUrl);
-                if (backImageUrl)
-                  await storageService.deleteFromUrl(
-                    "photocards",
-                    backImageUrl,
-                  );
-              }
-
-              // Supprime en BDD
-              const { error } = await supabase
-                .from("photocards")
-                .delete()
-                .in("id", [...selectedIds]);
-
-              if (error) throw error;
-
-              // Retire du state local
-              selectedIds.forEach((id) => removeById(id));
-              useCacheStore.getState().invalidateAll("photocards:");
-
-              setSelectedIds(new Set());
-              setSelectionMode(false);
-
-              Alert.alert(
-                "✅ Supprimées",
-                `${toDelete.length} photocard${toDelete.length > 1 ? "s" : ""} supprimée${toDelete.length > 1 ? "s" : ""}.`,
-              );
-            } catch (err: any) {
-              Alert.alert("Erreur", err.message);
-            }
-          },
-        },
-      ],
-    );
-  }, [selectedIds, filteredCards, removeById]);
-
-  const handleDeletePhotocard = useCallback((card: PhotocardWithDetails) => {
-    Alert.alert(
-      "Supprimer la photocard",
-      `Es-tu sûre de vouloir supprimer "${card.memberName} — ${card.albumTitle}" ? Cette action est irréversible.`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // Supprime les images du bucket
-              const imageUrl = extractUrl(card.imageUrl);
-              const backImageUrl = extractUrl(card.backImageUrl);
-
-              if (imageUrl)
-                await storageService.deleteFromUrl("photocards", imageUrl);
-              if (backImageUrl)
-                await storageService.deleteFromUrl("photocards", backImageUrl);
-
-              // Supprime en BDD
-              await photocardsService.delete(card.id);
-              removeById(card.id);
-
-              Alert.alert("✅ Supprimée", "Photocard supprimée.");
-            } catch (err: any) {
-              Alert.alert("Erreur", err.message);
-            }
-          },
-        },
-      ],
-    );
-  }, []);
+  const handleDeletePhotocard = useCallback(
+    (card: PhotocardWithDetails) => {
+      confirmDeleteOne(card, () => {
+        removeById(card.id);
+        Alert.alert("✅ Supprimée", "Photocard supprimée.");
+      });
+    },
+    [confirmDeleteOne, removeById],
+  );
 
   const handleBack = useCallback(() => {
     router.back();
