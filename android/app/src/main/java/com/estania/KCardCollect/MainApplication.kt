@@ -1,4 +1,4 @@
-package com.estania.KpopCardCollect
+package com.estania.KCardCollect
 
 import android.app.Application
 import android.content.res.Configuration

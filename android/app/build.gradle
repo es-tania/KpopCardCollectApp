@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.estania.KpopCardCollect'
+    namespace 'com.estania.KCardCollect'
     defaultConfig {
-        applicationId 'com.estania.KpopCardCollect'
+        applicationId 'com.estania.KCardCollect'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

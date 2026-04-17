@@ -1,4 +1,4 @@
-package com.estania.KpopCardCollect
+package com.estania.KCardCollect
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
