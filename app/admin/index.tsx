@@ -8,7 +8,8 @@ import {
   Edit,
   ImagePlus,
   UserCheck,
-  Users
+  Users,
+  Zap,
 } from "lucide-react-native";
 import React, { useCallback, useState } from "react";
 import {
@@ -182,6 +183,15 @@ export default function AdminScreen() {
               onPress={() => router.push("/admin/group-admins")}
             />
           </>
+        )}
+
+        {isAdmin && (
+          <AdminActionRow
+            icon={<Zap size={17} color={Colors.accent} strokeWidth={1.6} />}
+            label="Générer les embeddings"
+            sublabel="Calcul CLIP on-device pour le scan"
+            onPress={() => router.push("/admin/generate-embeddings")}
+          />
         )}
 
         <View style={styles.bottomPad} />

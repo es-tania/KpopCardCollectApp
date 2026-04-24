@@ -4,6 +4,10 @@ import { useCollectionStore } from "@/src/store/collectionStore";
 import { router, Stack } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, StatusBar, View } from "react-native";
+import { initExecutorch } from "react-native-executorch";
+import { ExpoResourceFetcher } from "react-native-executorch-expo-resource-fetcher";
+
+initExecutorch({ resourceFetcher: ExpoResourceFetcher });
 
 export default function RootLayout() {
   const { user, isAuthenticated, loading } = useAuth();

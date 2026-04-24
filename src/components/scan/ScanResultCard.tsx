@@ -1,5 +1,6 @@
+import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { Check, Plus, ShoppingCart, Star, X } from "lucide-react-native";
-import React from "react";
+import React, { useCallback } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
@@ -7,145 +8,167 @@ import { PhotocardWithDetails } from "../../types";
 
 interface ScanResultCardProps {
   card: PhotocardWithDetails;
-  onAddToCollection: () => void;
-  onAddToWishlist: () => void;
-  onAddToFavorites: () => void;
   onDismiss: () => void;
 }
 
 export const ScanResultCard: React.FC<ScanResultCardProps> = ({
   card,
-  onAddToCollection,
-  onAddToWishlist,
-  onAddToFavorites,
   onDismiss,
-}) => (
-  <View style={styles.container}>
-    {/* Header */}
-    <View style={styles.header}>
-      <Text style={styles.headerTitle}>✅ Carte trouvée</Text>
-      <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
-        <X size={16} color={Colors.textMuted} strokeWidth={1.8} />
-      </TouchableOpacity>
-    </View>
+}) => {
+  const {
+    collectionIds,
+    favoriteIds,
+    wishlistIds,
+    toggleCollection,
+    toggleFavorite,
+    toggleWishlist,
+  } = useUserCollection();
 
-    {/* Aperçu */}
-    <View style={styles.preview}>
-      <View style={styles.imageWrap}>
-        {card.imageUrl ? (
-          <Image
-            source={card.imageUrl as any}
-            style={styles.image}
-            resizeMode="cover"
+  // ── États live depuis le store — pas depuis la prop card ─────────────
+  const isInCollection = collectionIds.has(card.id);
+  const isFavorite = favoriteIds.has(card.id);
+  const isWishlisted = wishlistIds.has(card.id);
+
+  const handleToggleCollection = useCallback(async () => {
+    await toggleCollection(card.id);
+  }, [card.id, toggleCollection]);
+
+  const handleToggleFavorite = useCallback(async () => {
+    await toggleFavorite(card.id);
+  }, [card.id, toggleFavorite]);
+
+  const handleToggleWishlist = useCallback(async () => {
+    await toggleWishlist(card.id);
+  }, [card.id, toggleWishlist]);
+
+  return (
+    <View style={styles.container}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Carte trouvée</Text>
+        <TouchableOpacity onPress={onDismiss} style={styles.closeBtn}>
+          <X size={16} color={Colors.textMuted} strokeWidth={1.8} />
+        </TouchableOpacity>
+      </View>
+
+      {/* ── Aperçu ── */}
+      <View style={styles.preview}>
+        <View style={styles.imageWrap}>
+          {card.imageUrl ? (
+            <Image
+              source={card.imageUrl as any}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.imageFallback}>
+              <Text style={styles.imageFallbackEmoji}>🧑‍🎤</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.previewInfo}>
+          <Text style={styles.memberName}>{card.memberName}</Text>
+          <Text style={styles.groupName}>{card.groupName}</Text>
+          <Text style={styles.albumTitle}>{card.albumTitle}</Text>
+          {card.version && (
+            <Text style={styles.version}>Ver. {card.version}</Text>
+          )}
+          {card.type !== "normal" && (
+            <View style={styles.typeBadge}>
+              <Text style={styles.typeBadgeText}>
+                {card.type.toUpperCase().replace("_", " ")}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+
+      {/* ── Actions ── */}
+      <View style={styles.actions}>
+        {/* Collection */}
+        <TouchableOpacity
+          style={[
+            styles.actionBtn,
+            isInCollection ? styles.actionBtnActive : styles.actionBtnPrimary,
+          ]}
+          onPress={handleToggleCollection}
+          activeOpacity={0.75}
+        >
+          {isInCollection ? (
+            <Check size={15} color={Colors.accent} strokeWidth={2.5} />
+          ) : (
+            <Plus size={15} color={Colors.bg} strokeWidth={2} />
+          )}
+          <Text
+            style={[
+              styles.actionLabel,
+              isInCollection
+                ? styles.actionLabelActive
+                : styles.actionLabelPrimary,
+            ]}
+          >
+            {isInCollection ? "Collectée" : "Collection"}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Wishlist */}
+        <TouchableOpacity
+          style={[
+            styles.actionBtn,
+            styles.actionBtnSecondary,
+            isWishlisted && styles.actionBtnWishActive,
+          ]}
+          onPress={handleToggleWishlist}
+          activeOpacity={0.75}
+        >
+          <ShoppingCart
+            size={15}
+            color={isWishlisted ? Colors.accent : Colors.textMuted}
+            strokeWidth={1.8}
           />
-        ) : (
-          <View style={styles.imageFallback}>
-            <Text style={styles.imageFallbackEmoji}>🧑‍🎤</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.previewInfo}>
-        <Text style={styles.memberName}>{card.memberName}</Text>
-        <Text style={styles.groupName}>{card.groupName}</Text>
-        <Text style={styles.albumTitle}>{card.albumTitle}</Text>
-        {card.version && (
-          <Text style={styles.version}>Ver. {card.version}</Text>
-        )}
-        {card.type !== "normal" && (
-          <View style={styles.typeBadge}>
-            <Text style={styles.typeBadgeText}>
-              {card.type.toUpperCase().replace("_", " ")}
-            </Text>
-          </View>
-        )}
+          <Text
+            style={[
+              styles.actionLabel,
+              styles.actionLabelSecondary,
+              isWishlisted && styles.actionLabelWishActive,
+            ]}
+          >
+            {isWishlisted ? "Souhaitée" : "Wishlist"}
+          </Text>
+        </TouchableOpacity>
 
-        {/* Statut dans la collection */}
-        {card.isInCollection ? (
-          <View style={styles.ownedBadge}>
-            <Check size={11} color={Colors.accent} strokeWidth={2.5} />
-            <Text style={styles.ownedText}>Déjà dans ta collection</Text>
-          </View>
-        ) : (
-          <Text style={styles.notOwned}>Pas encore collectée</Text>
-        )}
+        {/* Favoris */}
+        <TouchableOpacity
+          style={[
+            styles.actionBtn,
+            styles.actionBtnSecondary,
+            isFavorite && styles.actionBtnFavActive,
+            { borderRightWidth: 0 },
+          ]}
+          onPress={handleToggleFavorite}
+          activeOpacity={0.75}
+        >
+          <Star
+            size={15}
+            color={isFavorite ? "#DAA520" : Colors.textMuted}
+            fill={isFavorite ? "#DAA520" : "transparent"}
+            strokeWidth={1.8}
+          />
+          <Text
+            style={[
+              styles.actionLabel,
+              styles.actionLabelSecondary,
+              isFavorite && styles.actionLabelFavActive,
+            ]}
+          >
+            {isFavorite ? "Favori ✓" : "Favori"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
-
-    {/* Actions */}
-    <View style={styles.actions}>
-      <TouchableOpacity
-        style={[
-          styles.actionBtn,
-          card.isInCollection && styles.actionBtnDisabled,
-        ]}
-        onPress={onAddToCollection}
-        disabled={card.isInCollection}
-      >
-        <Plus
-          size={15}
-          color={card.isInCollection ? Colors.textMuted : Colors.bg}
-          strokeWidth={2}
-        />
-        <Text
-          style={[
-            styles.actionLabel,
-            card.isInCollection && styles.actionLabelDisabled,
-          ]}
-        >
-          {card.isInCollection ? "Collectée" : "Collection"}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.actionBtn,
-          styles.actionBtnWish,
-          card.isWishlisted && styles.actionBtnWishActive,
-        ]}
-        onPress={onAddToWishlist}
-      >
-        <ShoppingCart
-          size={15}
-          color={card.isWishlisted ? Colors.accent : Colors.textMuted}
-          strokeWidth={1.8}
-        />
-        <Text
-          style={[
-            styles.actionLabel,
-            styles.actionLabelWish,
-            card.isWishlisted && styles.actionLabelWishActive,
-          ]}
-        >
-          {card.isWishlisted ? "Souhaitée" : "Wishlist"}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={[
-          styles.actionBtn,
-          styles.actionBtnFav,
-          card.isFavorite && styles.actionBtnFavActive,
-        ]}
-        onPress={onAddToFavorites}
-      >
-        <Star
-          size={15}
-          color={card.isFavorite ? "#DAA520" : Colors.textMuted}
-          fill={card.isFavorite ? "#DAA520" : "transparent"}
-          strokeWidth={1.8}
-        />
-        <Text
-          style={[
-            styles.actionLabel,
-            card.isFavorite && styles.actionLabelFavActive,
-          ]}
-        >
-          {card.isFavorite ? "Favori" : "Favori"}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -168,33 +191,23 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.semibold,
     color: Colors.accent,
   },
-  closeBtn: {
-    padding: 4,
-  },
+  closeBtn: { padding: 4 },
   preview: {
     flexDirection: "row",
     gap: Theme.spacing.md,
     padding: Theme.spacing.md,
   },
   imageWrap: {
-    width: 70,
-    height: 103,
+    width: 80,
+    height: 116,
     borderRadius: Theme.borderRadius.sm,
     overflow: "hidden",
     backgroundColor: Colors.surface2,
+    flexShrink: 0,
   },
-  image: {
-    width: "100%",
-    height: "100%",
-  },
-  imageFallback: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  imageFallbackEmoji: {
-    fontSize: 28,
-  },
+  image: { width: "100%", height: "100%" },
+  imageFallback: { flex: 1, alignItems: "center", justifyContent: "center" },
+  imageFallbackEmoji: { fontSize: 28 },
   previewInfo: {
     flex: 1,
     gap: 4,
@@ -205,18 +218,9 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.semibold,
     color: Colors.text,
   },
-  groupName: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.accent,
-  },
-  albumTitle: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.textMuted,
-  },
-  version: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.textMuted,
-  },
+  groupName: { fontSize: Theme.fontSize.base, color: Colors.accent },
+  albumTitle: { fontSize: Theme.fontSize.base, color: Colors.textMuted },
+  version: { fontSize: Theme.fontSize.sm + 1, color: Colors.textMuted },
   typeBadge: {
     alignSelf: "flex-start",
     backgroundColor: Colors.pillActive,
@@ -225,6 +229,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderWidth: 0.5,
     borderColor: Colors.borderActive,
+    marginTop: 2,
   },
   typeBadgeText: {
     fontSize: Theme.fontSize.xs + 1,
@@ -235,17 +240,16 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    marginTop: 2,
+    marginTop: 4,
   },
-  ownedText: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.accent,
-  },
+  ownedText: { fontSize: Theme.fontSize.sm + 1, color: Colors.accent },
   notOwned: {
     fontSize: Theme.fontSize.sm + 1,
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 4,
   },
+
+  // ── Actions ──────────────────────────────────────────────────────────
   actions: {
     flexDirection: "row",
     borderTopWidth: 0.5,
@@ -258,22 +262,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 5,
     paddingVertical: Theme.spacing.md,
-    backgroundColor: Colors.accent,
     borderRightWidth: 0.5,
     borderRightColor: Colors.border,
   },
-  actionBtnDisabled: {
+  actionBtnPrimary: {
+    backgroundColor: Colors.accent,
+  },
+  actionBtnActive: {
     backgroundColor: Colors.surface2,
   },
-  actionBtnWish: {
+  actionBtnSecondary: {
     backgroundColor: Colors.surface,
   },
   actionBtnWishActive: {
     backgroundColor: Colors.pillActive,
-  },
-  actionBtnFav: {
-    backgroundColor: Colors.surface,
-    borderRightWidth: 0,
   },
   actionBtnFavActive: {
     backgroundColor: "rgba(218,165,32,0.1)",
@@ -281,18 +283,10 @@ const styles = StyleSheet.create({
   actionLabel: {
     fontSize: Theme.fontSize.sm + 1,
     fontWeight: Theme.fontWeight.medium,
-    color: Colors.bg,
   },
-  actionLabelDisabled: {
-    color: Colors.textMuted,
-  },
-  actionLabelWish: {
-    color: Colors.textMuted,
-  },
-  actionLabelWishActive: {
-    color: Colors.accent,
-  },
-  actionLabelFavActive: {
-    color: "#DAA520",
-  },
+  actionLabelPrimary: { color: Colors.bg },
+  actionLabelActive: { color: Colors.accent },
+  actionLabelSecondary: { color: Colors.textMuted },
+  actionLabelWishActive: { color: Colors.accent },
+  actionLabelFavActive: { color: "#DAA520" },
 });

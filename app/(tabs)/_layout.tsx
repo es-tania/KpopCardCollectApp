@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Search, User } from "lucide-react-native";
+import { Home, ScanLine, Search, User } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../src/constants/colors";
@@ -66,6 +66,37 @@ export default function TabLayout() {
                 />
               }
             />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="scan"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: focused ? Colors.accent : Colors.surface2,
+                borderWidth: 2,
+                borderColor: focused ? Colors.accent : Colors.border,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 20,
+                shadowColor: Colors.accent,
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: focused ? 0.4 : 0,
+                shadowRadius: 8,
+                elevation: focused ? 8 : 0,
+              }}
+            >
+              <ScanLine
+                size={22}
+                color={focused ? Colors.bg : Colors.textMuted}
+                strokeWidth={2}
+              />
+            </View>
           ),
         }}
       />
