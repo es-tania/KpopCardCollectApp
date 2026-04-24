@@ -4,7 +4,7 @@ import { Camera, CameraView } from "expo-camera";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { ImagePlus } from "lucide-react-native";
+import { ImagePlus, X } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -32,9 +32,9 @@ import { useCollectionStore } from "../../src/store/collectionStore";
 import { PhotocardWithDetails, ScanStatus } from "../../src/types";
 
 const CAMERA_WIDTH = Dimensions.get("window").width;
-const CAMERA_HEIGHT = 500;
-const SCAN_FRAME_WIDTH = 260;
-const SCAN_FRAME_HEIGHT = 260 * (3 / 2);
+const CAMERA_HEIGHT = 550;
+const SCAN_FRAME_WIDTH = 230;
+const SCAN_FRAME_HEIGHT = 230 * (3 / 2);
 
 interface NotFoundItem {
   uri: string; // image croppée
@@ -52,7 +52,7 @@ export default function ScanScreen() {
   const [notFoundItems, setNotFoundItems] = useState<NotFoundItem[]>([]);
 
   const sheetAnim = useRef(new Animated.Value(0)).current;
-  const SHEET_PEEK = 120;
+  const SHEET_PEEK = 80;
   const SHEET_FULL = 500;
 
   const { collectionIds } = useCollectionStore();
@@ -109,8 +109,7 @@ export default function ScanScreen() {
     setMultiResults([]);
     setNotFoundItems([]);
     setScanStep("");
-    closeSheet();
-  }, [closeSheet]);
+  }, []);
 
   const performMultiScan = useCallback(async () => {
     if (pendingPhotos.length === 0) return;
@@ -304,7 +303,6 @@ export default function ScanScreen() {
           <ImagePlus size={18} color={Colors.text} strokeWidth={1.6} />
         </TouchableOpacity>
       </View>
-
       {/* ── Caméra ── */}
       <View style={styles.cameraArea}>
         {hasPermission === false ? (
@@ -327,8 +325,32 @@ export default function ScanScreen() {
         </View>
 
         {pendingPhotos.length > 0 && status !== "scanning" && (
-          <View style={styles.photoCounter}>
-            <Text style={styles.photoCounterText}>{pendingPhotos.length}</Text>
+          <View style={styles.photoCounterContainer}>
+            {pendingPhotos.map((uri, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.photoCounterItem}
+                onPress={() =>
+                  setPendingPhotos((prev) => prev.filter((_, i) => i !== index))
+                }
+              >
+                <Image
+                  source={{ uri }}
+                  style={styles.photoCounterImage}
+                  resizeMode="cover"
+                />
+                <TouchableOpacity
+                  style={styles.photoCounterDelete}
+                  onPress={() =>
+                    setPendingPhotos((prev) =>
+                      prev.filter((_, i) => i !== index),
+                    )
+                  }
+                >
+                  <X size={10} color={Colors.bg} strokeWidth={2.5} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
@@ -361,26 +383,28 @@ export default function ScanScreen() {
         )}
       </View>
 
-      {/* ── Bottom Sheet ── */}
-      {status === "found" && (
-        <Animated.View
-          style={[styles.bottomSheet, { height: sheetHeight }]}
-          {...panResponder.panHandlers}
-        >
+      {/* ── Bottom Sheet ── toujours visible */}
+      <Animated.View style={[styles.bottomSheet, { height: sheetHeight }]}>
+        <View {...panResponder.panHandlers}>
           <View style={styles.sheetHandle} />
+        </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.sheetContent}
-          >
-            {/* Cartes trouvées */}
-            {multiResults.length > 0 && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.sheetContent}
+        >
+          {/* Cartes trouvées */}
+          {status === "found" &&
+            (multiResults.length > 0 || notFoundItems.length > 0) && (
               <>
                 <View style={styles.sheetHeader}>
                   <Text style={styles.sheetTitle}>
-                    {multiResults.length} carte
-                    {multiResults.length > 1 ? "s" : ""} trouvée
-                    {multiResults.length > 1 ? "s" : ""}
+                    {multiResults.length + notFoundItems.length} carte
+                    {multiResults.length + notFoundItems.length > 1
+                      ? "s"
+                      : ""}{" "}
+                    scannée
+                    {multiResults.length + notFoundItems.length > 1 ? "s" : ""}
                   </Text>
                   <TouchableOpacity onPress={handleDismiss}>
                     <Text
@@ -389,40 +413,44 @@ export default function ScanScreen() {
                         fontSize: Theme.fontSize.sm,
                       }}
                     >
-                      Effacer
+                      Tout effacer
                     </Text>
                   </TouchableOpacity>
                 </View>
+
                 {multiResults.map((card) => (
                   <View key={card.id} style={styles.multiCardItem}>
                     <ScanResultCard
                       card={card}
-                      onDismiss={() =>
-                        setMultiResults((prev) =>
-                          prev.filter((c) => c.id !== card.id),
-                        )
-                      }
+                      onDismiss={() => {
+                        const newResults = multiResults.filter(
+                          (c) => c.id !== card.id,
+                        );
+                        setMultiResults(newResults);
+                        if (
+                          newResults.length === 0 &&
+                          notFoundItems.length === 0
+                        ) {
+                          handleDismiss();
+                        }
+                      }}
                     />
                   </View>
                 ))}
-              </>
-            )}
 
-            {/* Cartes non trouvées */}
-            {notFoundItems.length > 0 && (
-              <>
-                <View
-                  style={[
-                    styles.sheetHeader,
-                    multiResults.length > 0 && styles.sectionDivider,
-                  ]}
-                >
-                  <Text style={styles.notFoundTitle}>
-                    {notFoundItems.length} carte
-                    {notFoundItems.length > 1 ? "s" : ""} non trouvée
-                    {notFoundItems.length > 1 ? "s" : ""}
-                  </Text>
-                </View>
+                {/* Cartes non trouvées */}
+                {notFoundItems.length > 0 && (
+                  <View
+                    style={[multiResults.length > 0 && styles.sectionDivider]}
+                  >
+                    <Text style={styles.notFoundTitle}>
+                      {notFoundItems.length} carte
+                      {notFoundItems.length > 1 ? "s" : ""} non trouvée
+                      {notFoundItems.length > 1 ? "s" : ""}
+                    </Text>
+                  </View>
+                )}
+
                 {notFoundItems.map((item, index) => (
                   <View key={index} style={styles.notFoundCard}>
                     <Image
@@ -443,13 +471,38 @@ export default function ScanScreen() {
                         </Text>
                       </TouchableOpacity>
                     </View>
+                    {/* Bouton suppression */}
+                    <TouchableOpacity
+                      style={styles.notFoundDelete}
+                      onPress={() => {
+                        const newNotFound = notFoundItems.filter(
+                          (_, i) => i !== index,
+                        );
+                        setNotFoundItems(newNotFound);
+                        if (
+                          newNotFound.length === 0 &&
+                          multiResults.length === 0
+                        ) {
+                          handleDismiss();
+                        }
+                      }}
+                    >
+                      <X size={12} color={Colors.bg} strokeWidth={2.5} />
+                    </TouchableOpacity>
                   </View>
                 ))}
               </>
             )}
-          </ScrollView>
-        </Animated.View>
-      )}
+          {/* État idle */}
+          {status === "idle" && (
+            <Text style={styles.idleText}>
+              {pendingPhotos.length === 0
+                ? "Place une carte dans le cadre et appuie sur le bouton"
+                : `${pendingPhotos.length} photo${pendingPhotos.length > 1 ? "s" : ""} en attente — appuie sur "Analyser"`}
+            </Text>
+          )}
+        </ScrollView>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -484,11 +537,12 @@ const styles = StyleSheet.create({
     marginHorizontal: Theme.spacing.sm,
   },
   cameraArea: {
-    flex: 1,
+    height: 550,
     backgroundColor: "#000",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     position: "relative",
+    paddingTop: Theme.spacing.xxl + 50,
   },
   hintsContainer: {
     position: "absolute",
@@ -513,7 +567,7 @@ const styles = StyleSheet.create({
   },
   scanBtn: {
     position: "absolute",
-    bottom: 20,
+    bottom: Theme.spacing.xxl + 20,
     width: 72,
     height: 72,
     borderRadius: 36,
@@ -530,7 +584,7 @@ const styles = StyleSheet.create({
   },
   sendBtn: {
     position: "absolute",
-    bottom: 110,
+    bottom: Theme.spacing.xxl + 120,
     backgroundColor: Colors.accent,
     paddingHorizontal: Theme.spacing.xl,
     paddingVertical: Theme.spacing.sm + 2,
@@ -572,6 +626,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 10,
+  },
+  idleText: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+    paddingVertical: Theme.spacing.sm,
   },
   sheetHandle: {
     width: 40,
@@ -663,5 +724,60 @@ const styles = StyleSheet.create({
     color: Colors.text,
     fontSize: Theme.fontSize.sm,
     fontWeight: Theme.fontWeight.medium,
+  },
+  photoCounterContainer: {
+    position: "absolute",
+    top: Theme.spacing.md,
+    right: Theme.spacing.md,
+    flexDirection: "column",
+    gap: 6,
+  },
+  photoCounterItem: {
+    width: 44,
+    height: 60,
+    borderRadius: Theme.borderRadius.md,
+    overflow: "visible",
+    position: "relative",
+  },
+  photoCounterImage: {
+    width: 44,
+    height: 60,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1.5,
+  },
+  photoCounterDelete: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  photoCounterDeleteText: {
+    color: Colors.bg,
+    fontSize: 11,
+    fontWeight: Theme.fontWeight.bold,
+    lineHeight: 16,
+  },
+  notFoundDelete: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  notFoundDeleteText: {
+    color: Colors.bg,
+    fontSize: 12,
+    fontWeight: Theme.fontWeight.bold,
+    lineHeight: 20,
   },
 });

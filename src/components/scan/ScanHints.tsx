@@ -8,7 +8,7 @@ interface ScanHintsProps {
 }
 
 const HINTS: Record<ScanHintsProps["status"], string> = {
-  idle: "Pointe la caméra vers une photocard",
+  idle: "Centre ta photocard",
   scanning: "Analyse en cours...",
   found: "Photocard identifiée !",
   not_found: "Photocard non trouvé",

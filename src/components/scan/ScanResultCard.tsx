@@ -1,5 +1,5 @@
 import { useUserCollection } from "@/src/hooks/useUserCollection";
-import { Check, Plus, ShoppingCart, Star, X } from "lucide-react-native";
+import { Check, Plus, ShoppingBasket, Star, X } from "lucide-react-native";
 import React, { useCallback } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -112,32 +112,6 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
           </Text>
         </TouchableOpacity>
 
-        {/* Wishlist */}
-        <TouchableOpacity
-          style={[
-            styles.actionBtn,
-            styles.actionBtnSecondary,
-            isWishlisted && styles.actionBtnWishActive,
-          ]}
-          onPress={handleToggleWishlist}
-          activeOpacity={0.75}
-        >
-          <ShoppingCart
-            size={15}
-            color={isWishlisted ? Colors.accent : Colors.textMuted}
-            strokeWidth={1.8}
-          />
-          <Text
-            style={[
-              styles.actionLabel,
-              styles.actionLabelSecondary,
-              isWishlisted && styles.actionLabelWishActive,
-            ]}
-          >
-            {isWishlisted ? "Souhaitée" : "Wishlist"}
-          </Text>
-        </TouchableOpacity>
-
         {/* Favoris */}
         <TouchableOpacity
           style={[
@@ -162,7 +136,29 @@ export const ScanResultCard: React.FC<ScanResultCardProps> = ({
               isFavorite && styles.actionLabelFavActive,
             ]}
           >
-            {isFavorite ? "Favori ✓" : "Favori"}
+            Favori
+          </Text>
+        </TouchableOpacity>
+
+        {/* Wishlist */}
+        <TouchableOpacity
+          style={[styles.actionBtn, isWishlisted && styles.actionBtnWishActive]}
+          onPress={handleToggleWishlist}
+          activeOpacity={0.75}
+        >
+          <ShoppingBasket
+            size={15}
+            color={isWishlisted ? Colors.accent : Colors.textMuted}
+            strokeWidth={1.8}
+          />
+          <Text
+            style={[
+              styles.actionLabel,
+              styles.actionLabelSecondary,
+              isWishlisted && styles.actionLabelActive,
+            ]}
+          >
+            Wishlist
           </Text>
         </TouchableOpacity>
       </View>
@@ -275,7 +271,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   actionBtnWishActive: {
-    backgroundColor: Colors.pillActive,
+    backgroundColor: Colors.surface2,
   },
   actionBtnFavActive: {
     backgroundColor: "rgba(218,165,32,0.1)",
