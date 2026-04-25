@@ -1,5 +1,5 @@
+import { AlbumCard } from "@/src/components/album/AlbumCard";
 import { MembersGrid } from "@/src/components/member/MembersGrid";
-import { ProgressBar } from "@/src/components/ui/ProgressBar";
 import { SectionLabel } from "@/src/components/ui/SectionLabel";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
@@ -14,11 +14,9 @@ import React, { useCallback, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -109,26 +107,32 @@ export default function GroupScreen() {
     [photocards, collectionIds, favoriteIds, wishlistIds],
   );
 
-  const albumsWithStats = useMemo(
-    () =>
-      albums.map((album) => {
-        const albumCards = enrichedPhotocards.filter(
-          (c) => c.albumId === album.id,
-        );
-        const owned = albumCards.filter((c) => c.isInCollection).length;
-        return {
-          ...album,
-          totalPhotocards: albumCards.length,
-          ownedPhotocards: owned,
-          wishlistPhotocards: albumCards.filter((c) => c.isWishlisted).length,
-          completionPercentage:
-            albumCards.length > 0
-              ? Math.round((owned / albumCards.length) * 100)
-              : 0,
-        };
-      }),
-    [albums, enrichedPhotocards],
-  );
+  const albumsWithStats = useMemo(() => {
+    // Récupère tous les IDs de photocards chargées par album
+    const idsByAlbum = new Map<string, string[]>();
+    photocards.forEach((c) => {
+      if (!idsByAlbum.has(c.albumId)) idsByAlbum.set(c.albumId, []);
+      idsByAlbum.get(c.albumId)!.push(c.id);
+    });
+
+    return albums.map((album) => {
+      const ids = idsByAlbum.get(album.id) ?? [];
+      const owned = ids.filter((id) => collectionIds.has(id)).length;
+      const wished = ids.filter((id) => wishlistIds.has(id)).length;
+
+      return {
+        ...album,
+        // ✅ totalPhotocards vient de album.totalPhotocards (BDD)
+        // owned/wishlist calculés depuis collectionStore
+        ownedPhotocards: owned,
+        wishlistPhotocards: wished,
+        completionPercentage:
+          album.totalPhotocards > 0
+            ? Math.round((owned / album.totalPhotocards) * 100)
+            : 0,
+      };
+    });
+  }, [albums, photocards, collectionIds, wishlistIds]);
 
   // ── Data du FlatList principal ─────────────────────────────────────────
   // Chaque item = un row de 2 albums
@@ -184,46 +188,13 @@ export default function GroupScreen() {
     ({ item: row }: { item: Album[] }) => (
       <View style={styles.albumRow}>
         {row.map((album) => (
-          <TouchableOpacity
+          <AlbumCard
             key={album.id}
-            style={styles.albumCard}
+            album={album}
             onPress={() => handlePressAlbum(album)}
-            activeOpacity={0.75}
-          >
-            <View style={styles.albumCover}>
-              {album.coverUrl ? (
-                <Image
-                  source={album.coverUrl as any}
-                  style={StyleSheet.absoluteFillObject}
-                  resizeMode="cover"
-                />
-              ) : (
-                <Text style={styles.albumEmoji}>📀</Text>
-              )}
-              {album.isComplete && (
-                <View style={styles.completeBadge}>
-                  <Text style={styles.completeText}>✓</Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.albumInfo}>
-              <Text style={styles.albumTitle} numberOfLines={1}>
-                {album.title}
-              </Text>
-              <Text style={styles.albumMeta}>
-                {album.releaseDate
-                  ? new Date(album.releaseDate).getFullYear()
-                  : ""}
-              </Text>
-              <ProgressBar
-                label=""
-                current={album.ownedPhotocards ?? 0}
-                total={album.totalPhotocards}
-              />
-            </View>
-          </TouchableOpacity>
+          />
         ))}
-        {row.length < 2 && <View style={styles.albumCard} />}
+        {row.length < 2 && <View style={styles.albumCardEmpty} />}
       </View>
     ),
     [handlePressAlbum],
@@ -266,7 +237,6 @@ export default function GroupScreen() {
         </View>
       </View>
 
-      {/* ✅ FlatList unique — plus de ScrollView imbriqué */}
       <FlatList
         ref={flatListRef}
         data={albumRows}
@@ -282,7 +252,7 @@ export default function GroupScreen() {
         windowSize={8}
         initialNumToRender={6}
         getItemLayout={(_, index) => ({
-          length: 160, // hauteur approximative d'une row d'albums
+          length: 160,
           offset: 160 * index,
           index,
         })}
@@ -329,22 +299,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.lg,
     marginBottom: 10,
   },
-  albumCard: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    overflow: "hidden",
-  },
-  albumCover: {
-    height: 110,
-    backgroundColor: Colors.surface2,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  albumEmoji: { fontSize: 32 },
   completeBadge: {
     position: "absolute",
     bottom: 6,
@@ -371,4 +325,5 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSize.sm,
     color: Colors.textMuted,
   },
+  albumCardEmpty: { flex: 1 },
 });

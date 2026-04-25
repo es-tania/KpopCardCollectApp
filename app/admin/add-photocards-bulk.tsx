@@ -7,11 +7,11 @@ import { Colors } from "@/src/constants/colors";
 import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
-  SHOP_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { useShops } from "@/src/hooks/shops/useShops";
 import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import {
   BulkFormState,
@@ -59,6 +59,7 @@ const INITIAL_FORM: BulkFormState = {
 export default function AddPhotocardsBulkScreen() {
   const { isAdmin, groupAdminIds } = useAuthStore();
   const { groups } = useAccessibleGroups();
+  const { shopOptions, loading: shopsLoading } = useShops();
 
   const [form, setForm] = useState<BulkFormState>(INITIAL_FORM);
   const [photocards, setPhotocards] = useState<BulkPhotocard[]>([newCard()]);
@@ -230,6 +231,7 @@ export default function AddPhotocardsBulkScreen() {
             value={form.groupId}
             onChange={handleSelectGroup}
             required
+            searchable
           />
           <FormSelect
             label="Album / Event"
@@ -242,6 +244,7 @@ export default function AddPhotocardsBulkScreen() {
                 ? "Sélectionner un album..."
                 : "Sélectionne d'abord un groupe"
             }
+            searchable
           />
           <FormSelect
             label="Type"
@@ -257,10 +260,12 @@ export default function AddPhotocardsBulkScreen() {
           />
           <FormSelect
             label="Shop"
-            options={SHOP_OPTIONS}
+            options={shopOptions}
             value={form.shopName}
             onChange={setField("shopName")}
             placeholder="Sélectionner un shop..."
+            loading={shopsLoading}
+            searchable
           />
           <FormSelect
             label="Rareté"

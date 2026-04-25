@@ -3,6 +3,7 @@
 export interface SelectOption {
   key: string;
   label: string;
+  disabled?: boolean;
 }
 
 export type FormErrors<T> = Partial<Record<keyof T, string>>;

@@ -1,6 +1,6 @@
+import { AlbumCard } from "@/src/components/album/AlbumCard";
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid } from "@/src/components/photocard";
-import { ProgressBar } from "@/src/components/ui/ProgressBar";
 import {
   FILTER_OPTIONS,
   FilterKey,
@@ -16,6 +16,7 @@ import { ChevronLeft, Share2 } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Image,
   StyleSheet,
   Text,
@@ -29,48 +30,6 @@ import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { Album, Member } from "../../src/types";
-
-// ─── AlbumCard mémoïsée ───────────────────────────────────────────────────────
-
-const AlbumCard = React.memo(
-  ({ album, onPress }: { album: Album; onPress: () => void }) => (
-    <TouchableOpacity
-      style={styles.albumCard}
-      onPress={onPress}
-      activeOpacity={0.75}
-    >
-      <View style={styles.albumCover}>
-        {album.coverUrl ? (
-          <Image
-            source={album.coverUrl as any}
-            style={StyleSheet.absoluteFillObject}
-            resizeMode="cover"
-          />
-        ) : (
-          <Text style={styles.albumEmoji}>📀</Text>
-        )}
-        {album.isComplete && (
-          <View style={styles.completeBadge}>
-            <Text style={styles.completeText}>✓</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.albumInfo}>
-        <Text style={styles.albumTitle} numberOfLines={1}>
-          {album.title}
-        </Text>
-        <Text style={styles.albumMeta}>
-          {album.releaseDate ? new Date(album.releaseDate).getFullYear() : ""}
-        </Text>
-        <ProgressBar
-          label=""
-          current={album.ownedPhotocards ?? 0}
-          total={album.totalPhotocards}
-        />
-      </View>
-    </TouchableOpacity>
-  ),
-);
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -88,11 +47,8 @@ export default function MemberScreen() {
   const memberStats = useUserStats({ memberId: activeMemberId });
 
   // ── Data BDD ──────────────────────────────────────────────────────────
-  const {
-    members,
-    membersWithStats,
-    loading: membersLoading,
-  } = useGroupMembers(groupId);
+  const { membersWithStats, loading: membersLoading } =
+    useGroupMembers(groupId);
   const { albums, loading: albumsLoading } = useAlbums(groupId);
 
   const { photocards, loading: photocardsLoading } = usePaginatedPhotocards({
@@ -268,42 +224,41 @@ export default function MemberScreen() {
     ],
   );
 
-  // ── Header vue albums — static + grille albums ────────────────────────
-  const AlbumsHeader = useMemo(
+  // ── Header albums — static + label + spinner ──────────────────────────
+  const AlbumsListHeader = useMemo(
     () => (
       <>
         {StaticHeader}
         <SectionLabel label="Choisissez un album" style={styles.sectionLabel} />
-        {albumsLoading ? (
+        {albumsLoading && (
           <ActivityIndicator
             color={Colors.accent}
             style={styles.sectionLoading}
           />
-        ) : (
-          <View style={styles.albumsGrid}>
-            {albumRows.map((row, rowIndex) => (
-              <View key={`row-${rowIndex}`} style={styles.albumRow}>
-                {row.map((album) => (
-                  <AlbumCard
-                    key={album.id}
-                    album={album}
-                    onPress={albumHandlers.get(album.id)!}
-                  />
-                ))}
-                {row.length < 2 && (
-                  <View style={[styles.albumCard, styles.albumCardEmpty]} />
-                )}
-              </View>
-            ))}
-          </View>
         )}
-        <View style={styles.bottomPad} />
       </>
     ),
-    [StaticHeader, albumsLoading, albumRows, albumHandlers],
+    [StaticHeader, albumsLoading],
   );
 
-  // ── Header vue photocards — static seulement ─────────────────────────
+  // ── renderAlbumRow — identique à group/[id].tsx ───────────────────────
+  const renderAlbumRow = useCallback(
+    ({ item: row }: { item: Album[] }) => (
+      <View style={styles.albumRow}>
+        {row.map((album) => (
+          <AlbumCard
+            key={album.id}
+            album={album}
+            onPress={albumHandlers.get(album.id)!}
+          />
+        ))}
+        {row.length < 2 && <View style={styles.albumCardEmpty} />}
+      </View>
+    ),
+    [albumHandlers],
+  );
+
+  // ── Header vue photocards ─────────────────────────────────────────────
   const PhotocardsHeader = useMemo(() => <>{StaticHeader}</>, [StaticHeader]);
 
   // ── Loading ───────────────────────────────────────────────────────────
@@ -338,7 +293,11 @@ export default function MemberScreen() {
         >
           {selectedAlbum.coverUrl && (
             <Image
-              source={selectedAlbum.coverUrl as any}
+              source={
+                typeof selectedAlbum.coverUrl === "string"
+                  ? { uri: selectedAlbum.coverUrl }
+                  : (selectedAlbum.coverUrl as any)
+              }
               style={styles.albumBannerCover}
               resizeMode="cover"
             />
@@ -353,12 +312,24 @@ export default function MemberScreen() {
         </TouchableOpacity>
       )}
 
-      {/* ── Vue albums — toujours montée, cachée avec display:none ── */}
+      {/* ── Vue albums — FlatList natif, toujours montée ── */}
       <View style={[styles.fill, selectedAlbum ? styles.hidden : null]}>
-        <PhotocardMiniGrid
-          cards={[]}
-          ListHeaderComponent={AlbumsHeader}
-          hideEmpty
+        <FlatList
+          data={albumRows}
+          renderItem={renderAlbumRow}
+          keyExtractor={(_, i) => `album-row-${i}`}
+          ListHeaderComponent={AlbumsListHeader}
+          ListFooterComponent={<View style={styles.bottomPad} />}
+          showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={4}
+          windowSize={8}
+          initialNumToRender={6}
+          getItemLayout={(_, index) => ({
+            length: 160,
+            offset: 160 * index,
+            index,
+          })}
         />
       </View>
 
@@ -423,53 +394,14 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.md,
   },
 
-  // ── Albums grid ───────────────────────────────────────────────────────
-  albumsGrid: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingTop: Theme.spacing.md,
+  // ── Albums ────────────────────────────────────────────────────────────
+  albumRow: {
+    flexDirection: "row",
     gap: 10,
+    paddingHorizontal: Theme.spacing.lg,
+    marginBottom: 10,
   },
-  albumRow: { flexDirection: "row", gap: 10 },
-  albumCard: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    overflow: "hidden",
-  },
-  albumCardEmpty: { backgroundColor: "transparent", borderWidth: 0 },
-  albumCover: {
-    height: 110,
-    backgroundColor: Colors.surface2,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-  albumEmoji: { fontSize: 32 },
-  completeBadge: {
-    position: "absolute",
-    bottom: 6,
-    right: 6,
-    backgroundColor: Colors.accent,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  completeText: {
-    fontSize: Theme.fontSize.xs,
-    color: Colors.bg,
-    fontWeight: Theme.fontWeight.bold,
-  },
-  albumInfo: { padding: 8, gap: 2 },
-  albumTitle: {
-    fontSize: Theme.fontSize.base,
-    fontWeight: Theme.fontWeight.medium,
-    color: Colors.text,
-  },
-  albumMeta: { fontSize: Theme.fontSize.sm, color: Colors.textMuted },
+  albumCardEmpty: { flex: 1 },
 
   // ── Album banner ──────────────────────────────────────────────────────
   albumBanner: {

@@ -10,7 +10,6 @@ export {
 export { POSITION_OPTIONS } from "./positionOptions";
 export { RARITY_OPTIONS } from "./rarityOptions";
 export { SCAN_STATUS_HINTS } from "./scanFilterOptions";
-export { SHOP_OPTIONS } from "./shopOptions";
 export { SOURCE_OPTIONS } from "./sourceOptions";
 export { STATUS_FILTER_OPTIONS, STATUS_OPTIONS } from "./statusOptions";
 export { SUBMISSION_STATUS_LABELS } from "./submissionStatusOptions";

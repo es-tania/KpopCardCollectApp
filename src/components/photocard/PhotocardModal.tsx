@@ -6,7 +6,7 @@ import { useDeletePhotocards } from "@/src/hooks/photocard/useDeletePhotocards";
 import { useIsGroupAdmin } from "@/src/hooks/useIsGroupAdmin";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
-import { getShopLabel } from "@/src/utils/getShopLabel";
+import { useShopsStore } from "@/src/store/shopsStore";
 import { router } from "expo-router";
 import {
   Calendar,
@@ -31,7 +31,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/colors";
@@ -107,6 +107,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   const isGroupAdmin = useIsGroupAdmin(card?.groupId);
 
   const { confirmDeleteOne } = useDeletePhotocards();
+  const { getLabel } = useShopsStore();
 
   const {
     collectionIds,
@@ -339,7 +340,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
                   <Tag size={14} color={Colors.textMuted} strokeWidth={1.6} />
                 }
                 label="Shop"
-                value={getShopLabel(card.shopName)}
+                value={getLabel(card.shopName)}
               />
             )}
             {card.rarity && (

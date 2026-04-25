@@ -134,6 +134,7 @@ export default function AddAlbumScreen() {
             onChange={setGroup("groupId")}
             required
             error={errors.groupId}
+            searchable
           />
           <FormField
             label="Titre"

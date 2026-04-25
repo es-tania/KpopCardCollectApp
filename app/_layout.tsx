@@ -1,17 +1,19 @@
 import { Colors } from "@/src/constants/colors";
 import { useAuth } from "@/src/hooks/useAuth";
 import { useCollectionStore } from "@/src/store/collectionStore";
+import { useShopsStore } from "@/src/store/shopsStore";
 import { router, Stack } from "expo-router";
 import React, { useEffect } from "react";
 import { ActivityIndicator, StatusBar, View } from "react-native";
-import { initExecutorch } from "react-native-executorch";
-import { ExpoResourceFetcher } from "react-native-executorch-expo-resource-fetcher";
-
-initExecutorch({ resourceFetcher: ExpoResourceFetcher });
 
 export default function RootLayout() {
   const { user, isAuthenticated, loading } = useAuth();
   const initStore = useCollectionStore((s) => s.init);
+  const loadShops = useShopsStore((s) => s.load);
+
+  useEffect(() => {
+    loadShops();
+  }, []);
 
   useEffect(() => {
     if (user) initStore(user.id);

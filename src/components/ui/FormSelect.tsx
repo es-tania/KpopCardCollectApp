@@ -1,11 +1,13 @@
 import { SelectOption } from "@/src/types";
-import { ChevronDown } from "lucide-react-native";
-import React, { useState } from "react";
+import { ChevronDown, Search, X } from "lucide-react-native";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -21,6 +23,8 @@ interface FormSelectProps {
   onChange: (value: string) => void;
   required?: boolean;
   error?: string;
+  loading?: boolean;
+  searchable?: boolean;
 }
 
 export const FormSelect: React.FC<FormSelectProps> = ({
@@ -31,9 +35,26 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   onChange,
   required,
   error,
+  loading = false,
+  searchable = false,
 }) => {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
   const selected = options.find((o) => o.key === value);
+
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !query.trim()) return options;
+    const q = query.toLowerCase();
+    return options.filter(
+      (o) => !o.disabled && o.label.toLowerCase().includes(q),
+    );
+  }, [options, query, searchable]);
+
+  const handleOpen = () => {
+    setQuery("");
+    setOpen(true);
+  };
 
   return (
     <View style={styles.container}>
@@ -43,13 +64,18 @@ export const FormSelect: React.FC<FormSelectProps> = ({
       </Text>
 
       <TouchableOpacity
-        style={[styles.trigger, error ? styles.triggerError : {}]}
-        onPress={() => setOpen(true)}
+        style={[styles.trigger, error ? styles.triggerError : null]}
+        onPress={handleOpen}
         activeOpacity={0.75}
+        disabled={loading}
       >
-        <Text style={[styles.triggerText, !selected && styles.placeholder]}>
-          {selected ? selected.label : placeholder}
-        </Text>
+        {loading ? (
+          <ActivityIndicator size="small" color={Colors.accent} />
+        ) : (
+          <Text style={[styles.triggerText, !selected && styles.placeholder]}>
+            {selected ? selected.label : placeholder}
+          </Text>
+        )}
         <ChevronDown size={16} color={Colors.textMuted} strokeWidth={1.6} />
       </TouchableOpacity>
 
@@ -58,38 +84,79 @@ export const FormSelect: React.FC<FormSelectProps> = ({
       <Modal visible={open} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <SafeAreaView style={styles.modalContent} edges={["bottom"]}>
+            {/* Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{label}</Text>
               <TouchableOpacity onPress={() => setOpen(false)}>
                 <Text style={styles.modalClose}>Fermer</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView>
-              {options.map((opt) => (
-                <TouchableOpacity
-                  key={opt.key}
-                  style={[
-                    styles.option,
-                    opt.key === value && styles.optionSelected,
-                  ]}
-                  onPress={() => {
-                    onChange(opt.key);
-                    setOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      opt.key === value && styles.optionTextSelected,
-                    ]}
-                  >
-                    {opt.label}
-                  </Text>
-                  {opt.key === value && (
-                    <Text style={styles.optionCheck}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
+
+            {/* Barre de recherche */}
+            {searchable && (
+              <View style={styles.searchWrap}>
+                <Search size={15} color={Colors.textMuted} strokeWidth={1.6} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Rechercher..."
+                  placeholderTextColor={Colors.textMuted}
+                  value={query}
+                  onChangeText={setQuery}
+                  autoFocus
+                />
+                {query.length > 0 && (
+                  <TouchableOpacity onPress={() => setQuery("")}>
+                    <X size={14} color={Colors.textMuted} strokeWidth={1.6} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Liste */}
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {filteredOptions.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>Aucun résultat</Text>
+                </View>
+              ) : (
+                filteredOptions.map((opt) => {
+                  // ── Séparateur ────────────────────────────────────────────────────
+                  if (opt.disabled) {
+                    return (
+                      <View key={opt.key} style={styles.separator}>
+                        <Text style={styles.separatorText}>{opt.label}</Text>
+                      </View>
+                    );
+                  }
+
+                  // ── Option normale ────────────────────────────────────────────────
+                  return (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[
+                        styles.option,
+                        opt.key === value && styles.optionSelected,
+                      ]}
+                      onPress={() => {
+                        onChange(opt.key);
+                        setOpen(false);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          opt.key === value && styles.optionTextSelected,
+                        ]}
+                      >
+                        {opt.label}
+                      </Text>
+                      {opt.key === value && (
+                        <Text style={styles.optionCheck}>✓</Text>
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
           </SafeAreaView>
         </View>
@@ -116,17 +183,14 @@ const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.md,
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm + 2,
+    minHeight: 44,
   },
   triggerError: { borderColor: Colors.danger },
-  triggerText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.text,
-  },
+  triggerText: { fontSize: Theme.fontSize.base, color: Colors.text },
   placeholder: { color: Colors.textMuted },
-  error: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.danger,
-  },
+  error: { fontSize: Theme.fontSize.sm + 1, color: Colors.danger },
+
+  // ── Modal ─────────────────────────────────────────────────────────────
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -136,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "60%",
+    maxHeight: "70%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -155,6 +219,28 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSize.base,
     color: Colors.accent,
   },
+
+  // ── Recherche ─────────────────────────────────────────────────────────
+  searchWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    margin: Theme.spacing.md,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    backgroundColor: Colors.surface2,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: Theme.fontSize.base,
+    color: Colors.text,
+    padding: 0,
+  },
+
+  // ── Options ───────────────────────────────────────────────────────────
   option: {
     flexDirection: "row",
     alignItems: "center",
@@ -164,19 +250,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
   },
-  optionSelected: {
-    backgroundColor: Colors.pillActive,
-  },
-  optionText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.text,
-  },
+  optionSelected: { backgroundColor: Colors.pillActive },
+  optionText: { fontSize: Theme.fontSize.base, color: Colors.text },
   optionTextSelected: {
     color: Colors.accent,
     fontWeight: Theme.fontWeight.medium,
   },
-  optionCheck: {
-    color: Colors.accent,
-    fontSize: Theme.fontSize.base,
+  optionCheck: { color: Colors.accent, fontSize: Theme.fontSize.base },
+  emptyState: { padding: Theme.spacing.xl, alignItems: "center" },
+  emptyText: { fontSize: Theme.fontSize.base, color: Colors.textMuted },
+  separator: {
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
+    backgroundColor: Colors.surface2,
+  },
+  separatorText: {
+    fontSize: Theme.fontSize.sm,
+    color: Colors.textMuted,
+    fontWeight: Theme.fontWeight.medium,
   },
 });

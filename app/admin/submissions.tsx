@@ -1,5 +1,6 @@
 import { useSubmissions } from "@/src/hooks/useSubmissions";
 import { useAuthStore } from "@/src/store/authStore";
+import { useShopsStore } from "@/src/store/shopsStore";
 import { router } from "expo-router";
 import { Check, ChevronLeft, Clock, Eye, X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
@@ -18,7 +19,6 @@ import { PhotocardModal } from "../../src/components/photocard/PhotocardModal";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { PhotocardWithDetails, SubmissionStatus } from "../../src/types";
-import { getShopLabel } from "../../src/utils/getShopLabel";
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 const TABS: { key: SubmissionStatus; label: string }[] = [
@@ -43,85 +43,89 @@ const SubmissionRow: React.FC<SubmissionRowProps> = ({
   onApprove,
   onReject,
   tab,
-}) => (
-  <View style={rowStyles.container}>
-    {/* Image */}
-    <TouchableOpacity onPress={onPreview} activeOpacity={0.8}>
-      <View style={rowStyles.imageWrap}>
-        {card.imageUrl ? (
-          <Image
-            source={card.imageUrl as any}
-            style={rowStyles.image}
-            resizeMode="cover"
-          />
-        ) : (
-          <Text style={rowStyles.imageFallback}>🧑‍🎤</Text>
-        )}
-      </View>
-    </TouchableOpacity>
+}) => {
+  const { getLabel } = useShopsStore();
 
-    {/* Infos */}
-    <View style={rowStyles.info}>
-      <Text style={rowStyles.memberName}>{card.memberName}</Text>
-      <Text style={rowStyles.albumTitle} numberOfLines={1}>
-        {card.groupName} · {card.albumTitle}
-      </Text>
-      {card.version && <Text style={rowStyles.meta}>{card.version}</Text>}
-      {card.shopName && (
-        <Text style={rowStyles.meta}>{getShopLabel(card.shopName)}</Text>
-      )}
-      <Text style={rowStyles.date}>
-        {new Date(card.createdAt ?? "").toLocaleDateString("fr-FR", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })}
-      </Text>
-    </View>
-
-    {/* Actions */}
-    <View style={rowStyles.actions}>
-      {/* Aperçu */}
-      <TouchableOpacity style={rowStyles.previewBtn} onPress={onPreview}>
-        <Eye size={15} color={Colors.textMuted} strokeWidth={1.6} />
+  return (
+    <View style={rowStyles.container}>
+      {/* Image */}
+      <TouchableOpacity onPress={onPreview} activeOpacity={0.8}>
+        <View style={rowStyles.imageWrap}>
+          {card.imageUrl ? (
+            <Image
+              source={card.imageUrl as any}
+              style={rowStyles.image}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={rowStyles.imageFallback}>🧑‍🎤</Text>
+          )}
+        </View>
       </TouchableOpacity>
 
-      {/* Boutons selon le tab */}
-      {tab === "pending" && (
-        <>
-          <TouchableOpacity
-            style={[rowStyles.actionBtn, rowStyles.approveBtn]}
-            onPress={onApprove}
-          >
-            <Check size={15} color={Colors.bg} strokeWidth={2.5} />
-          </TouchableOpacity>
+      {/* Infos */}
+      <View style={rowStyles.info}>
+        <Text style={rowStyles.memberName}>{card.memberName}</Text>
+        <Text style={rowStyles.albumTitle} numberOfLines={1}>
+          {card.groupName} · {card.albumTitle}
+        </Text>
+        {card.version && <Text style={rowStyles.meta}>{card.version}</Text>}
+        {card.shopName && (
+          <Text style={rowStyles.meta}>{getLabel(card.shopName)}</Text>
+        )}
+        <Text style={rowStyles.date}>
+          {new Date(card.createdAt ?? "").toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          })}
+        </Text>
+      </View>
+
+      {/* Actions */}
+      <View style={rowStyles.actions}>
+        {/* Aperçu */}
+        <TouchableOpacity style={rowStyles.previewBtn} onPress={onPreview}>
+          <Eye size={15} color={Colors.textMuted} strokeWidth={1.6} />
+        </TouchableOpacity>
+
+        {/* Boutons selon le tab */}
+        {tab === "pending" && (
+          <>
+            <TouchableOpacity
+              style={[rowStyles.actionBtn, rowStyles.approveBtn]}
+              onPress={onApprove}
+            >
+              <Check size={15} color={Colors.bg} strokeWidth={2.5} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[rowStyles.actionBtn, rowStyles.rejectBtn]}
+              onPress={onReject}
+            >
+              <X size={15} color={Colors.bg} strokeWidth={2.5} />
+            </TouchableOpacity>
+          </>
+        )}
+        {tab === "approved" && (
           <TouchableOpacity
             style={[rowStyles.actionBtn, rowStyles.rejectBtn]}
             onPress={onReject}
           >
             <X size={15} color={Colors.bg} strokeWidth={2.5} />
           </TouchableOpacity>
-        </>
-      )}
-      {tab === "approved" && (
-        <TouchableOpacity
-          style={[rowStyles.actionBtn, rowStyles.rejectBtn]}
-          onPress={onReject}
-        >
-          <X size={15} color={Colors.bg} strokeWidth={2.5} />
-        </TouchableOpacity>
-      )}
-      {tab === "rejected" && (
-        <TouchableOpacity
-          style={[rowStyles.actionBtn, rowStyles.approveBtn]}
-          onPress={onApprove}
-        >
-          <Check size={15} color={Colors.bg} strokeWidth={2.5} />
-        </TouchableOpacity>
-      )}
+        )}
+        {tab === "rejected" && (
+          <TouchableOpacity
+            style={[rowStyles.actionBtn, rowStyles.approveBtn]}
+            onPress={onApprove}
+          >
+            <Check size={15} color={Colors.bg} strokeWidth={2.5} />
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const rowStyles = StyleSheet.create({
   container: {

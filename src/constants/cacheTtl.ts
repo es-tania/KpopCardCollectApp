@@ -24,4 +24,5 @@ export const CACHE_TTL = {
   photocards: 0 * 60 * 1000, // 5 min
   profile: 0 * 60 * 1000, // 5 min
   collection: 0 * 60 * 1000, // 1 min — change souvent
+  shops: 5 * 60 * 1000,
 } as const;

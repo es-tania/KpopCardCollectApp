@@ -1,7 +1,7 @@
 import { PHOTOCARD_TYPE_LABELS } from "@/src/constants/options";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { Check, Plus, ShoppingBasket, Star } from "lucide-react-native";
-import React from "react";
+import React, { useMemo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
@@ -25,6 +25,12 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
   const { toggleCollection, toggleFavorite, toggleWishlist } =
     useUserCollection();
 
+  const imageSource = useMemo(() => {
+    if (!card.imageUrl) return null;
+    if (typeof card.imageUrl === "string") return { uri: card.imageUrl };
+    return card.imageUrl as any;
+  }, [card.imageUrl]);
+
   return (
     <TouchableOpacity
       style={styles.container}
@@ -33,11 +39,12 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
     >
       {/* ── Image ── */}
       <View style={styles.imageContainer}>
-        {card.imageUrl ? (
+        {imageSource ? (
           <Image
-            source={card.imageUrl as any}
+            source={imageSource}
             style={styles.image}
             resizeMode="cover"
+            fadeDuration={0}
           />
         ) : (
           <View style={styles.placeholder}>

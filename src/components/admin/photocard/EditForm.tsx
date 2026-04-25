@@ -2,11 +2,12 @@ import { Colors } from "@/src/constants/colors";
 import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
-  SHOP_OPTIONS,
 } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { useGroupShops } from "@/src/hooks/shops/useGroupShops";
+import { useShops } from "@/src/hooks/shops/useShops";
 import {
   PhotocardEditFormState,
   PhotocardWithDetails,
@@ -57,6 +58,8 @@ export const EditForm: React.FC<EditFormProps> = ({
   });
   const { albums } = useAlbums(card.groupId);
   const { members } = useGroupMembers(card.groupId);
+  const { shopOptions, loading: shopsLoading } = useShops();
+  const { sortedOptions } = useGroupShops(card.groupId, shopOptions);
 
   const set = (key: keyof PhotocardEditFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -147,6 +150,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           options={albumOptions}
           value={form.albumId}
           onChange={set("albumId")}
+          searchable
         />
         <FormSelect
           label="Membre"
@@ -173,10 +177,12 @@ export const EditForm: React.FC<EditFormProps> = ({
         />
         <FormSelect
           label="Shop / Plateforme"
-          options={SHOP_OPTIONS}
+          options={sortedOptions}
           value={form.shopName}
           onChange={set("shopName")}
           placeholder="Sélectionner un shop..."
+          loading={shopsLoading}
+          searchable
         />
         <FormSelect
           label="Rareté"

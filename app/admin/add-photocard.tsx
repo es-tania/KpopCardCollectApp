@@ -2,11 +2,12 @@ import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
-  SHOP_OPTIONS,
 } from "@/src/constants/options";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useAddPhotocard } from "@/src/hooks/photocard/useAddPhotocard";
+import { useGroupShops } from "@/src/hooks/shops/useGroupShops";
+import { useShops } from "@/src/hooks/shops/useShops";
 import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardFormState, SelectOption } from "@/src/types";
@@ -60,6 +61,7 @@ export default function AddPhotocardScreen() {
   const { userSubmission } = useLocalSearchParams<{
     userSubmission?: string;
   }>();
+  const { shopOptions, loading: shopsLoading } = useShops();
   const isUserSubmission = userSubmission === "true";
 
   const [form, setForm] = useState<PhotocardFormState>({
@@ -67,6 +69,9 @@ export default function AddPhotocardScreen() {
     groupId: preGroupId ?? "",
     memberId: preMemberId ?? "",
   });
+
+  const { sortedOptions } = useGroupShops(form.groupId, shopOptions);
+
   const [errors, setErrors] = useState<
     Partial<Record<keyof PhotocardFormState, string>>
   >({});
@@ -238,6 +243,7 @@ export default function AddPhotocardScreen() {
             onChange={handleSelectGroup}
             required
             error={errors.groupId}
+            searchable
           />
           <FormSelect
             label="Album / Event"
@@ -246,6 +252,7 @@ export default function AddPhotocardScreen() {
             onChange={handleSelectAlbum}
             required
             error={errors.albumId}
+            searchable
           />
           <FormSelect
             label="Membre"
@@ -276,10 +283,12 @@ export default function AddPhotocardScreen() {
           />
           <FormSelect
             label="Shop / Plateforme"
-            options={SHOP_OPTIONS}
+            options={sortedOptions}
             value={form.shopName}
             onChange={set("shopName")}
             placeholder="Sélectionner un shop..."
+            loading={shopsLoading}
+            searchable
           />
           {/* Champ libre si "Autre" sélectionné */}
           {form.shopName === "other" && (
