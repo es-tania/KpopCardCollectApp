@@ -21,6 +21,7 @@ export interface PhotocardEditFormState {
   shopName: string;
   rarity: string;
   memberId: string;
+  memberIds: string[];
   albumId: string;
   imageUri: string;
   backImageUri: string;

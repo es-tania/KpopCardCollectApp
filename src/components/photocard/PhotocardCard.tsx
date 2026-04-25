@@ -55,8 +55,8 @@ export const PhotocardCard: React.FC<PhotocardCardProps> = ({
           {/* Infos principales en bas */}
           <View style={styles.infoOverlay}>
             <Text style={styles.albumTitle} numberOfLines={1}>
-              {card.memberName}
-              {card.version ? ` · ${card.version}` : ""}
+              {!card.isMultiMember && `${card.memberName} · `}
+              {card.version ? `${card.version}` : ""}
             </Text>
             <Text style={styles.memberName} numberOfLines={1}>
               {card.groupName}

@@ -1,5 +1,8 @@
 import { supabase } from "@/src/lib/supabase";
-import { mapPhotocard } from "@/src/services/photocardsService";
+import {
+  mapPhotocard,
+  photocardsService,
+} from "@/src/services/photocardsService";
 import { PhotocardWithDetails } from "@/src/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFetchOnFocus } from "./useFetchOnFocus";
@@ -26,10 +29,18 @@ export const usePaginatedPhotocards = (filters: Filters = {}) => {
     if (isFetching.current) return;
     isFetching.current = true;
     setLoading(true);
-
     try {
       const f = filtersRef.current;
 
+      // ── Cas memberId — utilise la fonction SQL ────────────────────
+      if (f.memberId) {
+        const data = await photocardsService.getByMember(f.memberId, f.albumId);
+        setPhotocards(data);
+        setError(null);
+        return;
+      }
+
+      // ── Cas général ───────────────────────────────────────────────
       let query = supabase
         .from("photocards_with_details")
         .select("*")
@@ -38,11 +49,9 @@ export const usePaginatedPhotocards = (filters: Filters = {}) => {
 
       if (f.groupId) query = query.eq("group_id", f.groupId);
       if (f.albumId) query = query.eq("album_id", f.albumId);
-      if (f.memberId) query = query.eq("member_id", f.memberId);
 
       const { data, error } = await query;
       if (error) throw error;
-
       setPhotocards((data ?? []).map(mapPhotocard));
       setError(null);
     } catch (err: any) {

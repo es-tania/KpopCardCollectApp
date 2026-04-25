@@ -1,6 +1,16 @@
 import { supabase } from "../lib/supabase";
-import { PhotocardWithDetails } from "../types";
+import {
+  CardMember,
+  PhotocardEditFormState,
+  PhotocardFormState,
+  PhotocardWithDetails,
+} from "../types";
 import { extractUrl } from "../utils/extractUrl";
+import {
+  photocardCreateSchema,
+  photocardEditSchema,
+  validateOrThrow,
+} from "../lib/validation";
 
 export const photocardsService = {
   getAll: async (): Promise<PhotocardWithDetails[]> => {
@@ -24,15 +34,16 @@ export const photocardsService = {
     return data.map(mapPhotocard);
   },
 
-  getByMember: async (memberId: string): Promise<PhotocardWithDetails[]> => {
-    const { data, error } = await supabase
-      .from("photocards_with_details")
-      .select("*")
-      .eq("member_id", memberId)
-      .eq("status", "approved");
-
+  getByMember: async (
+    memberId: string,
+    albumId?: string,
+  ): Promise<PhotocardWithDetails[]> => {
+    const { data, error } = await supabase.rpc("get_photocards_by_member", {
+      p_member_id: memberId,
+      p_album_id: albumId ?? null,
+    });
     if (error) throw error;
-    return data.map(mapPhotocard);
+    return (data ?? []).map(mapPhotocard);
   },
 
   getById: async (id: string): Promise<PhotocardWithDetails | null> => {
@@ -189,33 +200,77 @@ export const photocardsService = {
     if (error) throw error;
   },
 
-  update: async (
-    id: string,
-    data: Partial<PhotocardWithDetails>,
-  ): Promise<void> => {
-    const payload: Record<string, any> = {};
-
-    if (data.type) payload.type = data.type;
-    if (data.version !== undefined) payload.version = data.version ?? null;
-    if (data.shopName !== undefined) payload.shop_name = data.shopName ?? null;
-    if (data.rarity) payload.rarity = data.rarity;
-    if (data.memberId) payload.member_id = data.memberId;
-    if (data.albumId) payload.album_id = data.albumId;
-
-    // Images — uniquement si fournies
-    if (data.imageUrl !== undefined) {
-      payload.image_url = extractUrl(data.imageUrl) ?? null;
-    }
-    if (data.backImageUrl !== undefined) {
-      payload.back_image_url = extractUrl(data.backImageUrl) ?? null;
-    }
+  update: async (id: string, data: PhotocardEditFormState): Promise<void> => {
+    validateOrThrow(photocardEditSchema, data);
+    const isMulti = data.memberIds.length > 1;
 
     const { error } = await supabase
       .from("photocards")
-      .update(payload)
+      .update({
+        member_id: isMulti ? null : (data.memberIds[0] ?? data.memberId),
+        album_id: data.albumId,
+        type: data.type,
+        version: data.version || null,
+        shop_name: data.shopName || null,
+        rarity: data.rarity || "common",
+      })
       .eq("id", id);
 
     if (error) throw error;
+
+    const { error: deleteError } = await supabase
+      .from("photocard_members")
+      .delete()
+      .eq("photocard_id", id);
+
+    if (data.memberIds.length > 0) {
+      const { error: insertError } = await supabase
+        .from("photocard_members")
+        .insert(
+          data.memberIds.map((memberId) => ({
+            photocard_id: id,
+            member_id: memberId,
+          })),
+        );
+
+      if (insertError) throw insertError;
+    }
+  },
+
+  create: async (data: PhotocardFormState, isAdmin = false): Promise<void> => {
+    validateOrThrow(photocardCreateSchema, data);
+    const isMulti = data.memberIds.length > 1;
+
+    const { data: card, error } = await supabase
+      .from("photocards")
+      .insert({
+        member_id: isMulti ? null : (data.memberIds[0] ?? data.memberId),
+        album_id: data.albumId,
+        group_id: data.groupId,
+        type: data.type,
+        version: data.version || null,
+        shop_name: data.shopName || null,
+        rarity: data.rarity || "common",
+        status: isAdmin ? "approved" : "pending",
+        created_by: (await supabase.auth.getUser()).data.user?.id,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Insère tous les membres
+    if (data.memberIds.length > 0) {
+      const { error: insertError } = await supabase
+        .from("photocard_members")
+        .insert(
+          data.memberIds.map((memberId) => ({
+            photocard_id: card.id,
+            member_id: memberId,
+          })),
+        );
+      if (insertError) throw insertError;
+    }
   },
 
   delete: async (id: string): Promise<void> => {
@@ -224,24 +279,34 @@ export const photocardsService = {
   },
 };
 
-export const mapPhotocard = (data: any): PhotocardWithDetails => ({
-  id: data.id,
-  memberId: data.member_id,
-  albumId: data.album_id,
-  groupId: data.group_id,
-  imageUrl: data.image_url ? { uri: data.image_url } : null,
-  backImageUrl: data.back_image_url ? { uri: data.back_image_url } : null,
-  type: data.type,
-  version: data.version,
-  isLimited: data.is_limited,
-  shopName: data.shop_name,
-  rarity: data.rarity,
-  fingerprint: data.fingerprint,
-  status: data.status,
-  createdAt: data.created_at,
-  updatedAt: data.updated_at,
-  memberName: data.member_name,
-  albumTitle: data.album_title,
-  groupName: data.group_name,
-  createdBy: data.created_by,
-});
+export const mapPhotocard = (d: any): PhotocardWithDetails => {
+  const cardMembers: CardMember[] = (d.card_members ?? []).map((m: any) => ({
+    id: m.id,
+    stageName: m.stage_name,
+  }));
+
+  const isMultiMember = cardMembers.length > 1;
+
+  return {
+    id: d.id,
+    memberId: d.member_id ?? cardMembers[0]?.id ?? "",
+    memberName:
+      d.member_name ?? cardMembers.map((m) => m.stageName).join(" & ") ?? "",
+    cardMembers,
+    isMultiMember,
+    albumId: d.album_id,
+    albumTitle: d.album_title,
+    groupId: d.group_id,
+    groupName: d.group_name,
+    type: d.type,
+    version: d.version,
+    shopName: d.shop_name,
+    rarity: d.rarity,
+    imageUrl: d.image_url ? { uri: d.image_url } : null,
+    backImageUrl: d.back_image_url ? { uri: d.back_image_url } : null,
+    status: d.status,
+    createdAt: d.created_at,
+    updatedAt: d.updated_at,
+    createdBy: d.created_by,
+  };
+};

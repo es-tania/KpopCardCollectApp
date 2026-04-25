@@ -150,7 +150,9 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
             <X size={20} color={Colors.text} strokeWidth={1.8} />
           </TouchableOpacity>
           <Text style={styles.navTitle} numberOfLines={1}>
-            {card.memberName} — {card.albumTitle}
+            {!card.isMultiMember
+              ? `${card.memberName} — ${card.albumTitle}`
+              : card.albumTitle}
           </Text>
           <View style={styles.navRight}>
             <TouchableOpacity style={styles.closeBtn}>
@@ -293,13 +295,29 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
           <View style={styles.infoSection}>
             <Text style={styles.infoTitle}>Informations</Text>
 
-            <InfoRow
-              icon={
-                <Tag size={14} color={Colors.textMuted} strokeWidth={1.6} />
-              }
-              label="Membre"
-              value={card.memberName}
-            />
+            {card.isMultiMember ? (
+              <View>
+                <View style={infoStyles.row}>
+                  <Tag size={14} color={Colors.textMuted} strokeWidth={1.6} />
+                  <Text style={infoStyles.label}>Membres</Text>
+                </View>
+                <View style={styles.membersRow}>
+                  {card.cardMembers.map((m) => (
+                    <View key={m.id} style={styles.memberChip}>
+                      <Text style={styles.memberChipText}>{m.stageName}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : (
+              <InfoRow
+                icon={
+                  <Tag size={14} color={Colors.textMuted} strokeWidth={1.6} />
+                }
+                label="Membre"
+                value={card.memberName}
+              />
+            )}
             <InfoRow
               icon={
                 <Layers size={14} color={Colors.textMuted} strokeWidth={1.6} />
@@ -522,5 +540,24 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.semibold,
     color: Colors.text,
     marginBottom: Theme.spacing.md,
+  },
+  membersRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 4,
+  },
+  memberChip: {
+    backgroundColor: Colors.pillActive,
+    borderRadius: Theme.borderRadius.full,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  memberChipText: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.accent,
+    fontWeight: Theme.fontWeight.medium,
   },
 });

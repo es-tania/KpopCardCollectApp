@@ -1,6 +1,6 @@
 import { PHOTOCARD_TYPE_LABELS } from "@/src/constants/options";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
-import { Check, Plus, ShoppingBasket, Star } from "lucide-react-native";
+import { Check, Plus, ShoppingBasket, Star, Users } from "lucide-react-native";
 import React, { useMemo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -60,6 +60,14 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
                 <Text style={styles.typeBadgeText}>{typeLabel}</Text>
               </View>
             )}
+            {card.isMultiMember && (
+              <View style={styles.multiMemberBadge}>
+                <Users size={10} color={Colors.bg} strokeWidth={2} />
+                <Text style={styles.multiMemberText}>
+                  {card.cardMembers.length}
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Infos bas */}
@@ -69,7 +77,9 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
             </Text>
             <Text style={styles.memberName} numberOfLines={1}>
               {card.albumTitle}
-              {card.memberName ? ` · ${card.memberName}` : ""}
+              {!card.isMultiMember && card.memberName
+                ? ` · ${card.memberName}`
+                : ""}
             </Text>
           </View>
         </View>
@@ -223,5 +233,22 @@ const styles = StyleSheet.create({
   collectionBtnActive: {
     backgroundColor: Colors.accent,
     borderColor: Colors.accent,
+  },
+  multiMemberBadge: {
+    position: "absolute",
+    top: 4,
+    left: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: "rgba(145,126,255,0.85)",
+    borderRadius: Theme.borderRadius.full,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  multiMemberText: {
+    fontSize: Theme.fontSize.xs,
+    color: Colors.bg,
+    fontWeight: Theme.fontWeight.bold,
   },
 });

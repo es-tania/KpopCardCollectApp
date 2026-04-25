@@ -57,6 +57,7 @@ export interface PhotocardFormState {
   groupName: string;
   albumId: string;
   memberId: string;
+  memberIds: string[];
   albumTitle: string;
   memberName: string;
   type: string;

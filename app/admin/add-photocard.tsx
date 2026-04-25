@@ -1,3 +1,4 @@
+import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   PHOTOCARD_TYPE_OPTIONS,
@@ -39,6 +40,7 @@ const INITIAL_FORM: PhotocardFormState = {
   groupId: "",
   groupName: "",
   albumId: "",
+  memberIds: [],
   memberId: "",
   albumTitle: "",
   memberName: "",
@@ -262,11 +264,19 @@ export default function AddPhotocardScreen() {
               error={errors.albumId}
               searchable
             />
-            <FormSelect
-              label="Membre"
-              options={memberOptions}
-              value={form.memberId}
-              onChange={handleSelectMember}
+            <MemberMultiSelect
+              label="Membre(s)"
+              members={members}
+              selectedIds={form.memberIds}
+              onChange={(ids) =>
+                setForm((prev) => ({
+                  ...prev,
+                  memberIds: ids,
+                  memberId: ids[0] ?? "",
+                  memberName:
+                    members.find((m) => m.id === ids[0])?.stageName ?? "",
+                }))
+              }
               required
               error={errors.memberId}
             />

@@ -135,8 +135,21 @@ export const storageService = {
 
     if (result.canceled) return null;
 
-    const uri = result.assets[0].uri;
-    return storageService.uploadImage(bucket, path, uri);
+    const asset = result.assets[0];
+
+    // Taille max 8 Mo
+    const MAX_BYTES = 8 * 1024 * 1024;
+    if (asset.fileSize && asset.fileSize > MAX_BYTES) {
+      throw new Error("L'image dépasse la limite de 8 Mo");
+    }
+
+    // Extensions autorisées
+    const ext = asset.uri.split(".").pop()?.toLowerCase();
+    if (ext && !["jpg", "jpeg", "png", "webp"].includes(ext)) {
+      throw new Error("Format non supporté. Utilisez JPG, PNG ou WebP");
+    }
+
+    return storageService.uploadImage(bucket, path, asset.uri);
   },
 
   // ── Supprime un fichier ───────────────────────────────────────────────

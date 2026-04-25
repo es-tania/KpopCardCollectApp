@@ -29,6 +29,7 @@ import { FormField } from "../../ui/FormField";
 import { FormImagePicker } from "../../ui/FormImagePicker";
 import { FormSelect } from "../../ui/FormSelect";
 import { FormSubmitButton } from "../../ui/FormSubmitButton";
+import { MemberMultiSelect } from "../../ui/MemberMultiSelect";
 import { ProgressIndicator } from "../../ui/ProgressIndicator";
 
 interface EditFormProps {
@@ -52,6 +53,7 @@ export const EditForm: React.FC<EditFormProps> = ({
     shopName: card.shopName ?? "",
     rarity: card.rarity ?? "common",
     memberId: card.memberId,
+    memberIds: card.cardMembers?.map((m) => m.id) ?? [card.memberId],
     albumId: card.albumId,
     imageUri: "",
     backImageUri: "",
@@ -162,11 +164,18 @@ export const EditForm: React.FC<EditFormProps> = ({
             onChange={set("albumId")}
             searchable
           />
-          <FormSelect
-            label="Membre"
-            options={memberOptions}
-            value={form.memberId}
-            onChange={set("memberId")}
+          <MemberMultiSelect
+            label="Membre(s)"
+            members={members}
+            selectedIds={form.memberIds}
+            onChange={(ids) =>
+              setForm((prev) => ({
+                ...prev,
+                memberIds: ids,
+                memberId: ids[0] ?? "",
+              }))
+            }
+            required
           />
         </View>
 

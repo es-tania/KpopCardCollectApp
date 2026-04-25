@@ -86,12 +86,16 @@ export const useEditPhotocard = (
       setProgress("Mise à jour de la photocard...");
       await photocardsService.update(photocardId, {
         type: form.type as any,
-        version: form.version || undefined,
-        shopName: form.shopName || undefined,
+        version: form.version || "",
+        shopName: form.shopName || "",
         rarity: form.rarity as any,
-        memberId: form.memberId,
+        memberId: form.memberIds[0] ?? form.memberId,
+        memberIds: form.memberIds,
         albumId: form.albumId,
-        // Images
+        imageUri: form.imageUri,
+        backImageUri: form.backImageUri,
+        removeImage: form.removeImage,
+        removeBackImage: form.removeBackImage,
         ...(imageUrl !== undefined && {
           imageUrl: imageUrl === null ? null : { uri: imageUrl },
         }),

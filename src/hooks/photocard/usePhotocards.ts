@@ -44,7 +44,10 @@ export const usePhotocards = (filters?: {
             return photocardsService.getByAlbum(filters.albumId);
           }
           if (filters?.memberId) {
-            return photocardsService.getByMember(filters.memberId);
+            return photocardsService.getByMember(
+              filters.memberId,
+              filters.albumId,
+            );
           }
           return photocardsService.getAll();
         },

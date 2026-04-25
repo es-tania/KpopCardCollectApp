@@ -12,6 +12,11 @@ export type PhotocardTypeFilter = "all" | PhotocardType;
 
 export type PhotocardStatus = "approved" | "pending" | "rejected";
 
+export interface CardMember {
+  id: string;
+  stageName: string;
+}
+
 export interface Photocard {
   id: string;
 
@@ -51,6 +56,8 @@ export interface PhotocardWithDetails extends Photocard {
   albumTitle: string;
   groupName: string;
   createdBy: string;
+  cardMembers: CardMember[];
+  isMultiMember: boolean;
 
   // 📊 États utilisateur
   isInCollection?: boolean;

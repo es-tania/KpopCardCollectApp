@@ -184,8 +184,6 @@ export default function MemberScreen() {
     (member: Member) => {
       if (member.id === activeMemberId) return;
       setActiveMemberId(member.id);
-      setSelectedAlbum(null);
-      setActiveFilter("all");
     },
     [activeMemberId],
   );
