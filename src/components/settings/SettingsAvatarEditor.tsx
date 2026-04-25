@@ -29,7 +29,7 @@ export const SettingsAvatarEditor: React.FC<SettingsAvatarEditorProps> = ({
       ) : (
         <View style={styles.avatarFallback}>
           <Text style={styles.avatarInitial}>
-            {user.username[0].toUpperCase()}
+            {(user.username?.[0] ?? "?").toUpperCase()}
           </Text>
         </View>
       )}
