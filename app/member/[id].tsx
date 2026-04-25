@@ -1,5 +1,6 @@
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid } from "@/src/components/photocard";
+import { ProgressBar } from "@/src/components/ui/ProgressBar";
 import {
   FILTER_OPTIONS,
   FilterKey,
@@ -7,19 +8,12 @@ import {
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
-import { useScrollToTop } from "@/src/hooks/useScrollToTop";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Share2 } from "lucide-react-native";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -29,7 +23,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AlbumGrid } from "../../src/components/group/AlbumGrid";
 import { MembersList } from "../../src/components/member/MembersList";
 import { FilterPills } from "../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../src/components/ui/SectionLabel";
@@ -37,10 +30,51 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { Album, Member } from "../../src/types";
 
+// ─── AlbumCard mémoïsée ───────────────────────────────────────────────────────
+
+const AlbumCard = React.memo(
+  ({ album, onPress }: { album: Album; onPress: () => void }) => (
+    <TouchableOpacity
+      style={styles.albumCard}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={styles.albumCover}>
+        {album.coverUrl ? (
+          <Image
+            source={album.coverUrl as any}
+            style={StyleSheet.absoluteFillObject}
+            resizeMode="cover"
+          />
+        ) : (
+          <Text style={styles.albumEmoji}>📀</Text>
+        )}
+        {album.isComplete && (
+          <View style={styles.completeBadge}>
+            <Text style={styles.completeText}>✓</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.albumInfo}>
+        <Text style={styles.albumTitle} numberOfLines={1}>
+          {album.title}
+        </Text>
+        <Text style={styles.albumMeta}>
+          {album.releaseDate ? new Date(album.releaseDate).getFullYear() : ""}
+        </Text>
+        <ProgressBar
+          label=""
+          current={album.ownedPhotocards ?? 0}
+          total={album.totalPhotocards}
+        />
+      </View>
+    </TouchableOpacity>
+  ),
+);
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberScreen() {
-  const { scrollRef, scrollToTop } = useScrollToTop();
   const { id, groupId } = useLocalSearchParams<{
     id: string;
     groupId: string;
@@ -52,23 +86,21 @@ export default function MemberScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
   const memberStats = useUserStats({ memberId: activeMemberId });
-  const albumsScrollY = useRef<number>(0);
-  const isAlbumsViewActive = useRef<boolean>(true);
 
   // ── Data BDD ──────────────────────────────────────────────────────────
-  const { membersWithStats, loading: membersLoading } =
-    useGroupMembers(groupId);
+  const {
+    members,
+    membersWithStats,
+    loading: membersLoading,
+  } = useGroupMembers(groupId);
   const { albums, loading: albumsLoading } = useAlbums(groupId);
 
-  // Photocards du membre actif
   const { photocards, loading: photocardsLoading } = usePaginatedPhotocards({
     memberId: activeMemberId,
     albumId: selectedAlbum?.id ?? undefined,
   });
 
-  // États collection/favoris/wishlist
   const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
-
   const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
 
   // ── Membre actif ──────────────────────────────────────────────────────
@@ -81,37 +113,78 @@ export default function MemberScreen() {
   );
 
   // ── Photocards enrichies ──────────────────────────────────────────────
-  const enrichedPhotocards = useMemo(() => {
-    return photocards.map((card) => ({
-      ...card,
-      isInCollection: collectionIds.has(card.id),
-      isFavorite: favoriteIds.has(card.id),
-      isWishlisted: wishlistIds.has(card.id),
-    }));
-  }, [photocards, collectionIds, favoriteIds, wishlistIds]);
+  const enrichedPhotocards = useMemo(
+    () =>
+      photocards.map((card) => ({
+        ...card,
+        isInCollection: collectionIds.has(card.id),
+        isFavorite: favoriteIds.has(card.id),
+        isWishlisted: wishlistIds.has(card.id),
+      })),
+    [photocards, collectionIds, favoriteIds, wishlistIds],
+  );
 
-  // Albums enrichis avec les stats de l'utilisateur pour ce membre
-  const albumsWithStats = useMemo(() => {
-    return albums.map((album) => {
-      const albumCards = enrichedPhotocards.filter(
-        (c) => c.albumId === album.id,
-      );
-      return {
-        ...album,
-        totalPhotocards: albumCards.length,
-        ownedPhotocards: albumCards.filter((c) => c.isInCollection).length,
-        wishlistPhotocards: albumCards.filter((c) => c.isWishlisted).length,
-        completionPercentage:
-          albumCards.length > 0
-            ? Math.round(
-                (albumCards.filter((c) => c.isInCollection).length /
-                  albumCards.length) *
-                  100,
-              )
-            : 0,
-      };
+  // ── Stats albums depuis IDs bruts ─────────────────────────────────────
+  const albumStatsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        totalPhotocards: number;
+        ownedPhotocards: number;
+        wishlistPhotocards: number;
+        completionPercentage: number;
+      }
+    >();
+    albums.forEach((album) => {
+      const ids = photocards
+        .filter((c) => c.albumId === album.id)
+        .map((c) => c.id);
+      const total = ids.length;
+      const owned = ids.filter((id) => collectionIds.has(id)).length;
+      const wished = ids.filter((id) => wishlistIds.has(id)).length;
+      map.set(album.id, {
+        totalPhotocards: total,
+        ownedPhotocards: owned,
+        wishlistPhotocards: wished,
+        completionPercentage: total > 0 ? Math.round((owned / total) * 100) : 0,
+      });
     });
-  }, [albums, enrichedPhotocards]);
+    return map;
+  }, [albums, photocards, collectionIds, wishlistIds]);
+
+  const albumsWithStats = useMemo(
+    () =>
+      albums.map((album) => ({
+        ...album,
+        ...(albumStatsMap.get(album.id) ?? {
+          totalPhotocards: 0,
+          ownedPhotocards: 0,
+          wishlistPhotocards: 0,
+          completionPercentage: 0,
+        }),
+      })),
+    [albums, albumStatsMap],
+  );
+
+  // ── Rows d'albums ─────────────────────────────────────────────────────
+  const albumRows = useMemo(() => {
+    const rows: Album[][] = [];
+    for (let i = 0; i < albumsWithStats.length; i += 2) {
+      rows.push(albumsWithStats.slice(i, i + 2));
+    }
+    return rows;
+  }, [albumsWithStats]);
+
+  // ── Handlers stables par album ────────────────────────────────────────
+  const albumHandlers = useMemo(() => {
+    const map = new Map<string, () => void>();
+    albumsWithStats.forEach((album) => {
+      map.set(album.id, () =>
+        setSelectedAlbum((prev) => (prev?.id === album.id ? null : album)),
+      );
+    });
+    return map;
+  }, [albumsWithStats]);
 
   // ── Photocards filtrées ───────────────────────────────────────────────
   const filteredCards = useMemo(() => {
@@ -141,51 +214,33 @@ export default function MemberScreen() {
       setActiveMemberId(id);
       setSelectedAlbum(null);
       setActiveFilter("all");
-      albumsScrollY.current = 0;
-      scrollToTop();
     }
   }, [id]);
 
   // ── Handlers ──────────────────────────────────────────────────────────
-  const handleSelectAlbum = useCallback((album: Album) => {
-    isAlbumsViewActive.current = false;
-    setSelectedAlbum((prev) => (prev?.id === album.id ? null : album));
-  }, []);
-
-  const handleBackToAlbums = useCallback(() => {
-    isAlbumsViewActive.current = true;
-    setSelectedAlbum(null);
-    scrollToTop();
-  }, []);
+  const handleBackToAlbums = useCallback(() => setSelectedAlbum(null), []);
+  const handlePressBack = useCallback(() => router.back(), []);
+  const handleExport = useCallback(() => {
+    router.push(`/export?memberId=${activeMemberId}`);
+  }, [activeMemberId]);
 
   const handleSelectMember = useCallback(
     (member: Member) => {
       if (member.id === activeMemberId) return;
       setActiveMemberId(member.id);
+      setSelectedAlbum(null);
       setActiveFilter("all");
-      albumsScrollY.current = 0;
     },
     [activeMemberId],
   );
 
-  const handlePressBack = useCallback(() => {
-    router.back();
-  }, []);
-
-  const handleExport = useCallback(() => {
-    router.push(`/export?memberId=${activeMemberId}`);
-  }, [activeMemberId]);
-
-  // ── Header pour le FlatList ───────────────────────────────────────────
-  const ListHeader = useMemo(
+  // ── Header statique — membres + filtres ──────────────────────────────
+  const StaticHeader = useMemo(
     () => (
       <>
-        {/* Header membre */}
         {activeMember && (
           <MemberHeader member={{ ...activeMember, ...memberStats }} />
         )}
-
-        {/* Sélecteur membres */}
         <View style={styles.membersSection}>
           <SectionLabel label="Membres" style={styles.sectionLabel} />
           <MembersList
@@ -194,8 +249,6 @@ export default function MemberScreen() {
             onPressMember={handleSelectMember}
           />
         </View>
-
-        {/* Filtres */}
         <View style={styles.filtersRow}>
           <FilterPills
             options={FILTER_OPTIONS}
@@ -203,43 +256,55 @@ export default function MemberScreen() {
             onSelect={(k) => setActiveFilter(k as FilterKey)}
           />
         </View>
-
-        {/* Albums ou bannière album sélectionné */}
-        {!selectedAlbum && (
-          <>
-            <SectionLabel
-              label="Choisissez un album"
-              style={styles.sectionLabel}
-            />
-            {albumsLoading ? (
-              <ActivityIndicator
-                color={Colors.accent}
-                style={styles.sectionLoading}
-              />
-            ) : (
-              <AlbumGrid
-                albums={albumsWithStats}
-                onPressAlbum={handleSelectAlbum}
-              />
-            )}
-          </>
-        )}
       </>
     ),
     [
       activeMember,
+      memberStats,
       membersWithStats,
       activeMemberId,
       handleSelectMember,
       activeFilter,
-      selectedAlbum,
-      albumsLoading,
-      albumsWithStats,
-      handleSelectAlbum,
-      handleBackToAlbums,
-      filteredCards.length,
     ],
   );
+
+  // ── Header vue albums — static + grille albums ────────────────────────
+  const AlbumsHeader = useMemo(
+    () => (
+      <>
+        {StaticHeader}
+        <SectionLabel label="Choisissez un album" style={styles.sectionLabel} />
+        {albumsLoading ? (
+          <ActivityIndicator
+            color={Colors.accent}
+            style={styles.sectionLoading}
+          />
+        ) : (
+          <View style={styles.albumsGrid}>
+            {albumRows.map((row, rowIndex) => (
+              <View key={`row-${rowIndex}`} style={styles.albumRow}>
+                {row.map((album) => (
+                  <AlbumCard
+                    key={album.id}
+                    album={album}
+                    onPress={albumHandlers.get(album.id)!}
+                  />
+                ))}
+                {row.length < 2 && (
+                  <View style={[styles.albumCard, styles.albumCardEmpty]} />
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+        <View style={styles.bottomPad} />
+      </>
+    ),
+    [StaticHeader, albumsLoading, albumRows, albumHandlers],
+  );
+
+  // ── Header vue photocards — static seulement ─────────────────────────
+  const PhotocardsHeader = useMemo(() => <>{StaticHeader}</>, [StaticHeader]);
 
   // ── Loading ───────────────────────────────────────────────────────────
   if (membersLoading) {
@@ -264,6 +329,7 @@ export default function MemberScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Bannière album sélectionné */}
       {selectedAlbum && (
         <TouchableOpacity
           style={styles.albumBanner}
@@ -287,36 +353,27 @@ export default function MemberScreen() {
         </TouchableOpacity>
       )}
 
-      {/* ── Contenu — FlatList gère tout ── */}
-      {!selectedAlbum ? (
+      {/* ── Vue albums — toujours montée, cachée avec display:none ── */}
+      <View style={[styles.fill, selectedAlbum ? styles.hidden : null]}>
         <PhotocardMiniGrid
           cards={[]}
-          ListHeaderComponent={ListHeader}
+          ListHeaderComponent={AlbumsHeader}
           hideEmpty
         />
-      ) : photocardsLoading ? (
-        <>
-          {/* Header + spinner */}
+      </View>
+
+      {/* ── Vue photocards — montée seulement quand album sélectionné ── */}
+      {selectedAlbum &&
+        (photocardsLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator color={Colors.accent} />
+          </View>
+        ) : (
           <PhotocardMiniGrid
-            cards={[]}
-            ListHeaderComponent={
-              <>
-                {ListHeader}
-                <ActivityIndicator
-                  color={Colors.accent}
-                  style={styles.sectionLoading}
-                />
-              </>
-            }
+            cards={filteredCards}
+            ListHeaderComponent={PhotocardsHeader}
           />
-        </>
-      ) : (
-        // Mode photocards — FlatList avec infinite scroll
-        <PhotocardMiniGrid
-          cards={filteredCards}
-          ListHeaderComponent={ListHeader}
-        />
-      )}
+        ))}
     </SafeAreaView>
   );
 }
@@ -324,15 +381,10 @@ export default function MemberScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: Colors.bg,
-  },
-  loadingWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  safe: { flex: 1, backgroundColor: Colors.bg },
+  fill: { flex: 1 },
+  hidden: { display: "none" },
+  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
   navbar: {
     flexDirection: "row",
     alignItems: "center",
@@ -352,17 +404,6 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: Colors.border,
   },
-  navTitle: {
-    flex: 1,
-    fontSize: Theme.fontSize.base,
-    fontWeight: Theme.fontWeight.medium,
-    color: Colors.text,
-    textAlign: "center",
-    marginHorizontal: Theme.spacing.sm,
-  },
-  scroll: {
-    flex: 1,
-  },
   membersSection: {
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
@@ -372,9 +413,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.lg,
     paddingTop: Theme.spacing.md,
   },
-  sectionLoading: {
-    paddingVertical: Theme.spacing.xl,
-  },
+  sectionLoading: { paddingVertical: Theme.spacing.xl },
   filtersRow: {
     paddingHorizontal: Theme.spacing.lg,
     paddingTop: Theme.spacing.md,
@@ -383,6 +422,56 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     marginBottom: Theme.spacing.md,
   },
+
+  // ── Albums grid ───────────────────────────────────────────────────────
+  albumsGrid: {
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: Theme.spacing.md,
+    gap: 10,
+  },
+  albumRow: { flexDirection: "row", gap: 10 },
+  albumCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    overflow: "hidden",
+  },
+  albumCardEmpty: { backgroundColor: "transparent", borderWidth: 0 },
+  albumCover: {
+    height: 110,
+    backgroundColor: Colors.surface2,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  albumEmoji: { fontSize: 32 },
+  completeBadge: {
+    position: "absolute",
+    bottom: 6,
+    right: 6,
+    backgroundColor: Colors.accent,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  completeText: {
+    fontSize: Theme.fontSize.xs,
+    color: Colors.bg,
+    fontWeight: Theme.fontWeight.bold,
+  },
+  albumInfo: { padding: 8, gap: 2 },
+  albumTitle: {
+    fontSize: Theme.fontSize.base,
+    fontWeight: Theme.fontWeight.medium,
+    color: Colors.text,
+  },
+  albumMeta: { fontSize: Theme.fontSize.sm, color: Colors.textMuted },
+
+  // ── Album banner ──────────────────────────────────────────────────────
   albumBanner: {
     flexDirection: "row",
     alignItems: "center",
@@ -400,9 +489,7 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: Theme.borderRadius.sm,
   },
-  albumBannerInfo: {
-    flex: 1,
-  },
+  albumBannerInfo: { flex: 1 },
   albumBannerTitle: {
     fontSize: Theme.fontSize.base,
     fontWeight: Theme.fontWeight.medium,
@@ -413,19 +500,5 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 2,
   },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: 40,
-    gap: 8,
-  },
-  emptyEmoji: {
-    fontSize: 32,
-  },
-  emptyText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.textMuted,
-  },
-  bottomPad: {
-    height: 40,
-  },
+  bottomPad: { height: 40 },
 });

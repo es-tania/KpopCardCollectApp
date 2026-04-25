@@ -1,6 +1,5 @@
 import { PHOTOCARD_FILTER_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
-import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,6 +26,7 @@ interface PhotocardMiniGridProps {
   onEndReached?: () => void;
   loadingMore?: boolean;
   ListHeaderComponent?: React.ReactElement;
+  ListFooterComponent?: React.ReactElement;
   hideEmpty?: boolean;
 }
 
@@ -40,6 +40,7 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
   onEndReached,
   loadingMore = false,
   ListHeaderComponent,
+  ListFooterComponent,
   hideEmpty = false,
 }) => {
   const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
@@ -50,18 +51,12 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
 
   const flatListRef = useRef<FlatList>(null);
   const cooldown = useRef(false);
-  const prevCardsRef = useRef(cards);
-  const prevIdsRef = useRef(cards.map((c) => c.id).join(","));
-  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
+  const prevCards = useRef(cards);
 
   // ── Réinitialise le compteur si les cartes changent ───────────────────
-  const currentIds = cards.map((c) => c.id).join(",");
-  if (currentIds !== prevIdsRef.current) {
-    prevIdsRef.current = currentIds;
-    prevCardsRef.current = cards;
+  if (prevCards.current !== cards) {
+    prevCards.current = cards;
     setVisibleCount(LOCAL_PAGE);
-  } else {
-    prevCardsRef.current = cards;
   }
 
   // ── Types disponibles ─────────────────────────────────────────────────
@@ -72,16 +67,11 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
     );
   }, [cards]);
 
-  const activeCards = useMemo(
-    () => cards.filter((c) => !deletedIds.has(c.id)),
-    [cards, deletedIds],
-  );
-
   // ── Cartes filtrées par type ──────────────────────────────────────────
   const typeFilteredCards = useMemo(() => {
-    if (activeType === "all") return activeCards;
-    return activeCards.filter((c) => c.type === activeType);
-  }, [activeCards, activeType]);
+    if (activeType === "all") return cards;
+    return cards.filter((c) => c.type === activeType);
+  }, [cards, activeType]);
 
   // ── Cartes visibles ───────────────────────────────────────────────────
   const visibleCards = useMemo(
@@ -183,14 +173,21 @@ export const PhotocardMiniGrid: React.FC<PhotocardMiniGridProps> = ({
 
   // ── Footer ────────────────────────────────────────────────────────────
   const renderFooter = useCallback(() => {
-    if (!hasLocalMore && !loadingMore) return null;
+    const hasPagination = hasLocalMore || loadingMore;
     return (
-      <View style={styles.footer}>
-        <ActivityIndicator color={Colors.accent} size="small" />
-        <Text style={styles.footerText}>{hasLocalMore && "Chargement..."}</Text>
-      </View>
+      <>
+        {ListFooterComponent}
+        {hasPagination && (
+          <View style={styles.footer}>
+            <ActivityIndicator color={Colors.accent} size="small" />
+            <Text style={styles.footerText}>
+              {hasLocalMore && "Chargement..."}
+            </Text>
+          </View>
+        )}
+      </>
     );
-  }, [hasLocalMore, loadingMore, visibleCount, typeFilteredCards.length]);
+  }, [hasLocalMore, loadingMore, ListFooterComponent]);
 
   // ── Empty ─────────────────────────────────────────────────────────────
   const renderEmpty = useCallback(() => {

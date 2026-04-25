@@ -1,14 +1,29 @@
 import { ALBUM_TYPE_LABELS } from "@/src/constants/options";
-import React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 import { Album } from "../../types";
 import { ProgressBar } from "../ui/ProgressBar";
 
+const LOCAL_PAGE = 12;
+const NUM_COLUMNS = 2;
+
 interface AlbumGridProps {
   albums: Album[];
   onPressAlbum: (album: Album) => void;
+  ListHeaderComponent?: React.ReactElement;
+  onEndReached?: () => void;
+  loadingMore?: boolean;
+  scrollEnabled?: boolean;
 }
 
 const AlbumCard: React.FC<{
@@ -70,26 +85,132 @@ const AlbumCard: React.FC<{
 export const AlbumGrid: React.FC<AlbumGridProps> = ({
   albums,
   onPressAlbum,
-}) => (
-  <View style={styles.grid}>
-    {albums.map((album) => (
-      <View key={album.id} style={styles.gridItem}>
-        <AlbumCard album={album} onPress={() => onPressAlbum(album)} />
+  ListHeaderComponent,
+  onEndReached,
+  loadingMore = false,
+  scrollEnabled,
+}) => {
+  const [visibleCount, setVisibleCount] = useState(LOCAL_PAGE);
+  const cooldown = useRef(false);
+  const prevIdsRef = useRef(albums.map((a) => a.id).join(","));
+
+  // ── Reset si la liste change ──────────────────────────────────────────
+  const currentIds = albums.map((a) => a.id).join(",");
+  if (currentIds !== prevIdsRef.current) {
+    prevIdsRef.current = currentIds;
+    setVisibleCount(LOCAL_PAGE);
+  }
+
+  // ── Albums visibles ───────────────────────────────────────────────────
+  const visibleAlbums = useMemo(
+    () => albums.slice(0, visibleCount),
+    [albums, visibleCount],
+  );
+
+  const hasLocalMore = visibleCount < albums.length;
+
+  // ── Rows par paires ───────────────────────────────────────────────────
+  const rows = useMemo(() => {
+    const result: Album[][] = [];
+    for (let i = 0; i < visibleAlbums.length; i += NUM_COLUMNS) {
+      result.push(visibleAlbums.slice(i, i + NUM_COLUMNS));
+    }
+    return result;
+  }, [visibleAlbums]);
+
+  // ── onEndReached ──────────────────────────────────────────────────────
+  const handleEndReached = useCallback(() => {
+    if (cooldown.current) return;
+    cooldown.current = true;
+
+    if (hasLocalMore) {
+      setVisibleCount((prev) => Math.min(prev + LOCAL_PAGE, albums.length));
+    } else if (onEndReached) {
+      onEndReached();
+    }
+
+    setTimeout(() => {
+      cooldown.current = false;
+    }, 800);
+  }, [hasLocalMore, albums.length, onEndReached]);
+
+  // ── Render row ────────────────────────────────────────────────────────
+  const renderRow = useCallback(
+    ({ item: row }: { item: Album[] }) => (
+      <View style={styles.row}>
+        {row.map((album) => (
+          <View key={album.id} style={styles.cardWrap}>
+            <AlbumCard album={album} onPress={() => onPressAlbum(album)} />
+          </View>
+        ))}
+        {/* Rempli si nombre impair */}
+        {row.length < NUM_COLUMNS &&
+          Array(NUM_COLUMNS - row.length)
+            .fill(null)
+            .map((_, i) => <View key={`empty-${i}`} style={styles.cardWrap} />)}
       </View>
-    ))}
-  </View>
-);
+    ),
+    [onPressAlbum],
+  );
+
+  const keyExtractor = useCallback(
+    (_: any, index: number) => `row-${index}`,
+    [],
+  );
+
+  // ── Footer ────────────────────────────────────────────────────────────
+  const renderFooter = useCallback(() => {
+    if (!hasLocalMore && !loadingMore) return null;
+    return (
+      <View style={styles.footer}>
+        <ActivityIndicator color={Colors.accent} size="small" />
+      </View>
+    );
+  }, [hasLocalMore, loadingMore]);
+
+  // ── Empty ─────────────────────────────────────────────────────────────
+  const renderEmpty = useCallback(
+    () => (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyEmoji}>📀</Text>
+        <Text style={styles.emptyText}>Aucun album</Text>
+      </View>
+    ),
+    [],
+  );
+
+  return (
+    <FlatList
+      data={rows}
+      renderItem={renderRow}
+      keyExtractor={keyExtractor}
+      ListHeaderComponent={ListHeaderComponent}
+      ListFooterComponent={renderFooter}
+      ListEmptyComponent={renderEmpty}
+      onEndReached={handleEndReached}
+      onEndReachedThreshold={0.5}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.content}
+      removeClippedSubviews={true}
+      maxToRenderPerBatch={4}
+      windowSize={8}
+      initialNumToRender={6}
+      scrollEnabled={scrollEnabled ?? true}
+    />
+  );
+};
 
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+  content: {
     paddingHorizontal: Theme.spacing.lg,
+    paddingBottom: 40,
+    gap: 10,
   },
-  gridItem: {
-    width: "47.5%",
+  row: {
+    flexDirection: "row",
+    gap: 10,
   },
+  cardWrap: { flex: 1 },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Theme.borderRadius.md,
@@ -102,47 +223,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface2,
     position: "relative",
   },
-  coverImage: {
-    width: "100%",
-    height: "100%",
-  },
+  coverImage: { width: "100%", height: "100%" },
   coverFallback: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  coverEmoji: {
-    fontSize: 32,
-  },
-  coverBadges: {
-    position: "absolute",
-    top: 6,
-    left: 6,
-    flexDirection: "row",
-    gap: 4,
-  },
-  pobBadge: {
-    backgroundColor: "rgba(125,211,240,0.85)",
-    borderRadius: Theme.borderRadius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  pobText: {
-    fontSize: Theme.fontSize.xs,
-    color: Colors.bg,
-    fontWeight: Theme.fontWeight.semibold,
-  },
-  limitedBadge: {
-    backgroundColor: "rgba(250,199,117,0.85)",
-    borderRadius: Theme.borderRadius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  limitedText: {
-    fontSize: Theme.fontSize.xs,
-    color: Colors.bg,
-    fontWeight: Theme.fontWeight.semibold,
-  },
+  coverEmoji: { fontSize: 32 },
   completeBadge: {
     position: "absolute",
     bottom: 6,
@@ -172,8 +259,19 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSize.sm,
     color: Colors.textMuted,
   },
-  eventName: {
-    fontSize: Theme.fontSize.sm,
-    color: Colors.accent,
+  footer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: Theme.spacing.lg,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 32,
+    gap: 8,
+  },
+  emptyEmoji: { fontSize: 28 },
+  emptyText: {
+    fontSize: Theme.fontSize.base,
+    color: Colors.textMuted,
   },
 });
