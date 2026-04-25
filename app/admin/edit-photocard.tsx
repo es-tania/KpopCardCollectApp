@@ -7,7 +7,7 @@ import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { useDeletePhotocards } from "@/src/hooks/photocard/useDeletePhotocards";
 import { useEditPhotocard } from "@/src/hooks/photocard/useEditPhotocard";
-import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
+import { useFilteredPhotocards } from "@/src/hooks/photocard/useFilteredPhotocards";
 import { photocardsService } from "@/src/services";
 import { useAuthStore } from "@/src/store/authStore";
 import { router, useLocalSearchParams } from "expo-router";
@@ -26,6 +26,7 @@ import React, {
   useState,
 } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   FlatList,
@@ -58,6 +59,7 @@ export default function EditPhotocardScreen() {
   const { isAdmin, groupAdminIds } = useAuthStore();
   const { confirmDeleteOne, confirmDeleteMany } = useDeletePhotocards();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
+
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
   );
@@ -73,6 +75,18 @@ export default function EditPhotocardScreen() {
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+  const {
+    photocards: filteredCards,
+    loading: photocardsLoading,
+    refetch,
+    removeById,
+  } = useFilteredPhotocards({
+    groupId: selectedGroupId,
+    albumId: selectedAlbumId,
+    memberId: selectedMemberId,
+    query,
+    allowedGroupIds: isAdmin ? undefined : groupAdminIds,
+  });
 
   // ── State sélection ───────────────────────────────────────────────────
   const [selectionMode, setSelectionMode] = useState(false);
@@ -80,13 +94,6 @@ export default function EditPhotocardScreen() {
 
   // Animation filtres
   const filterAnim = useRef(new Animated.Value(1)).current;
-
-  const {
-    photocards,
-    loading: photocardsLoading,
-    refetch,
-    removeById,
-  } = usePhotocards();
   const { groups } = useGroups();
 
   const { loading, progress, error, submit } = useEditPhotocard(async () => {
@@ -155,37 +162,6 @@ export default function EditPhotocardScreen() {
     () => filteredMemberOptions.map((m) => ({ id: m.id, label: m.stageName })),
     [filteredMemberOptions],
   );
-
-  // ── Photocards filtrées ──────────────────────────────────────────────────
-
-  const filteredCards = useMemo(() => {
-    return photocards.filter((c) => {
-      if (!isAdmin && !groupAdminIds.includes(c.groupId)) return false;
-
-      if (selectedGroupId && c.groupId !== selectedGroupId) return false;
-      if (selectedAlbumId && c.albumId !== selectedAlbumId) return false;
-      if (selectedMemberId && c.memberId !== selectedMemberId) return false;
-      if (query) {
-        const q = query.toLowerCase();
-        return (
-          c.memberName.toLowerCase().includes(q) ||
-          c.albumTitle.toLowerCase().includes(q) ||
-          c.groupName.toLowerCase().includes(q) ||
-          c.type.toLowerCase().includes(q) ||
-          c.version?.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    });
-  }, [
-    photocards,
-    isAdmin,
-    groupAdminIds,
-    selectedGroupId,
-    selectedAlbumId,
-    selectedMemberId,
-    query,
-  ]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -389,14 +365,26 @@ export default function EditPhotocardScreen() {
           {/* Compteur */}
           <View style={styles.countBar}>
             <Text style={styles.countText}>
-              <Text style={styles.countNum}>{filteredCards.length}</Text> carte
-              {filteredCards.length !== 1 ? "s" : ""}
-              {selectedGroupId &&
-                ` · ${groups.find((g) => g.id === selectedGroupId)?.name}`}
-              {selectedAlbumId &&
-                ` · ${filteredAlbumOptions.find((a) => a.id === selectedAlbumId)?.title}`}
-              {selectedMemberId &&
-                ` · ${filteredMemberOptions.find((m) => m.id === selectedMemberId)?.stageName}`}
+              {!selectedGroupId &&
+              !selectedAlbumId &&
+              !selectedMemberId &&
+              !query ? (
+                <>
+                  <Text style={styles.countNum}>{filteredCards.length}</Text>{" "}
+                  dernières cartes ajoutées
+                </>
+              ) : (
+                <>
+                  <Text style={styles.countNum}>{filteredCards.length}</Text>{" "}
+                  carte{filteredCards.length !== 1 ? "s" : ""}
+                  {selectedGroupId &&
+                    ` · ${groups.find((g) => g.id === selectedGroupId)?.name}`}
+                  {selectedAlbumId &&
+                    ` · ${filteredAlbumOptions.find((a) => a.id === selectedAlbumId)?.title}`}
+                  {selectedMemberId &&
+                    ` · ${filteredMemberOptions.find((m) => m.id === selectedMemberId)?.stageName}`}
+                </>
+              )}
             </Text>
           </View>
 
@@ -423,11 +411,17 @@ export default function EditPhotocardScreen() {
             )}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={styles.emptyEmoji}>🔍</Text>
-                <Text style={styles.emptyTitle}>Aucune carte trouvée</Text>
-                <Text style={styles.emptySubtitle}>
-                  Essaie d'affiner ou de changer les filtres
-                </Text>
+                {photocardsLoading ? (
+                  <ActivityIndicator color={Colors.accent} />
+                ) : (
+                  <>
+                    <Text style={styles.emptyEmoji}>🔍</Text>
+                    <Text style={styles.emptyTitle}>Aucune carte trouvée</Text>
+                    <Text style={styles.emptySubtitle}>
+                      Essaie d'affiner ou de changer les filtres
+                    </Text>
+                  </>
+                )}
               </View>
             }
             showsVerticalScrollIndicator={false}

@@ -1,21 +1,13 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
 import { ALL_KEY } from "@/src/constants/key";
 import { useGroups } from "@/src/hooks/group/useGroups";
-import { useFetchOnFocus } from "@/src/hooks/useFetchOnFocus";
-import { supabase } from "@/src/lib/supabase";
+import { useMyCards } from "@/src/hooks/photocard/useMyCards";
 import { useAuthStore } from "@/src/store/authStore";
 import { useCollectionStore } from "@/src/store/collectionStore";
-import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
-import { CardMode, PhotocardWithDetails } from "@/src/types";
+import { CardMode } from "@/src/types";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Grid3x3, SlidersHorizontal } from "lucide-react-native";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
@@ -28,7 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PhotocardMiniGrid } from "../src/components/photocard/PhotocardMiniGrid";
 import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
-import { mapPhotocard } from "../src/services/photocardsService";
 
 // ─── Config par mode ──────────────────────────────────────────────────────────
 
@@ -69,80 +60,30 @@ export default function MyCardsScreen() {
   const config = MODE_CONFIG[mode];
 
   // ── State ─────────────────────────────────────────────────────────────
-  const [cards, setCards] = useState<PhotocardWithDetails[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string>(ALL_KEY);
   const [showFilters, setShowFilters] = useState(false);
 
   const filterHeight = useRef(new Animated.Value(0)).current;
-  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
-  // ── Fetch depuis Supabase ─────────────────────────────────────────────
 
-  const fetchCards = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from(config.table)
-        .select(`photocard_id, photocards_with_details (*)`)
-        .eq("user_id", user.id);
+  const { cards, loading } = useMyCards(mode);
 
-      if (error) throw error;
-
-      setCards(
-        (data ?? [])
-          .map((d: any) => d.photocards_with_details)
-          .filter(Boolean)
-          .map((d: any) => ({
-            ...mapPhotocard(d),
-            isInCollection: collectionIds.has(d.id),
-            isFavorite: favoriteIds.has(d.id),
-            isWishlisted: wishlistIds.has(d.id),
-          })),
-      );
-    } catch (err: any) {
-      console.error("fetchCards error:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, mode]);
-
-  useEffect(() => {
-    fetchCards();
-  }, [mode, user]);
-  useFetchOnFocus(fetchCards);
-
-  // ── Groupes présents dans les cartes ─────────────────────────────────
-
+  // ── Groupes présents dans les cartes ──────────────────────────────────
   const groupsInCards = useMemo(() => {
-    const groupIds = new Set(cards.map((c) => c.groupId));
-    return groups.filter((g) => groupIds.has(g.id));
+    const ids = new Set(cards.map((c) => c.groupId));
+    return groups.filter((g) => ids.has(g.id));
   }, [cards, groups]);
 
   // ── Filtre par groupe ─────────────────────────────────────────────────
-
-  // ── Cartes enrichies depuis le store (toujours à jour) ────────────────
-  const enrichedCards = useMemo(() => {
-    return cards.map((card) => ({
-      ...card,
-      isInCollection: collectionIds.has(card.id),
-      isFavorite: favoriteIds.has(card.id),
-      isWishlisted: wishlistIds.has(card.id),
-    }));
-  }, [cards, collectionIds, favoriteIds, wishlistIds]);
-
   const filteredCards = useMemo(() => {
-    let cards = enrichedCards.filter((c) => !deletedIds.has(c.id));
     if (selectedGroupId === ALL_KEY) return cards;
     return cards.filter((c) => c.groupId === selectedGroupId);
-  }, [enrichedCards, selectedGroupId, deletedIds]);
+  }, [cards, selectedGroupId]);
 
   const selectedGroupName = useMemo(
     () => groupsInCards.find((g) => g.id === selectedGroupId)?.name ?? null,
     [selectedGroupId, groupsInCards],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────
   const toggleFilters = useCallback(() => {
     setShowFilters((v) => !v);
     Animated.spring(filterHeight, {
@@ -207,28 +148,6 @@ export default function MyCardsScreen() {
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={Colors.accent} />
         </View>
-      ) : filteredCards.length === 0 ? (
-        <>
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyEmoji}>🃏</Text>
-            <Text style={styles.emptyTitle}>Aucune carte</Text>
-            <Text style={styles.emptySubtitle}>
-              {selectedGroupId !== ALL_KEY
-                ? "Aucune carte pour ce groupe"
-                : config.emptyText}
-            </Text>
-            {selectedGroupId !== ALL_KEY && (
-              <TouchableOpacity
-                style={styles.resetBtn}
-                onPress={() => handleSelectGroup(ALL_KEY)}
-              >
-                <Text style={styles.resetBtnText}>
-                  Voir toutes les photocards
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </>
       ) : (
         <PhotocardMiniGrid
           cards={filteredCards}
