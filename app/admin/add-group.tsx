@@ -18,6 +18,8 @@ import { ChevronLeft, Plus, UserPlus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -166,151 +168,160 @@ export default function AddGroupScreen() {
         <View style={styles.navBtn} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* ── Médias ── */}
-        <View style={styles.section}>
-          <FormField
-            label="Nom du groupe"
-            value={form.name}
-            onChangeText={setField("name")}
-            placeholder="ex: P1Harmony"
-            required
-            error={errors.name}
-            autoCapitalize="words"
-          />
-          <FormImagePicker
-            label="Logo"
-            imageUri={form.logoUri}
-            onPick={() =>
-              pickLocalImage((uri) => setField("logoUri")(uri), {
-                aspect: [1, 1],
-              })
-            }
-            onRemove={() => setField("logoUri")("")}
-            aspectRatio={1}
-          />
-          <FormImagePicker
-            label="Bannière"
-            imageUri={form.bannerUri}
-            onPick={() =>
-              pickLocalImage((uri) => setField("bannerUri")(uri), {
-                aspect: [8, 5],
-              })
-            }
-            onRemove={() => setField("bannerUri")("")}
-            aspectRatio={800 / 300}
-            previewWidth={300}
-          />
-        </View>
-
-        {/* ── Identité ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identité</Text>
-          <FormField
-            label="Nom coréen"
-            value={form.koreanName}
-            onChangeText={setField("koreanName")}
-            placeholder="ex: 피원하모니"
-          />
-          <FormField
-            label="Agence"
-            value={form.company}
-            onChangeText={setField("company")}
-            placeholder="ex: FNC Ent."
-            required
-            error={errors.company}
-          />
-          <FormField
-            label="Fandom"
-            value={form.fandomName}
-            onChangeText={setField("fandomName")}
-            placeholder="ex: P1ECE"
-          />
-        </View>
-
-        {/* ── Infos ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informations</Text>
-          <FormSelect
-            label="Génération"
-            options={GENERATION_OPTIONS}
-            value={form.generation}
-            onChange={setField("generation")}
-          />
-          <FormSelect
-            label="Statut"
-            options={STATUS_OPTIONS}
-            value={form.status}
-            onChange={setField("status")}
-          />
-          <FormDatePicker
-            label="Date de début"
-            value={form.debutDate}
-            onChange={setField("debutDate")}
-            maxDate={new Date()} // ne peut pas débuter dans le futur
-          />
-          {form.status === "disbanded" && (
-            <FormDatePicker
-              label="Date de disband"
-              value={form.disbandDate}
-              onChange={setField("disbandDate")}
-              minDate={form.debutDate ? new Date(form.debutDate) : undefined}
-              maxDate={new Date()}
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Médias ── */}
+          <View style={styles.section}>
+            <FormField
+              label="Nom du groupe"
+              value={form.name}
+              onChangeText={setField("name")}
+              placeholder="ex: P1Harmony"
+              required
+              error={errors.name}
+              autoCapitalize="words"
             />
-          )}
-        </View>
+            <FormImagePicker
+              label="Logo"
+              imageUri={form.logoUri}
+              onPick={() =>
+                pickLocalImage((uri) => setField("logoUri")(uri), {
+                  aspect: [1, 1],
+                })
+              }
+              onRemove={() => setField("logoUri")("")}
+              aspectRatio={1}
+            />
+            <FormImagePicker
+              label="Bannière"
+              imageUri={form.bannerUri}
+              onPick={() =>
+                pickLocalImage((uri) => setField("bannerUri")(uri), {
+                  aspect: [8, 5],
+                })
+              }
+              onRemove={() => setField("bannerUri")("")}
+              aspectRatio={800 / 300}
+              previewWidth={300}
+            />
+          </View>
 
-        {/* ── Membres ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Membres ({members.length})</Text>
+          {/* ── Identité ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Identité</Text>
+            <FormField
+              label="Nom coréen"
+              value={form.koreanName}
+              onChangeText={setField("koreanName")}
+              placeholder="ex: 피원하모니"
+            />
+            <FormField
+              label="Agence"
+              value={form.company}
+              onChangeText={setField("company")}
+              placeholder="ex: FNC Ent."
+              required
+              error={errors.company}
+            />
+            <FormField
+              label="Fandom"
+              value={form.fandomName}
+              onChangeText={setField("fandomName")}
+              placeholder="ex: P1ECE"
+            />
+          </View>
+
+          {/* ── Infos ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Informations</Text>
+            <FormSelect
+              label="Génération"
+              options={GENERATION_OPTIONS}
+              value={form.generation}
+              onChange={setField("generation")}
+            />
+            <FormSelect
+              label="Statut"
+              options={STATUS_OPTIONS}
+              value={form.status}
+              onChange={setField("status")}
+            />
+            <FormDatePicker
+              label="Date de début"
+              value={form.debutDate}
+              onChange={setField("debutDate")}
+              maxDate={new Date()} // ne peut pas débuter dans le futur
+            />
+            {form.status === "disbanded" && (
+              <FormDatePicker
+                label="Date de disband"
+                value={form.disbandDate}
+                onChange={setField("disbandDate")}
+                minDate={form.debutDate ? new Date(form.debutDate) : undefined}
+                maxDate={new Date()}
+              />
+            )}
+          </View>
+
+          {/* ── Membres ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                Membres ({members.length})
+              </Text>
+              <TouchableOpacity
+                style={styles.addMemberBtn}
+                onPress={handleAddMember}
+                activeOpacity={0.75}
+              >
+                <UserPlus size={15} color={Colors.accent} strokeWidth={1.8} />
+                <Text style={styles.addMemberText}>Ajouter</Text>
+              </TouchableOpacity>
+            </View>
+
+            {members.map((member, index) => (
+              <MemberFormCard
+                key={member.localId}
+                member={member}
+                index={index}
+                errors={memberErrors[member.localId]}
+                onChange={handleChangeMember}
+                onRemove={handleRemoveMember}
+                defaultExpanded={true}
+                showAvatar={false}
+              />
+            ))}
+
+            {/* Bouton ajouter membre en bas de liste */}
             <TouchableOpacity
-              style={styles.addMemberBtn}
+              style={styles.addMemberRowBtn}
               onPress={handleAddMember}
               activeOpacity={0.75}
             >
-              <UserPlus size={15} color={Colors.accent} strokeWidth={1.8} />
-              <Text style={styles.addMemberText}>Ajouter</Text>
+              <Plus size={16} color={Colors.accent} strokeWidth={2} />
+              <Text style={styles.addMemberRowText}>Ajouter un membre</Text>
             </TouchableOpacity>
           </View>
 
-          {members.map((member, index) => (
-            <MemberFormCard
-              key={member.localId}
-              member={member}
-              index={index}
-              errors={memberErrors[member.localId]}
-              onChange={handleChangeMember}
-              onRemove={handleRemoveMember}
-              defaultExpanded={true}
-              showAvatar={false}
-            />
-          ))}
-
-          {/* Bouton ajouter membre en bas de liste */}
-          <TouchableOpacity
-            style={styles.addMemberRowBtn}
-            onPress={handleAddMember}
-            activeOpacity={0.75}
-          >
-            <Plus size={16} color={Colors.accent} strokeWidth={2} />
-            <Text style={styles.addMemberRowText}>Ajouter un membre</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Soumettre ── */}
-        <FormSubmitButton
-          label={`Créer le groupe avec ${members.length} membre${members.length > 1 ? "s" : ""}`}
-          onPress={handleSubmit}
-          loading={loading}
-        />
-        <ProgressIndicator message={progress} />
-      </ScrollView>
+          {/* ── Soumettre ── */}
+          <FormSubmitButton
+            label={`Créer le groupe avec ${members.length} membre${members.length > 1 ? "s" : ""}`}
+            onPress={handleSubmit}
+            loading={loading}
+          />
+          <ProgressIndicator message={progress} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

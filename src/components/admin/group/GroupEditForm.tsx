@@ -21,6 +21,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -164,291 +166,300 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* ── Aperçu groupe ── */}
-      <View style={styles.previewCard}>
-        {/* Bannière */}
-        {group.bannerUrl && (
-          <View style={styles.previewBanner}>
-            <Image
-              source={group.bannerUrl as any}
-              style={styles.previewBannerImg}
-              resizeMode="cover"
-            />
-            <View style={styles.previewBannerOverlay} />
-          </View>
-        )}
-
-        {/* Logo + infos */}
-        <View
-          style={[
-            styles.previewContent,
-            !!group.bannerUrl && styles.previewContentOverBanner,
-          ]}
-        >
-          <View style={styles.previewLogo}>
-            {group.logoUrl || group.logoUrl ? (
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* ── Aperçu groupe ── */}
+        <View style={styles.previewCard}>
+          {/* Bannière */}
+          {group.bannerUrl && (
+            <View style={styles.previewBanner}>
               <Image
-                source={(group.logoUrl ?? group.logoUrl) as any}
-                style={styles.previewLogoImg}
-                resizeMode="contain"
+                source={group.bannerUrl as any}
+                style={styles.previewBannerImg}
+                resizeMode="cover"
               />
-            ) : (
-              <Text style={styles.previewLogoInitials}>
-                {group.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </Text>
-            )}
+              <View style={styles.previewBannerOverlay} />
+            </View>
+          )}
+
+          {/* Logo + infos */}
+          <View
+            style={[
+              styles.previewContent,
+              !!group.bannerUrl && styles.previewContentOverBanner,
+            ]}
+          >
+            <View style={styles.previewLogo}>
+              {group.logoUrl || group.logoUrl ? (
+                <Image
+                  source={(group.logoUrl ?? group.logoUrl) as any}
+                  style={styles.previewLogoImg}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={styles.previewLogoInitials}>
+                  {group.name
+                    .split(" ")
+                    .map((w) => w[0])
+                    .join("")
+                    .toUpperCase()
+                    .slice(0, 2)}
+                </Text>
+              )}
+            </View>
+            <View style={styles.previewInfo}>
+              <View style={styles.previewNameRow}>
+                <Text style={styles.previewName}>{group.name}</Text>
+              </View>
+              {group.koreanName && (
+                <Text style={styles.previewKorean}>{group.koreanName}</Text>
+              )}
+              {group.fandomName && (
+                <Text style={styles.previewFandom}>✦ {group.fandomName}</Text>
+              )}
+              <View style={styles.previewBadges}>
+                {group.generation && <Badge label={group.generation} />}
+                {group.company && (
+                  <Badge
+                    label={group.company}
+                    color="rgba(90,106,128,0.3)"
+                    textColor={Colors.textMuted}
+                  />
+                )}
+                {group.status === "hiatus" && (
+                  <Badge
+                    label="Hiatus"
+                    color="rgba(250,199,117,0.15)"
+                    textColor={Colors.warning}
+                  />
+                )}
+                {group.status === "disbanded" && (
+                  <Badge
+                    label="Disbandé"
+                    color="rgba(240,112,112,0.15)"
+                    textColor={Colors.danger}
+                  />
+                )}
+              </View>
+            </View>
           </View>
-          <View style={styles.previewInfo}>
-            <View style={styles.previewNameRow}>
-              <Text style={styles.previewName}>{group.name}</Text>
+
+          {/* Stats rapides */}
+          <View style={styles.previewStats}>
+            <View style={styles.previewStat}>
+              <Text style={styles.previewStatNum}>{group.totalPhotocards}</Text>
+              <Text style={styles.previewStatLabel}>Photocards</Text>
             </View>
-            {group.koreanName && (
-              <Text style={styles.previewKorean}>{group.koreanName}</Text>
-            )}
-            {group.fandomName && (
-              <Text style={styles.previewFandom}>✦ {group.fandomName}</Text>
-            )}
-            <View style={styles.previewBadges}>
-              {group.generation && <Badge label={group.generation} />}
-              {group.company && (
-                <Badge
-                  label={group.company}
-                  color="rgba(90,106,128,0.3)"
-                  textColor={Colors.textMuted}
-                />
-              )}
-              {group.status === "hiatus" && (
-                <Badge
-                  label="Hiatus"
-                  color="rgba(250,199,117,0.15)"
-                  textColor={Colors.warning}
-                />
-              )}
-              {group.status === "disbanded" && (
-                <Badge
-                  label="Disbandé"
-                  color="rgba(240,112,112,0.15)"
-                  textColor={Colors.danger}
-                />
-              )}
+            <View style={styles.previewStatDivider} />
+            <View style={styles.previewStat}>
+              <Text style={styles.previewStatNum}>
+                {group.totalAlbums ?? "—"}
+              </Text>
+              <Text style={styles.previewStatLabel}>Albums</Text>
             </View>
+            {group.debutDate && (
+              <>
+                <View style={styles.previewStatDivider} />
+                <View style={styles.previewStat}>
+                  <Text style={styles.previewStatNum}>
+                    {new Date(group.debutDate).getFullYear()}
+                  </Text>
+                  <Text style={styles.previewStatLabel}>Début</Text>
+                </View>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Stats rapides */}
-        <View style={styles.previewStats}>
-          <View style={styles.previewStat}>
-            <Text style={styles.previewStatNum}>{group.totalPhotocards}</Text>
-            <Text style={styles.previewStatLabel}>Photocards</Text>
-          </View>
-          <View style={styles.previewStatDivider} />
-          <View style={styles.previewStat}>
-            <Text style={styles.previewStatNum}>
-              {group.totalAlbums ?? "—"}
-            </Text>
-            <Text style={styles.previewStatLabel}>Albums</Text>
-          </View>
-          {group.debutDate && (
-            <>
-              <View style={styles.previewStatDivider} />
-              <View style={styles.previewStat}>
-                <Text style={styles.previewStatNum}>
-                  {new Date(group.debutDate).getFullYear()}
-                </Text>
-                <Text style={styles.previewStatLabel}>Début</Text>
-              </View>
-            </>
+        {/* ── Médias ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Médias</Text>
+          <FormImagePicker
+            label="Nouveau logo"
+            imageUri={form.logoUri}
+            onPick={() =>
+              pickLocalImage(
+                (uri) => {
+                  set("logoUri")(uri);
+                  setForm((prev) => ({ ...prev, removeLogo: false })); // annule la suppression si on repick
+                },
+                { aspect: [1, 1] },
+              )
+            }
+            onRemove={() =>
+              setForm((prev) => ({
+                ...prev,
+                logoUri: "",
+                removeLogo: true,
+              }))
+            }
+            aspectRatio={1}
+          />
+
+          <FormImagePicker
+            label="Nouvelle bannière"
+            imageUri={form.bannerUri}
+            onPick={() =>
+              pickLocalImage(
+                (uri) => {
+                  set("bannerUri")(uri);
+                  setForm((prev) => ({ ...prev, removeBanner: false }));
+                },
+                { aspect: [8, 4] },
+              )
+            }
+            onRemove={() =>
+              setForm((prev) => ({
+                ...prev,
+                bannerUri: "",
+                removeBanner: true,
+              }))
+            }
+            aspectRatio={800 / 300}
+          />
+        </View>
+
+        {/* ── Identité ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Identité</Text>
+          <FormField
+            label="Nom du groupe"
+            value={form.name}
+            onChangeText={set("name")}
+            placeholder="ex: P1Harmony"
+            required
+            autoCapitalize="words"
+          />
+          <FormField
+            label="Nom coréen"
+            value={form.koreanName}
+            onChangeText={set("koreanName")}
+            placeholder="ex: 피원하모니"
+          />
+          <FormField
+            label="Agence"
+            value={form.company}
+            onChangeText={set("company")}
+            placeholder="ex: FNC Ent."
+            required
+          />
+          <FormField
+            label="Fandom"
+            value={form.fandomName}
+            onChangeText={set("fandomName")}
+            placeholder="ex: P1ECE"
+          />
+        </View>
+
+        {/* ── Informations ── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Informations</Text>
+          <FormSelect
+            label="Génération"
+            options={GENERATION_OPTIONS}
+            value={form.generation}
+            onChange={set("generation")}
+          />
+          <FormSelect
+            label="Statut"
+            options={STATUS_OPTIONS}
+            value={form.status}
+            onChange={set("status")}
+          />
+          <FormDatePicker
+            label="Date de début"
+            value={form.debutDate}
+            onChange={set("debutDate")}
+            minDate={form.debutDate ? new Date(form.debutDate) : undefined}
+            maxDate={new Date()}
+          />
+          {/* Disband uniquement si disbanded */}
+          {form.status === "disbanded" && (
+            <FormField
+              label="Date de disband"
+              value={form.disbandDate}
+              onChangeText={set("disbandDate")}
+              placeholder="YYYY-MM-DD"
+            />
           )}
         </View>
-      </View>
 
-      {/* ── Médias ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Médias</Text>
-        <FormImagePicker
-          label="Nouveau logo"
-          imageUri={form.logoUri}
-          onPick={() =>
-            pickLocalImage(
-              (uri) => {
-                set("logoUri")(uri);
-                setForm((prev) => ({ ...prev, removeLogo: false })); // annule la suppression si on repick
-              },
-              { aspect: [1, 1] },
-            )
-          }
-          onRemove={() =>
-            setForm((prev) => ({
-              ...prev,
-              logoUri: "",
-              removeLogo: true,
-            }))
-          }
-          aspectRatio={1}
-        />
+        {/* ── Membres ── */}
+        <View style={styles.section}>
+          <View style={memberSectionStyles.header}>
+            <Text style={styles.sectionTitle}>Membres ({members.length})</Text>
+            <TouchableOpacity
+              style={memberSectionStyles.addBtn}
+              onPress={handleAddMember}
+              activeOpacity={0.75}
+            >
+              <UserPlus size={15} color={Colors.accent} strokeWidth={1.8} />
+              <Text style={memberSectionStyles.addBtnText}>Ajouter</Text>
+            </TouchableOpacity>
+          </View>
 
-        <FormImagePicker
-          label="Nouvelle bannière"
-          imageUri={form.bannerUri}
-          onPick={() =>
-            pickLocalImage(
-              (uri) => {
-                set("bannerUri")(uri);
-                setForm((prev) => ({ ...prev, removeBanner: false }));
-              },
-              { aspect: [8, 4] },
-            )
-          }
-          onRemove={() =>
-            setForm((prev) => ({
-              ...prev,
-              bannerUri: "",
-              removeBanner: true,
-            }))
-          }
-          aspectRatio={800 / 300}
-        />
-      </View>
+          {members.map((member, index) => (
+            <MemberFormCard
+              key={member.localId}
+              member={member}
+              index={index}
+              errors={memberErrors[member.localId]}
+              onChange={handleChangeMember}
+              onRemove={handleRemoveMember}
+              defaultExpanded={false}
+              showAvatar={true}
+            />
+          ))}
 
-      {/* ── Identité ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Identité</Text>
-        <FormField
-          label="Nom du groupe"
-          value={form.name}
-          onChangeText={set("name")}
-          placeholder="ex: P1Harmony"
-          required
-          autoCapitalize="words"
-        />
-        <FormField
-          label="Nom coréen"
-          value={form.koreanName}
-          onChangeText={set("koreanName")}
-          placeholder="ex: 피원하모니"
-        />
-        <FormField
-          label="Agence"
-          value={form.company}
-          onChangeText={set("company")}
-          placeholder="ex: FNC Ent."
-          required
-        />
-        <FormField
-          label="Fandom"
-          value={form.fandomName}
-          onChangeText={set("fandomName")}
-          placeholder="ex: P1ECE"
-        />
-      </View>
-
-      {/* ── Informations ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Informations</Text>
-        <FormSelect
-          label="Génération"
-          options={GENERATION_OPTIONS}
-          value={form.generation}
-          onChange={set("generation")}
-        />
-        <FormSelect
-          label="Statut"
-          options={STATUS_OPTIONS}
-          value={form.status}
-          onChange={set("status")}
-        />
-        <FormDatePicker
-          label="Date de début"
-          value={form.debutDate}
-          onChange={set("debutDate")}
-          minDate={form.debutDate ? new Date(form.debutDate) : undefined}
-          maxDate={new Date()}
-        />
-        {/* Disband uniquement si disbanded */}
-        {form.status === "disbanded" && (
-          <FormField
-            label="Date de disband"
-            value={form.disbandDate}
-            onChangeText={set("disbandDate")}
-            placeholder="YYYY-MM-DD"
-          />
-        )}
-      </View>
-
-      {/* ── Membres ── */}
-      <View style={styles.section}>
-        <View style={memberSectionStyles.header}>
-          <Text style={styles.sectionTitle}>Membres ({members.length})</Text>
+          {/* Bouton ajouter en bas */}
           <TouchableOpacity
-            style={memberSectionStyles.addBtn}
+            style={memberSectionStyles.addRowBtn}
             onPress={handleAddMember}
             activeOpacity={0.75}
           >
-            <UserPlus size={15} color={Colors.accent} strokeWidth={1.8} />
-            <Text style={memberSectionStyles.addBtnText}>Ajouter</Text>
+            <Plus size={16} color={Colors.accent} strokeWidth={2} />
+            <Text style={memberSectionStyles.addRowText}>
+              Ajouter un membre
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {members.map((member, index) => (
-          <MemberFormCard
-            key={member.localId}
-            member={member}
-            index={index}
-            errors={memberErrors[member.localId]}
-            onChange={handleChangeMember}
-            onRemove={handleRemoveMember}
-            defaultExpanded={false}
-            showAvatar={true}
-          />
-        ))}
+        {/* ── Progression ── */}
+        <ProgressIndicator message={progress} />
 
-        {/* Bouton ajouter en bas */}
-        <TouchableOpacity
-          style={memberSectionStyles.addRowBtn}
-          onPress={handleAddMember}
-          activeOpacity={0.75}
-        >
-          <Plus size={16} color={Colors.accent} strokeWidth={2} />
-          <Text style={memberSectionStyles.addRowText}>Ajouter un membre</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* ── Progression ── */}
-      <ProgressIndicator message={progress} />
-
-      {/* ── Actions ── */}
-      <View style={styles.btnGroup}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
-          <Text style={styles.cancelText}>Annuler</Text>
-        </TouchableOpacity>
-        <View style={styles.saveBtn}>
-          <FormSubmitButton
-            label="Enregistrer"
-            onPress={() => {
-              if (!validateMembers()) {
-                Alert.alert(
-                  "Formulaire incomplet",
-                  "Vérifie les noms de scène.",
-                );
-                return;
-              }
-              onSave(form, members);
-            }}
-            loading={loading}
-          />
+        {/* ── Actions ── */}
+        <View style={styles.btnGroup}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={onCancel}>
+            <Text style={styles.cancelText}>Annuler</Text>
+          </TouchableOpacity>
+          <View style={styles.saveBtn}>
+            <FormSubmitButton
+              label="Enregistrer"
+              onPress={() => {
+                if (!validateMembers()) {
+                  Alert.alert(
+                    "Formulaire incomplet",
+                    "Vérifie les noms de scène.",
+                  );
+                  return;
+                }
+                onSave(form, members);
+              }}
+              loading={loading}
+            />
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

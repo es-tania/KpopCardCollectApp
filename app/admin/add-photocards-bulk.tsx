@@ -25,6 +25,8 @@ import { ChevronLeft, Plus } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -212,121 +214,128 @@ export default function AddPhotocardsBulkScreen() {
         <View style={styles.navBtn} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* ── Infos communes ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Infos communes</Text>
-          <Text style={styles.sectionSubtitle}>
-            Ces informations s'appliquent à toutes les photocards
-          </Text>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Infos communes ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Infos communes</Text>
+            <Text style={styles.sectionSubtitle}>
+              Ces informations s'appliquent à toutes les photocards
+            </Text>
 
-          <FormSelect
-            label="Groupe"
-            options={groupOptions}
-            value={form.groupId}
-            onChange={handleSelectGroup}
-            required
-            searchable
-          />
-          <FormSelect
-            label="Album / Event"
-            options={albumOptions}
-            value={form.albumId}
-            onChange={handleSelectAlbum}
-            required
-            placeholder={
-              form.groupId
-                ? "Sélectionner un album..."
-                : "Sélectionne d'abord un groupe"
-            }
-            searchable
-          />
-          <FormSelect
-            label="Type"
-            options={PHOTOCARD_TYPE_OPTIONS}
-            value={form.type}
-            onChange={setField("type")}
-          />
-          <FormField
-            label="Version"
-            value={form.version}
-            onChangeText={setField("version")}
-            placeholder="ex: A ver., Digipack..."
-          />
-          <FormSelect
-            label="Shop"
-            options={shopOptions}
-            value={form.shopName}
-            onChange={setField("shopName")}
-            placeholder="Sélectionner un shop..."
-            loading={shopsLoading}
-            searchable
-          />
-          <FormSelect
-            label="Rareté"
-            options={RARITY_OPTIONS}
-            value={form.rarity}
-            onChange={setField("rarity")}
-          />
-        </View>
+            <FormSelect
+              label="Groupe"
+              options={groupOptions}
+              value={form.groupId}
+              onChange={handleSelectGroup}
+              required
+              searchable
+            />
+            <FormSelect
+              label="Album / Event"
+              options={albumOptions}
+              value={form.albumId}
+              onChange={handleSelectAlbum}
+              required
+              placeholder={
+                form.groupId
+                  ? "Sélectionner un album..."
+                  : "Sélectionne d'abord un groupe"
+              }
+              searchable
+            />
+            <FormSelect
+              label="Type"
+              options={PHOTOCARD_TYPE_OPTIONS}
+              value={form.type}
+              onChange={setField("type")}
+            />
+            <FormField
+              label="Version"
+              value={form.version}
+              onChangeText={setField("version")}
+              placeholder="ex: A ver., Digipack..."
+            />
+            <FormSelect
+              label="Shop"
+              options={shopOptions}
+              value={form.shopName}
+              onChange={setField("shopName")}
+              placeholder="Sélectionner un shop..."
+              loading={shopsLoading}
+              searchable
+            />
+            <FormSelect
+              label="Rareté"
+              options={RARITY_OPTIONS}
+              value={form.rarity}
+              onChange={setField("rarity")}
+            />
+          </View>
 
-        {/* ── Photocards ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>
-                Photocards ({photocards.length})
-              </Text>
-              <Text style={styles.sectionSubtitle}>Une carte par membre</Text>
+          {/* ── Photocards ── */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>
+                  Photocards ({photocards.length})
+                </Text>
+                <Text style={styles.sectionSubtitle}>Une carte par membre</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.addBtn}
+                onPress={handleAddCard}
+                activeOpacity={0.75}
+              >
+                <Plus size={15} color={Colors.accent} strokeWidth={2} />
+                <Text style={styles.addBtnText}>Ajouter</Text>
+              </TouchableOpacity>
             </View>
+
+            {photocards.map((card, index) => (
+              <BulkPhotocardCard
+                key={card.localId}
+                card={card}
+                index={index}
+                memberOptions={memberOptions}
+                onChange={handleChangeCard}
+                onRemove={handleRemoveCard}
+                error={cardErrors[card.localId]}
+              />
+            ))}
+
+            {/* Bouton ajouter en bas */}
             <TouchableOpacity
-              style={styles.addBtn}
+              style={styles.addRowBtn}
               onPress={handleAddCard}
               activeOpacity={0.75}
             >
-              <Plus size={15} color={Colors.accent} strokeWidth={2} />
-              <Text style={styles.addBtnText}>Ajouter</Text>
+              <Plus size={16} color={Colors.accent} strokeWidth={2} />
+              <Text style={styles.addRowText}>Ajouter une photocard</Text>
             </TouchableOpacity>
           </View>
 
-          {photocards.map((card, index) => (
-            <BulkPhotocardCard
-              key={card.localId}
-              card={card}
-              index={index}
-              memberOptions={memberOptions}
-              onChange={handleChangeCard}
-              onRemove={handleRemoveCard}
-              error={cardErrors[card.localId]}
-            />
-          ))}
+          {/* ── Progression ── */}
+          <ProgressIndicator message={progress} />
 
-          {/* Bouton ajouter en bas */}
-          <TouchableOpacity
-            style={styles.addRowBtn}
-            onPress={handleAddCard}
-            activeOpacity={0.75}
-          >
-            <Plus size={16} color={Colors.accent} strokeWidth={2} />
-            <Text style={styles.addRowText}>Ajouter une photocard</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Progression ── */}
-        <ProgressIndicator message={progress} />
-
-        {/* ── Submit ── */}
-        <FormSubmitButton
-          label={`Ajouter ${photocards.length} photocard${photocards.length > 1 ? "s" : ""}`}
-          onPress={handleSubmit}
-          loading={loading}
-        />
-      </ScrollView>
+          {/* ── Submit ── */}
+          <FormSubmitButton
+            label={`Ajouter ${photocards.length} photocard${photocards.length > 1 ? "s" : ""}`}
+            onPress={handleSubmit}
+            loading={loading}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

@@ -1,8 +1,4 @@
-import {
-  AuthFooter,
-  AuthHeader,
-  PasswordField
-} from "@/src/components/auth";
+import { AuthFooter, AuthHeader, PasswordField } from "@/src/components/auth";
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
@@ -97,6 +93,8 @@ export default function LoginScreen() {
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
           {/* Header */}

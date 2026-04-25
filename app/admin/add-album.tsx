@@ -14,6 +14,8 @@ import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -85,6 +87,7 @@ export default function AddAlbumScreen() {
     if (!form.groupId) e.groupId = "Groupe requis";
     if (!form.title.trim()) e.title = "Titre requis";
     if (!form.type) e.type = "Type requis";
+    if (!form.releaseDate) e.releaseDate = "Date de sortie requise";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -104,139 +107,150 @@ export default function AddAlbumScreen() {
         <View style={styles.navBtn} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* ── Cover ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Couverture</Text>
-          <FormImagePicker
-            label="Couverture"
-            imageUri={form.coverUri}
-            onPick={() =>
-              pickLocalImage((uri) => set("coverUri")(uri), { aspect: [1, 1] })
-            }
-            onRemove={() => set("coverUri")("")}
-            aspectRatio={1}
-          />
-        </View>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Cover ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Couverture</Text>
+            <FormImagePicker
+              label="Ajouter une cover"
+              imageUri={form.coverUri}
+              onPick={() =>
+                pickLocalImage((uri) => set("coverUri")(uri), {
+                  aspect: [1, 1],
+                })
+              }
+              onRemove={() => set("coverUri")("")}
+              aspectRatio={1}
+            />
+          </View>
 
-        {/* ── Identité ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identification</Text>
-          <FormSelect
-            label="Groupe"
-            options={groupOptions}
-            value={form.groupId}
-            onChange={setGroup("groupId")}
-            required
-            error={errors.groupId}
-            searchable
-          />
-          <FormField
-            label="Titre"
-            value={form.title}
-            onChangeText={set("title")}
-            placeholder="ex: UNIQUE"
-            required
-            error={errors.title}
-            autoCapitalize="words"
-          />
-          <FormField
-            label="Titre coréen"
-            value={form.koreanTitle}
-            onChangeText={set("koreanTitle")}
-            placeholder="ex: 유니크"
-          />
-          <FormSelect
-            label="Type"
-            options={ALBUM_TYPE_OPTIONS}
-            value={form.type}
-            onChange={set("type")}
-            required
-            error={errors.type}
-          />
-          <FormSelect
-            label="Catégorie"
-            options={CATEGORY_OPTIONS}
-            value={form.category}
-            onChange={set("category")}
-          />
-        </View>
+          {/* ── Identité ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Identification</Text>
+            <FormSelect
+              label="Groupe"
+              options={groupOptions}
+              value={form.groupId}
+              onChange={setGroup("groupId")}
+              required
+              error={errors.groupId}
+              searchable
+            />
+            <FormField
+              label="Titre"
+              value={form.title}
+              onChangeText={set("title")}
+              placeholder="ex: UNIQUE"
+              required
+              error={errors.title}
+              autoCapitalize="words"
+            />
+            <FormField
+              label="Titre coréen"
+              value={form.koreanTitle}
+              onChangeText={set("koreanTitle")}
+              placeholder="ex: 유니크"
+            />
+            <FormSelect
+              label="Type"
+              options={ALBUM_TYPE_OPTIONS}
+              value={form.type}
+              onChange={set("type")}
+              required
+              error={errors.type}
+            />
+            <FormSelect
+              label="Catégorie"
+              options={CATEGORY_OPTIONS}
+              value={form.category}
+              onChange={set("category")}
+            />
+          </View>
 
-        {/* ── Dates ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dates</Text>
-          <FormDatePicker
-            label="Date de sortie"
-            value={form.releaseDate}
-            onChange={set("releaseDate")}
-          />
-          <FormDatePicker
-            label="Date de l'event"
-            value={form.eventDate}
-            onChange={set("eventDate")}
-          />
-        </View>
+          {/* ── Dates ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Dates</Text>
+            <FormDatePicker
+              label="Date de sortie"
+              value={form.releaseDate}
+              onChange={set("releaseDate")}
+              required
+              error={errors.releaseDate}
+            />
+            <FormDatePicker
+              label="Date de l'event"
+              value={form.eventDate}
+              onChange={set("eventDate")}
+            />
+          </View>
 
-        {/* ── Event ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Event (optionnel)</Text>
-          <FormField
-            label="Nom de l'event"
-            value={form.eventName}
-            onChangeText={set("eventName")}
-            placeholder="ex: Weverse Fansign Vol.3"
-          />
-          <FormField
-            label="Lieu"
-            value={form.eventLocation}
-            onChangeText={set("eventLocation")}
-            placeholder="ex: Seoul, Corée du Sud"
-          />
-        </View>
+          {/* ── Event ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Event (optionnel)</Text>
+            <FormField
+              label="Nom de l'event"
+              value={form.eventName}
+              onChangeText={set("eventName")}
+              placeholder="ex: Weverse Fansign Vol.3"
+            />
+            <FormField
+              label="Lieu"
+              value={form.eventLocation}
+              onChangeText={set("eventLocation")}
+              placeholder="ex: Seoul, Corée du Sud"
+            />
+          </View>
 
-        {/* ── Détails ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Détails</Text>
-          <FormField
-            label="Versions"
-            value={form.versions}
-            onChangeText={set("versions")}
-            placeholder="ex: A, B, Digipack (séparées par virgule)"
-          />
-          <FormField
-            label="Tags"
-            value={form.tags}
-            onChangeText={set("tags")}
-            placeholder="ex: 1st mini, debut (séparés par virgule)"
-          />
-          <FormSelect
-            label="Contient des POB ?"
-            options={YES_NO_OPTIONS}
-            value={form.hasPOB}
-            onChange={set("hasPOB")}
-          />
-          <FormSelect
-            label="Édition limitée ?"
-            options={YES_NO_OPTIONS}
-            value={form.isLimited}
-            onChange={set("isLimited")}
-          />
-        </View>
+          {/* ── Détails ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Détails</Text>
+            <FormField
+              label="Versions"
+              value={form.versions}
+              onChangeText={set("versions")}
+              placeholder="ex: A, B, Digipack (séparées par virgule)"
+            />
+            <FormField
+              label="Tags"
+              value={form.tags}
+              onChangeText={set("tags")}
+              placeholder="ex: 1st mini, debut (séparés par virgule)"
+            />
+            <FormSelect
+              label="Contient des POB ?"
+              options={YES_NO_OPTIONS}
+              value={form.hasPOB}
+              onChange={set("hasPOB")}
+            />
+            <FormSelect
+              label="Édition limitée ?"
+              options={YES_NO_OPTIONS}
+              value={form.isLimited}
+              onChange={set("isLimited")}
+            />
+          </View>
 
-        {/* ── Progression ── */}
-        <ProgressIndicator message={progress} />
+          {/* ── Progression ── */}
+          <ProgressIndicator message={progress} />
 
-        <FormSubmitButton
-          label="Ajouter l'album"
-          onPress={handleSubmit}
-          loading={loading}
-        />
-      </ScrollView>
+          <FormSubmitButton
+            label="Ajouter l'album"
+            onPress={handleSubmit}
+            loading={loading}
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

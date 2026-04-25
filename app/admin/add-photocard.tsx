@@ -17,6 +17,8 @@ import { ChevronLeft } from "lucide-react-native";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -193,34 +195,40 @@ export default function AddPhotocardScreen() {
         <View style={styles.navBtn} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {/* ── Image + IA ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Image</Text>
-          <FormImagePicker
-            label="Recto"
-            imageUri={form.imageUri}
-            onPick={() => pickLocalImage((uri) => set("imageUri")(uri))}
-            onRemove={() => set("imageUri")("")}
-            required
-            error={errors.imageUri}
-            aspectRatio={2 / 3}
-          />
-          <FormImagePicker
-            label="Verso (optionnel)"
-            imageUri={form.backImageUri}
-            onPick={() => pickLocalImage((uri) => set("backImageUri")(uri))}
-            onRemove={() => set("backImageUri")("")}
-            aspectRatio={2 / 3}
-          />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets={true}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Image + IA ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Image</Text>
+            <FormImagePicker
+              label="Recto"
+              imageUri={form.imageUri}
+              onPick={() => pickLocalImage((uri) => set("imageUri")(uri))}
+              onRemove={() => set("imageUri")("")}
+              required
+              error={errors.imageUri}
+              aspectRatio={2 / 3}
+            />
+            <FormImagePicker
+              label="Verso (optionnel)"
+              imageUri={form.backImageUri}
+              onPick={() => pickLocalImage((uri) => set("backImageUri")(uri))}
+              onRemove={() => set("backImageUri")("")}
+              aspectRatio={2 / 3}
+            />
 
-          {/* Bouton IA */}
-          {/* <TouchableOpacity
+            {/* Bouton IA */}
+            {/* <TouchableOpacity
             style={styles.aiBtn}
             onPress={handleAiDetect}
             disabled={aiDetecting}
@@ -231,89 +239,90 @@ export default function AddPhotocardScreen() {
               {aiDetecting ? "Détection en cours..." : "Détecter avec l'IA"}
             </Text>
           </TouchableOpacity> */}
-        </View>
+          </View>
 
-        {/* ── Identification ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Identification</Text>
-          <FormSelect
-            label="Groupe"
-            options={groupOptions}
-            value={form.groupId}
-            onChange={handleSelectGroup}
-            required
-            error={errors.groupId}
-            searchable
-          />
-          <FormSelect
-            label="Album / Event"
-            options={albumOptions}
-            value={form.albumId}
-            onChange={handleSelectAlbum}
-            required
-            error={errors.albumId}
-            searchable
-          />
-          <FormSelect
-            label="Membre"
-            options={memberOptions}
-            value={form.memberId}
-            onChange={handleSelectMember}
-            required
-            error={errors.memberId}
-          />
-        </View>
-
-        {/* ── Détails ── */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Détails</Text>
-          <FormSelect
-            label="Type"
-            options={PHOTOCARD_TYPE_OPTIONS}
-            value={form.type}
-            onChange={set("type")}
-            required
-            error={errors.type}
-          />
-          <FormField
-            label="Version"
-            value={form.version}
-            onChangeText={set("version")}
-            placeholder="ex: A ver., Digipack..."
-          />
-          <FormSelect
-            label="Shop / Plateforme"
-            options={sortedOptions}
-            value={form.shopName}
-            onChange={set("shopName")}
-            placeholder="Sélectionner un shop..."
-            loading={shopsLoading}
-            searchable
-          />
-          {/* Champ libre si "Autre" sélectionné */}
-          {form.shopName === "other" && (
-            <FormField
-              label="Précise le shop"
-              value={form.shopName}
-              onChangeText={set("eventName")}
-              placeholder="ex: Nom du shop..."
+          {/* ── Identification ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Identification</Text>
+            <FormSelect
+              label="Groupe"
+              options={groupOptions}
+              value={form.groupId}
+              onChange={handleSelectGroup}
+              required
+              error={errors.groupId}
+              searchable
             />
-          )}
-          <FormSelect
-            label="Rareté"
-            options={RARITY_OPTIONS}
-            value={form.rarity}
-            onChange={set("rarity")}
+            <FormSelect
+              label="Album / Event"
+              options={albumOptions}
+              value={form.albumId}
+              onChange={handleSelectAlbum}
+              required
+              error={errors.albumId}
+              searchable
+            />
+            <FormSelect
+              label="Membre"
+              options={memberOptions}
+              value={form.memberId}
+              onChange={handleSelectMember}
+              required
+              error={errors.memberId}
+            />
+          </View>
+
+          {/* ── Détails ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Détails</Text>
+            <FormSelect
+              label="Type"
+              options={PHOTOCARD_TYPE_OPTIONS}
+              value={form.type}
+              onChange={set("type")}
+              required
+              error={errors.type}
+            />
+            <FormField
+              label="Version"
+              value={form.version}
+              onChangeText={set("version")}
+              placeholder="ex: A ver., Digipack..."
+            />
+            <FormSelect
+              label="Shop / Plateforme"
+              options={sortedOptions}
+              value={form.shopName}
+              onChange={set("shopName")}
+              placeholder="Sélectionner un shop..."
+              loading={shopsLoading}
+              searchable
+            />
+            {/* Champ libre si "Autre" sélectionné */}
+            {form.shopName === "other" && (
+              <FormField
+                label="Précise le shop"
+                value={form.shopName}
+                onChangeText={set("eventName")}
+                placeholder="ex: Nom du shop..."
+              />
+            )}
+            <FormSelect
+              label="Rareté"
+              options={RARITY_OPTIONS}
+              value={form.rarity}
+              onChange={set("rarity")}
+            />
+          </View>
+          {/* ── Soumettre ── */}
+          <FormSubmitButton
+            label="Ajouter la photocard"
+            onPress={handleSubmit}
+            loading={loading}
           />
-        </View>
-        {/* ── Soumettre ── */}
-        <FormSubmitButton
-          label="Ajouter la photocard"
-          onPress={handleSubmit}
-          loading={loading}
-        />
-        <ProgressIndicator message={progress} />
-      </ScrollView>
+          <ProgressIndicator message={progress} />
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

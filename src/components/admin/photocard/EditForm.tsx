@@ -17,6 +17,8 @@ import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { useState } from "react";
 import {
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -76,137 +78,146 @@ export const EditForm: React.FC<EditFormProps> = ({
   }));
 
   return (
-    <ScrollView
-      contentContainerStyle={editStyles.content}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Aperçu de la carte */}
-      <View style={editStyles.previewCard}>
-        <View style={editStyles.previewImage}>
-          {card.imageUrl ? (
-            <Image
-              source={card.imageUrl as any}
-              style={editStyles.previewImg}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={editStyles.previewFallback}>🧑‍🎤</Text>
-          )}
+      <ScrollView
+        contentContainerStyle={editStyles.content}
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={true}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Aperçu de la carte */}
+        <View style={editStyles.previewCard}>
+          <View style={editStyles.previewImage}>
+            {card.imageUrl ? (
+              <Image
+                source={card.imageUrl as any}
+                style={editStyles.previewImg}
+                resizeMode="cover"
+              />
+            ) : (
+              <Text style={editStyles.previewFallback}>🧑‍🎤</Text>
+            )}
+          </View>
+          <View style={editStyles.previewInfo}>
+            <Text style={editStyles.previewMember}>{card.memberName}</Text>
+            <Text style={editStyles.previewGroup}>{card.groupName}</Text>
+            <Text style={editStyles.previewAlbum}>{card.albumTitle}</Text>
+          </View>
         </View>
-        <View style={editStyles.previewInfo}>
-          <Text style={editStyles.previewMember}>{card.memberName}</Text>
-          <Text style={editStyles.previewGroup}>{card.groupName}</Text>
-          <Text style={editStyles.previewAlbum}>{card.albumTitle}</Text>
-        </View>
-      </View>
 
-      {/* Images */}
-      <View style={editStyles.section}>
-        <Text style={editStyles.sectionTitle}>Images</Text>
-        <FormImagePicker
-          label="Recto"
-          imageUri={form.imageUri || (card.imageUrl as any)?.uri || ""}
-          onPick={() =>
-            pickLocalImage((uri) => {
-              set("imageUri")(uri);
-              setForm((prev) => ({ ...prev, removeImage: false }));
-            })
-          }
-          onRemove={() =>
-            setForm((prev) => ({
-              ...prev,
-              imageUri: "",
-              removeImage: true,
-            }))
-          }
-          aspectRatio={2 / 3}
-        />
-        <FormImagePicker
-          label="Verso (optionnel)"
-          imageUri={form.backImageUri || (card.backImageUrl as any)?.uri || ""}
-          onPick={() =>
-            pickLocalImage((uri) => {
-              set("backImageUri")(uri);
-              setForm((prev) => ({ ...prev, removeBackImage: false }));
-            })
-          }
-          onRemove={() =>
-            setForm((prev) => ({
-              ...prev,
-              backImageUri: "",
-              removeBackImage: true,
-            }))
-          }
-          aspectRatio={2 / 3}
-        />
-      </View>
-
-      {/* Identification */}
-      <View style={editStyles.section}>
-        <Text style={editStyles.sectionTitle}>Identification</Text>
-        <FormSelect
-          label="Album / Event"
-          options={albumOptions}
-          value={form.albumId}
-          onChange={set("albumId")}
-          searchable
-        />
-        <FormSelect
-          label="Membre"
-          options={memberOptions}
-          value={form.memberId}
-          onChange={set("memberId")}
-        />
-      </View>
-
-      {/* Détails */}
-      <View style={editStyles.section}>
-        <Text style={editStyles.sectionTitle}>Détails</Text>
-        <FormSelect
-          label="Type"
-          options={PHOTOCARD_TYPE_OPTIONS}
-          value={form.type}
-          onChange={set("type")}
-        />
-        <FormField
-          label="Version"
-          value={form.version}
-          onChangeText={set("version")}
-          placeholder="ex: A ver., Digipack..."
-        />
-        <FormSelect
-          label="Shop / Plateforme"
-          options={sortedOptions}
-          value={form.shopName}
-          onChange={set("shopName")}
-          placeholder="Sélectionner un shop..."
-          loading={shopsLoading}
-          searchable
-        />
-        <FormSelect
-          label="Rareté"
-          options={RARITY_OPTIONS}
-          value={form.rarity}
-          onChange={set("rarity")}
-        />
-      </View>
-
-      {/* Actions */}
-      <View style={editStyles.btnGroup}>
-        <TouchableOpacity style={editStyles.cancelBtn} onPress={onCancel}>
-          <Text style={editStyles.cancelText}>Annuler</Text>
-        </TouchableOpacity>
-        <View style={editStyles.saveBtn}>
-          <FormSubmitButton
-            label="Enregistrer"
-            onPress={() => onSave(form)}
-            loading={loading}
+        {/* Images */}
+        <View style={editStyles.section}>
+          <Text style={editStyles.sectionTitle}>Images</Text>
+          <FormImagePicker
+            label="Recto"
+            imageUri={form.imageUri || (card.imageUrl as any)?.uri || ""}
+            onPick={() =>
+              pickLocalImage((uri) => {
+                set("imageUri")(uri);
+                setForm((prev) => ({ ...prev, removeImage: false }));
+              })
+            }
+            onRemove={() =>
+              setForm((prev) => ({
+                ...prev,
+                imageUri: "",
+                removeImage: true,
+              }))
+            }
+            aspectRatio={2 / 3}
+          />
+          <FormImagePicker
+            label="Verso (optionnel)"
+            imageUri={
+              form.backImageUri || (card.backImageUrl as any)?.uri || ""
+            }
+            onPick={() =>
+              pickLocalImage((uri) => {
+                set("backImageUri")(uri);
+                setForm((prev) => ({ ...prev, removeBackImage: false }));
+              })
+            }
+            onRemove={() =>
+              setForm((prev) => ({
+                ...prev,
+                backImageUri: "",
+                removeBackImage: true,
+              }))
+            }
+            aspectRatio={2 / 3}
           />
         </View>
-        <ProgressIndicator message={progress} />
-      </View>
-    </ScrollView>
+
+        {/* Identification */}
+        <View style={editStyles.section}>
+          <Text style={editStyles.sectionTitle}>Identification</Text>
+          <FormSelect
+            label="Album / Event"
+            options={albumOptions}
+            value={form.albumId}
+            onChange={set("albumId")}
+            searchable
+          />
+          <FormSelect
+            label="Membre"
+            options={memberOptions}
+            value={form.memberId}
+            onChange={set("memberId")}
+          />
+        </View>
+
+        {/* Détails */}
+        <View style={editStyles.section}>
+          <Text style={editStyles.sectionTitle}>Détails</Text>
+          <FormSelect
+            label="Type"
+            options={PHOTOCARD_TYPE_OPTIONS}
+            value={form.type}
+            onChange={set("type")}
+          />
+          <FormField
+            label="Version"
+            value={form.version}
+            onChangeText={set("version")}
+            placeholder="ex: A ver., Digipack..."
+          />
+          <FormSelect
+            label="Shop / Plateforme"
+            options={sortedOptions}
+            value={form.shopName}
+            onChange={set("shopName")}
+            placeholder="Sélectionner un shop..."
+            loading={shopsLoading}
+            searchable
+          />
+          <FormSelect
+            label="Rareté"
+            options={RARITY_OPTIONS}
+            value={form.rarity}
+            onChange={set("rarity")}
+          />
+        </View>
+
+        {/* Actions */}
+        <View style={editStyles.btnGroup}>
+          <TouchableOpacity style={editStyles.cancelBtn} onPress={onCancel}>
+            <Text style={editStyles.cancelText}>Annuler</Text>
+          </TouchableOpacity>
+          <View style={editStyles.saveBtn}>
+            <FormSubmitButton
+              label="Enregistrer"
+              onPress={() => onSave(form)}
+              loading={loading}
+            />
+          </View>
+          <ProgressIndicator message={progress} />
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

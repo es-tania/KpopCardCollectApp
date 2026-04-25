@@ -3,6 +3,7 @@ import { ChevronDown, Search, X } from "lucide-react-native";
 import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Modal,
   ScrollView,
   StyleSheet,
@@ -52,6 +53,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
   }, [options, query, searchable]);
 
   const handleOpen = () => {
+    Keyboard.dismiss();
     setQuery("");
     setOpen(true);
   };

@@ -7,6 +7,8 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -164,14 +166,19 @@ export default function GroupAdminsScreen() {
       {/* ── Formulaire d'ajout ── */}
       <View style={styles.form}>
         <Text style={styles.formTitle}>Ajouter un admin</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nom d'utilisateur"
-          placeholderTextColor={Colors.textMuted}
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-        />
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <TextInput
+            style={styles.input}
+            placeholder="Nom d'utilisateur"
+            placeholderTextColor={Colors.textMuted}
+            value={username}
+            onChangeText={setUsername}
+            autoCapitalize="none"
+          />
+        </KeyboardAvoidingView>
 
         {/* Sélecteur de groupe */}
         <View style={styles.groupPicker}>
