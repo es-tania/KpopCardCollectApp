@@ -1,4 +1,5 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { ALL_KEY } from "@/src/constants/key";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { useMyCards } from "@/src/hooks/photocard/useMyCards";
@@ -21,34 +22,10 @@ import { PhotocardMiniGrid } from "../src/components/photocard/PhotocardMiniGrid
 import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
 
-// ─── Config par mode ──────────────────────────────────────────────────────────
-
-const MODE_CONFIG: Record<
-  CardMode,
-  { title: string; emptyText: string; accentColor: string; table: string }
-> = {
-  collection: {
-    title: "Toute ma collection",
-    emptyText: "Ta collection est vide pour l'instant",
-    accentColor: Colors.accent,
-    table: "user_collection",
-  },
-  favorites: {
-    title: "Mes favoris",
-    emptyText: "Aucune carte en favori pour l'instant",
-    accentColor: "#DAA520",
-    table: "user_favorites",
-  },
-  wishlist: {
-    title: "Ma wishlist",
-    emptyText: "Ta wishlist est vide pour l'instant",
-    accentColor: Colors.accent,
-    table: "user_wishlist",
-  },
-};
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function MyCardsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { groups } = useGroups(true);
 
@@ -57,6 +34,12 @@ export default function MyCardsScreen() {
   const { mode: rawMode } = useLocalSearchParams<{ mode?: string }>();
   const mode: CardMode =
     rawMode === "favorites" || rawMode === "wishlist" ? rawMode : "collection";
+
+  const MODE_CONFIG: Record<CardMode, { title: string; accentColor: string; table: string }> = {
+    collection: { title: t("myCards.titleCollection"), accentColor: Colors.accent, table: "user_collection" },
+    favorites: { title: t("myCards.titleFavorites"), accentColor: "#DAA520", table: "user_favorites" },
+    wishlist: { title: t("myCards.titleWishlist"), accentColor: Colors.accent, table: "user_wishlist" },
+  };
   const config = MODE_CONFIG[mode];
 
   // ── State ─────────────────────────────────────────────────────────────
@@ -134,7 +117,7 @@ export default function MyCardsScreen() {
         ]}
       >
         <View style={styles.filtersPanelInner}>
-          <Text style={styles.filterLabel}>Groupe</Text>
+          <Text style={styles.filterLabel}>{t("fields.group")}</Text>
           <GroupFilter
             groups={groupsInCards}
             selectedId={selectedGroupId}

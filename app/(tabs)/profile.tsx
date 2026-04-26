@@ -1,4 +1,5 @@
 import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { storageService } from "@/src/services";
 import { buildStoragePath } from "@/src/services/storageService";
@@ -33,6 +34,7 @@ import {
 import { Colors } from "../../src/constants/colors";
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { user: authUser, isAdmin, isGroupAdmin, signOut } = useAuthStore();
   const { followedGroups } = useFollowedGroups();
   const {
@@ -71,22 +73,22 @@ export default function ProfileScreen() {
 
   const stats = [
     {
-      label: "Photocards",
+      label: t("profile.stats.photocards"),
       value: collectionIds.size,
       color: Colors.accent,
     },
     {
-      label: "Favoris",
+      label: t("profile.stats.favorites"),
       value: favoriteIds.size,
       color: "#DAA520",
     },
     {
-      label: "Souhaits",
+      label: t("profile.stats.wishlist"),
       value: wishlistIds.size,
       color: Colors.accent,
     },
     {
-      label: "Groupes",
+      label: t("profile.stats.groups"),
       value: followedGroups.length,
       color: Colors.textMuted,
     },
@@ -96,9 +98,9 @@ export default function ProfileScreen() {
   }, []);
 
   const handlePressAvatar = useCallback(() => {
-    Alert.alert("Photo de profil", "Choisir une option", [
+    Alert.alert(t("settings.avatar.title"), t("common.add"), [
       {
-        text: "Depuis la galerie",
+        text: t("settings.avatar.fromGallery"),
         onPress: async () => {
           if (!authUser) return;
           try {
@@ -118,12 +120,12 @@ export default function ProfileScreen() {
             // Met à jour le state local
             setProfile((prev) => (prev ? { ...prev, avatarUrl: url } : prev));
           } catch (err: any) {
-            Alert.alert("Erreur", err.message);
+            Alert.alert(t("common.error"), err.message);
           }
         },
       },
       {
-        text: "Supprimer la photo",
+        text: t("settings.avatar.remove"),
         style: "destructive",
         onPress: async () => {
           if (!authUser || !profile?.avatarUrl) return;
@@ -141,19 +143,19 @@ export default function ProfileScreen() {
               prev ? { ...prev, avatarUrl: undefined } : prev,
             );
           } catch (err: any) {
-            Alert.alert("Erreur", err.message);
+            Alert.alert(t("common.error"), err.message);
           }
         },
       },
-      { text: "Annuler", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
-  }, [authUser, profile]);
+  }, [authUser, profile, t]);
 
   const handleLogout = useCallback(() => {
-    Alert.alert("Déconnexion", "Es-tu sûre de vouloir te déconnecter ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("settings.danger.logoutTitle"), t("settings.danger.logoutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Déconnecter",
+        text: t("settings.danger.logoutButton"),
         style: "destructive",
         onPress: async () => {
           await signOut();
@@ -162,7 +164,7 @@ export default function ProfileScreen() {
         },
       },
     ]);
-  }, [signOut]);
+  }, [signOut, t]);
 
   if (profileLoading) {
     return (
@@ -190,30 +192,25 @@ export default function ProfileScreen() {
         <ProfileStats stats={stats} loading={collectionLoading} />
 
         {/* ── Ma Collection ── */}
-        <ProfileSectionTitle title="Ma collection" />
+        <ProfileSectionTitle title={t("profile.menu.collection")} />
         <ProfileMenuRow
           icon={<Users size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Mes groupes"
+          label={t("search.groups")}
           badge={followedGroups.length}
           onPress={() => router.push("/my-groups")}
         />
         <ProfileMenuRow
           icon={<Grid3x3 size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Toutes mes photocards"
+          label={t("profile.stats.photocards")}
           badge={collectionIds.size}
           onPress={() => router.push("/my-cards")}
         />
-        {/* <ProfileMenuRow
-          icon={<Download size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Exporter une wishlist"
-          onPress={() => router.push("/export?mode=wishlist")}
-        /> */}
 
         {/* ── Listes ── */}
-        <ProfileSectionTitle title="Mes listes" />
+        <ProfileSectionTitle title={t("myCards.titleFavorites")} />
         <ProfileMenuRow
           icon={<Star size={17} color="#DAA520" strokeWidth={1.6} />}
-          label="Favoris"
+          label={t("profile.stats.favorites")}
           badge={favoriteIds.size}
           onPress={() => router.push("/my-cards?mode=favorites")}
         />
@@ -221,47 +218,43 @@ export default function ProfileScreen() {
           icon={
             <ShoppingBasket size={17} color={Colors.accent} strokeWidth={1.6} />
           }
-          label="Liste de souhaits"
+          label={t("myCards.titleWishlist")}
           badge={wishlistIds.size}
           onPress={() => router.push("/my-cards?mode=wishlist")}
         />
 
-        <ProfileSectionTitle title="Contribuer" />
+        <ProfileSectionTitle title={t("profile.menu.contribute")} />
         <ProfileMenuRow
           icon={<Plus size={17} color={Colors.accent2} strokeWidth={1.6} />}
-          label="Proposer une photocard"
-          sublabel="Soumise à validation par un admin"
+          label={t("admin.sections.addPhotocard")}
+          sublabel={t("submissions.status.pending")}
           onPress={() =>
             router.push("/admin/add-photocard?userSubmission=true")
           }
         />
         <ProfileMenuRow
           icon={<Grid3x3 size={17} color={Colors.accent2} strokeWidth={1.6} />}
-          label="Mes soumissions"
-          sublabel="Voir le statut de tes propositions"
+          label={t("profile.menu.submissions")}
+          sublabel={t("submissions.title")}
           onPress={() => router.push("/my-submissions")}
         />
 
         {/* ── Compte ── */}
-        <ProfileSectionTitle title="Compte" />
+        <ProfileSectionTitle title={t("settings.sections.account")} />
         {(isAdmin || isGroupAdmin) && (
           <ProfileMenuRow
             icon={
               <ShieldCheck size={17} color={Colors.accent} strokeWidth={1.6} />
             }
-            label="Administration"
-            sublabel={
-              isAdmin
-                ? "Gérer les cartes et soumissions"
-                : "Gérer les cartes de tes groupes"
-            }
+            label={t("profile.menu.admin")}
+            sublabel={t("admin.title")}
             onPress={() => router.push("/admin")}
           />
         )}
 
         <ProfileMenuRow
           icon={<LogOut size={17} color={Colors.danger} strokeWidth={1.6} />}
-          label="Déconnexion"
+          label={t("settings.danger.logout")}
           onPress={handleLogout}
           destructive
         />

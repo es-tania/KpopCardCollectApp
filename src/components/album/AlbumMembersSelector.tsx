@@ -15,6 +15,7 @@ import { MembersList } from "../member/MembersList";
 interface AlbumMembersSelectorProps {
   members: Member[];
   selectedMemberId: string;
+  albumId: string;
   onSelectAll: () => void;
   onSelectMember: (member: Member) => void;
 }
@@ -22,6 +23,7 @@ interface AlbumMembersSelectorProps {
 export const AlbumMembersSelector: React.FC<AlbumMembersSelectorProps> = ({
   members,
   selectedMemberId,
+  albumId,
   onSelectAll,
   onSelectMember,
 }) => (
@@ -61,6 +63,7 @@ export const AlbumMembersSelector: React.FC<AlbumMembersSelectorProps> = ({
         selectedId={
           selectedMemberId !== ALL_MEMBERS_ID ? selectedMemberId : undefined
         }
+        albumId={albumId}
         onPressMember={onSelectMember}
       />
     </ScrollView>

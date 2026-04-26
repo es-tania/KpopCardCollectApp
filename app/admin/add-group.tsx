@@ -2,6 +2,7 @@ import {
   MemberFormCard,
   newMemberForm,
 } from "@/src/components/member/MemberFormCard";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
@@ -54,6 +55,7 @@ const INITIAL_GROUP: GroupFormState = {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function AddGroupScreen() {
+  const { t } = useTranslation();
   const [form, setForm] = useState<GroupFormState>(INITIAL_GROUP);
   const [errors, setErrors] = useState<
     Partial<Record<keyof GroupFormState, string>>
@@ -85,7 +87,7 @@ export default function AddGroupScreen() {
       return;
     }
     Alert.alert("Supprimer", "Retirer ce membre du formulaire ?", [
-      { text: "Annuler", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
       {
         text: "Retirer",
         style: "destructive",
@@ -183,7 +185,7 @@ export default function AddGroupScreen() {
           {/* ── Médias ── */}
           <View style={styles.section}>
             <FormField
-              label="Nom du groupe"
+              label={t("fields.name")}
               value={form.name}
               onChangeText={setField("name")}
               placeholder="ex: P1Harmony"
@@ -251,7 +253,7 @@ export default function AddGroupScreen() {
               onChange={setField("generation")}
             />
             <FormSelect
-              label="Statut"
+              label={t("fields.status")}
               options={STATUS_OPTIONS}
               value={form.status}
               onChange={setField("status")}

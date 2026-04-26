@@ -28,14 +28,14 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     set({ loading: true });
     try {
       const [collection, favorites, wishlist] = await Promise.all([
-        collectionService.getCollection(userId),
+        collectionService.getCollection(userId), // ← retourne string[]
         collectionService.getFavorites(userId),
         collectionService.getWishlist(userId),
       ]);
       set({
-        collectionIds: new Set(collection.map((c) => c.id)),
-        favoriteIds: new Set(favorites.map((c) => c.id)),
-        wishlistIds: new Set(wishlist.map((c) => c.id)),
+        collectionIds: new Set(collection), // ← directement string[]
+        favoriteIds: new Set(favorites),
+        wishlistIds: new Set(wishlist),
         initialized: true,
       });
     } finally {

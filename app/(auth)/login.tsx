@@ -3,6 +3,7 @@ import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { authService } from "@/src/services";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -30,6 +31,7 @@ interface FormErrors {
 }
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [form, setForm] = useState<FormState>({ email: "", password: "" });
   const [errors, setErrors] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
@@ -39,9 +41,9 @@ export default function LoginScreen() {
 
   const validate = (): boolean => {
     const e: FormErrors = {};
-    if (!form.email.trim()) e.email = "Email requis";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Email invalide";
-    if (!form.password) e.password = "Mot de passe requis";
+    if (!form.email.trim()) e.email = t("errors.required");
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = t("errors.invalidEmail");
+    if (!form.password) e.password = t("errors.required");
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -53,7 +55,7 @@ export default function LoginScreen() {
       await authService.signInWithEmail(form.email, form.password);
       router.replace("/(tabs)");
     } catch (error: any) {
-      Alert.alert("Erreur de connexion", error.message);
+      Alert.alert(t("common.error"), error.message);
     } finally {
       setLoading(false);
     }
@@ -99,8 +101,8 @@ export default function LoginScreen() {
         >
           {/* Header */}
           <AuthHeader
-            title="Bon retour !"
-            subtitle="Connecte-toi pour accéder à ta collection"
+            title={t("auth.loginTitle")}
+            subtitle={t("auth.loginSubtitle")}
           />
 
           {/* Connexion sociale */}
@@ -116,7 +118,7 @@ export default function LoginScreen() {
           {/* Formulaire email */}
           <View style={styles.form}>
             <FormField
-              label="Email"
+              label={t("fields.email")}
               value={form.email}
               onChangeText={set("email")}
               placeholder="ton@email.com"
@@ -127,7 +129,7 @@ export default function LoginScreen() {
               error={errors.email}
             />
             <PasswordField
-              label="Mot de passe"
+              label={t("fields.password")}
               value={form.password}
               onChangeText={set("password")}
               required
@@ -139,20 +141,20 @@ export default function LoginScreen() {
               style={styles.forgotBtn}
               onPress={handleForgotPassword}
             >
-              <Text style={styles.forgotText}>Mot de passe oublié ?</Text>
+              <Text style={styles.forgotText}>{t("auth.forgotPassword")}</Text>
             </TouchableOpacity>
           </View>
 
           <FormSubmitButton
-            label="Se connecter"
+            label={t("auth.loginButton")}
             onPress={handleLogin}
             loading={loading}
           />
 
           {/* Footer */}
           <AuthFooter
-            text="Pas encore de compte ?"
-            linkLabel="S'inscrire"
+            text={t("auth.noAccount")}
+            linkLabel={t("auth.signUp")}
             onPress={() => router.push("/(auth)/register")}
           />
         </ScrollView>

@@ -1,12 +1,26 @@
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
+import { useUserStats } from "@/src/hooks/useUserStats";
 import { Album } from "@/src/types";
 import React, { useMemo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ProgressBar } from "../ui/ProgressBar";
 
 export const AlbumCard = React.memo(
-  ({ album, onPress }: { album: Album; onPress: () => void }) => {
+  ({
+    album,
+    onPress,
+    memberId,
+  }: {
+    album: Album;
+    onPress: () => void;
+    memberId?: string;
+  }) => {
+    const stats = useUserStats({
+      albumId: album.id,
+      memberId,
+    });
+
     const imageSource = useMemo(() => {
       if (!album.coverUrl) return null;
       if (typeof album.coverUrl === "string") return { uri: album.coverUrl };
@@ -45,7 +59,7 @@ export const AlbumCard = React.memo(
           </Text>
           <ProgressBar
             label=""
-            current={album.ownedPhotocards ?? 0}
+            current={stats.ownedPhotocards ?? 0}
             total={album.totalPhotocards}
           />
         </View>

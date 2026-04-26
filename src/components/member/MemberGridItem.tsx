@@ -1,3 +1,4 @@
+import { useUserStats } from "@/src/hooks/useUserStats";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -14,70 +15,67 @@ export const MemberGridItem: React.FC<MemberGridItemProps> = ({
   member,
   selected,
   onPress,
-}) => (
-  <TouchableOpacity
-    style={[styles.card, selected && styles.cardSelected]}
-    onPress={onPress}
-    activeOpacity={0.75}
-  >
-    {/* Photo */}
-    <View style={styles.photoWrap}>
-      {member.photoUrl ? (
-        <Image
-          source={member.photoUrl as any}
-          style={styles.photo}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.photoFallback}>
-          <Text style={styles.photoInitial}>
-            {member.stageName[0].toUpperCase()}
-          </Text>
-        </View>
-      )}
-      {selected && <View style={styles.selectedDot} />}
-    </View>
+}) => {
+  // ── Stats live depuis le store via useUserStats ───────────────────────
+  const stats = useUserStats({ memberId: member.id });
 
-    {/* Infos */}
-    <View style={styles.info}>
-      <Text
-        style={[styles.stageName, selected && styles.stageNameSelected]}
-        numberOfLines={1}
-      >
-        {member.stageName}
-      </Text>
-      {member.position && member.position.length > 0 && (
-        <Text style={styles.position} numberOfLines={1}>
-          {member.position[0]}
-        </Text>
-      )}
-      {member.ownedPhotocards !== undefined && (
-        <View style={styles.progressRow}>
-          <View style={styles.progressTrack}>
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${
-                    member.totalPhotocards
-                      ? Math.round(
-                          (member.ownedPhotocards / member.totalPhotocards) *
-                            100,
-                        )
-                      : 0
-                  }%` as any,
-                },
-              ]}
-            />
+  const owned = stats.ownedPhotocards;
+  const total = stats.totalPhotocards || member.totalPhotocards || 0;
+  const pct = total > 0 ? Math.round((owned / total) * 100) : 0;
+
+  return (
+    <TouchableOpacity
+      style={[styles.card, selected && styles.cardSelected]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      {/* Photo */}
+      <View style={styles.photoWrap}>
+        {member.photoUrl ? (
+          <Image
+            source={member.photoUrl as any}
+            style={styles.photo}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.photoFallback}>
+            <Text style={styles.photoInitial}>
+              {member.stageName[0].toUpperCase()}
+            </Text>
           </View>
-          <Text style={styles.progressCount}>
-            {member.ownedPhotocards}/{member.totalPhotocards ?? "?"}
+        )}
+        {selected && <View style={styles.selectedDot} />}
+      </View>
+
+      {/* Infos */}
+      <View style={styles.info}>
+        <Text
+          style={[styles.stageName, selected && styles.stageNameSelected]}
+          numberOfLines={1}
+        >
+          {member.stageName}
+        </Text>
+        {member.position && member.position.length > 0 && (
+          <Text style={styles.position} numberOfLines={1}>
+            {member.position[0]}
           </Text>
-        </View>
-      )}
-    </View>
-  </TouchableOpacity>
-);
+        )}
+        {total > 0 && (
+          <View style={styles.progressRow}>
+            <View style={styles.progressTrack}>
+              <View
+                style={[styles.progressFill, { width: `${pct}%` as any }]}
+              />
+            </View>
+            <Text style={styles.progressCount}>
+              {owned}/{total}
+            </Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   card: {

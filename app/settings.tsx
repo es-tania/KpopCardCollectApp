@@ -4,6 +4,8 @@ import {
   SettingsSection,
 } from "@/src/components/settings";
 import { useSettings } from "@/src/hooks/useSettings";
+import { useTranslation } from "@/src/hooks/useTranslation";
+import type { SupportedLocale } from "@/src/store/languageStore";
 import { router } from "expo-router";
 import {
   Bell,
@@ -38,25 +40,50 @@ import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
 
 export default function SettingsScreen() {
+  const { t, locale, setLocale } = useTranslation();
   const { profile, prefs, handlers } = useSettings();
   const { user, username, email, avatarUrl, loading } = profile;
-  const { notifications, submissionNotifs, collectionNotifs, publicProfile, showCollection, showWishlist } = prefs;
   const {
-    toggleNotifications, toggleSubmissionNotifs, toggleCollectionNotifs,
-    togglePublicProfile, toggleShowCollection, toggleShowWishlist,
-    changeAvatar, changeUsername, changeEmail, changePassword,
-    exportData, deleteAccount, logout,
+    notifications,
+    submissionNotifs,
+    collectionNotifs,
+    publicProfile,
+    showCollection,
+    showWishlist,
+  } = prefs;
+  const {
+    toggleNotifications,
+    toggleSubmissionNotifs,
+    toggleCollectionNotifs,
+    togglePublicProfile,
+    toggleShowCollection,
+    toggleShowWishlist,
+    changeAvatar,
+    changeUsername,
+    changeEmail,
+    changePassword,
+    exportData,
+    deleteAccount,
+    logout,
   } = handlers;
 
-  // ── Langue — purement UI, reste dans la page ──────────────────────────
   const handleLanguage = useCallback(() => {
-    Alert.alert("Langue", "Choisir une langue", [
-      { text: "Français 🇫🇷", onPress: () => {} },
-      { text: "English 🇬🇧", onPress: () => {} },
-      { text: "한국어 🇰🇷", onPress: () => {} },
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("settings.language.title"), t("settings.language.choose"), [
+      {
+        text: `🇫🇷 ${t("settings.language.fr")}`,
+        onPress: () => setLocale("fr" as SupportedLocale),
+      },
+      {
+        text: `🇬🇧 ${t("settings.language.en")}`,
+        onPress: () => setLocale("en" as SupportedLocale),
+      },
+      {
+        text: `🇰🇷 ${t("settings.language.ko")}`,
+        onPress: () => setLocale("ko" as SupportedLocale),
+      },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
-  }, []);
+  }, [t, setLocale]);
 
   // ── Support — purement UI ─────────────────────────────────────────────
   const handleSupport = useCallback(() => {
@@ -70,7 +97,7 @@ export default function SettingsScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Paramètres</Text>
+        <Text style={styles.navTitle}>{t("settings.title")}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -87,17 +114,17 @@ export default function SettingsScreen() {
           />
 
           {/* ── Compte ── */}
-          <SettingsSection title="Compte">
+          <SettingsSection title={t("settings.sections.account")}>
             <SettingsRow
               icon={<User size={16} color={Colors.accent} strokeWidth={1.6} />}
-              label="Pseudo"
+              label={t("settings.account.username")}
               type="navigate"
-              valueLabel={username || "Non défini"}
+              valueLabel={username || t("empty.noResults")}
               onPress={changeUsername}
             />
             <SettingsRow
               icon={<Mail size={16} color={Colors.accent} strokeWidth={1.6} />}
-              label="Email"
+              label={t("settings.account.email")}
               type="navigate"
               valueLabel={email}
               onPress={changeEmail}
@@ -106,7 +133,7 @@ export default function SettingsScreen() {
               icon={
                 <KeyRound size={16} color={Colors.accent} strokeWidth={1.6} />
               }
-              label="Mot de passe"
+              label={t("settings.account.password")}
               type="navigate"
               onPress={changePassword}
               showSeparator={false}
@@ -114,18 +141,18 @@ export default function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Notifications ── */}
-          <SettingsSection title="Notifications">
+          <SettingsSection title={t("settings.sections.notifications")}>
             <SettingsRow
               icon={<Bell size={16} color="#DAA520" strokeWidth={1.6} />}
-              label="Activer les notifications"
+              label={t("settings.notifications.enable")}
               type="toggle"
               value={notifications}
               onToggle={toggleNotifications}
             />
             <SettingsRow
               icon={<Shield size={16} color="#DAA520" strokeWidth={1.6} />}
-              label="Soumissions validées"
-              sublabel="Reçois une notif quand ta carte est approuvée"
+              label={t("settings.notifications.submissions")}
+              sublabel={t("settings.notifications.submissionsHint")}
               type="toggle"
               value={submissionNotifs}
               onToggle={toggleSubmissionNotifs}
@@ -133,8 +160,8 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon={<Heart size={16} color="#DAA520" strokeWidth={1.6} />}
-              label="Nouveautés collection"
-              sublabel="Nouvelles cartes pour tes groupes suivis"
+              label={t("settings.notifications.newCards")}
+              sublabel={t("settings.notifications.newCardsHint")}
               type="toggle"
               value={collectionNotifs}
               onToggle={toggleCollectionNotifs}
@@ -144,18 +171,18 @@ export default function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Confidentialité ── */}
-          <SettingsSection title="Confidentialité">
+          <SettingsSection title={t("settings.sections.privacy")}>
             <SettingsRow
               icon={<Globe size={16} color={Colors.accent} strokeWidth={1.6} />}
-              label="Profil public"
-              sublabel="Les autres utilisateurs peuvent voir ton profil"
+              label={t("settings.privacy.publicProfile")}
+              sublabel={t("settings.privacy.publicProfileHint")}
               type="toggle"
               value={publicProfile}
               onToggle={togglePublicProfile}
             />
             <SettingsRow
               icon={<Eye size={16} color={Colors.accent} strokeWidth={1.6} />}
-              label="Afficher ma collection"
+              label={t("settings.privacy.showCollection")}
               type="toggle"
               value={showCollection}
               onToggle={toggleShowCollection}
@@ -163,7 +190,7 @@ export default function SettingsScreen() {
             />
             <SettingsRow
               icon={<Eye size={16} color={Colors.accent} strokeWidth={1.6} />}
-              label="Afficher ma wishlist"
+              label={t("settings.privacy.showWishlist")}
               type="toggle"
               value={showWishlist}
               onToggle={toggleShowWishlist}
@@ -173,7 +200,7 @@ export default function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Langue ── */}
-          <SettingsSection title="Langue">
+          <SettingsSection title={t("settings.sections.language")}>
             <SettingsRow
               icon={
                 <Languages
@@ -182,16 +209,16 @@ export default function SettingsScreen() {
                   strokeWidth={1.6}
                 />
               }
-              label="Langue"
+              label={t("settings.sections.language")}
               type="navigate"
-              valueLabel="Français"
+              valueLabel={t(`settings.language.${locale}` as any)}
               onPress={handleLanguage}
               showSeparator={false}
             />
           </SettingsSection>
 
           {/* ── Données ── */}
-          <SettingsSection title="Mes données">
+          <SettingsSection title={t("settings.sections.data")}>
             <SettingsRow
               icon={
                 <Smartphone
@@ -200,8 +227,8 @@ export default function SettingsScreen() {
                   strokeWidth={1.6}
                 />
               }
-              label="Exporter mes données"
-              sublabel="Télécharge toutes tes données"
+              label={t("settings.data.export")}
+              sublabel={t("settings.data.exportHint")}
               type="navigate"
               onPress={exportData}
               showSeparator={false}
@@ -209,12 +236,12 @@ export default function SettingsScreen() {
           </SettingsSection>
 
           {/* ── À propos ── */}
-          <SettingsSection title="À propos">
+          <SettingsSection title={t("settings.sections.about")}>
             <SettingsRow
               icon={
                 <Info size={16} color={Colors.textMuted} strokeWidth={1.6} />
               }
-              label="Version"
+              label={t("settings.about.version")}
               type="info"
               valueLabel="1.0.0"
             />
@@ -222,7 +249,7 @@ export default function SettingsScreen() {
               icon={
                 <Lock size={16} color={Colors.textMuted} strokeWidth={1.6} />
               }
-              label="Politique de confidentialité"
+              label={t("settings.about.privacy")}
               type="navigate"
               onPress={() => {}}
             />
@@ -234,7 +261,7 @@ export default function SettingsScreen() {
                   strokeWidth={1.6}
                 />
               }
-              label="Aide & Support"
+              label={t("settings.about.support")}
               type="navigate"
               onPress={handleSupport}
               showSeparator={false}
@@ -242,12 +269,12 @@ export default function SettingsScreen() {
           </SettingsSection>
 
           {/* ── Danger ── */}
-          <SettingsSection title="Danger">
+          <SettingsSection title={t("settings.sections.danger")}>
             <SettingsRow
               icon={
                 <LogOut size={16} color={Colors.danger} strokeWidth={1.6} />
               }
-              label="Déconnexion"
+              label={t("settings.danger.logout")}
               type="action"
               onPress={logout}
               destructive
@@ -256,8 +283,8 @@ export default function SettingsScreen() {
               icon={
                 <Trash2 size={16} color={Colors.danger} strokeWidth={1.6} />
               }
-              label="Supprimer mon compte"
-              sublabel="Action irréversible"
+              label={t("settings.danger.deleteAccount")}
+              sublabel={t("settings.danger.deleteAccountHint")}
               type="action"
               onPress={deleteAccount}
               destructive

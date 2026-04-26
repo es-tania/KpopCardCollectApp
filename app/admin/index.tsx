@@ -1,4 +1,5 @@
 import { MOCK_PENDING } from "@/src/data";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
 import {
@@ -40,38 +41,36 @@ const STATS = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminScreen() {
+  const { t } = useTranslation();
   const { isAdmin } = useAuthStore();
   const [pending, setPending] = useState(MOCK_PENDING);
 
   const handleApprove = useCallback((id: string) => {
-    Alert.alert("Approuver", "Confirmer l'approbation de cette carte ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("admin.approve"), t("common.confirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Approuver",
+        text: t("admin.approve"),
         onPress: () => {
           setPending((prev) => prev.filter((p) => p.id !== id));
-          Alert.alert(
-            "✅ Approuvée",
-            "La carte a été ajoutée à l'application.",
-          );
+          Alert.alert(t("submissions.status.approved"), "");
         },
       },
     ]);
-  }, []);
+  }, [t]);
 
   const handleReject = useCallback((id: string) => {
-    Alert.alert("Refuser", "Confirmer le refus de cette carte ?", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("admin.reject"), t("common.confirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Refuser",
+        text: t("admin.reject"),
         style: "destructive",
         onPress: () => {
           setPending((prev) => prev.filter((p) => p.id !== id));
-          Alert.alert("❌ Refusée", "La carte a été refusée.");
+          Alert.alert(t("submissions.status.rejected"), "");
         },
       },
     ]);
-  }, []);
+  }, [t]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -80,7 +79,7 @@ export default function AdminScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={18} color={Colors.accent} strokeWidth={1.6} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Administration</Text>
+        <Text style={styles.navTitle}>{t("admin.title")}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -116,54 +115,51 @@ export default function AdminScreen() {
         </View> */}
 
         {/* ── Soumissions ── */}
-        <AdminSectionTitle title={`Soumissions à valider`} />
+        <AdminSectionTitle title={t("admin.sections.submissions")} />
 
         <AdminActionRow
           icon={<Check size={17} color="#DAA520" strokeWidth={1.6} />}
-          label="Tout voir"
+          label={t("common.seeAll")}
           onPress={() => router.push("/admin/submissions")}
         />
 
         {/* ── Ajouter ── */}
-        <AdminSectionTitle title="Ajouter" />
+        <AdminSectionTitle title={t("common.add")} />
         <AdminActionRow
           icon={<ImagePlus size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Ajouter une photocard"
-          sublabel="Simple ou en lot"
+          label={t("admin.sections.addPhotocard")}
           onPress={() => router.push("/admin/add-photocard")}
         />
         <AdminActionRow
           icon={<ImagePlus size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Ajouter des photocards en lot"
-          sublabel="Même album, plusieurs membres"
+          label={t("admin.sections.addPhotocard")}
           onPress={() => router.push("/admin/add-photocards-bulk")}
         />
         <AdminActionRow
           icon={<Disc3 size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Ajouter un album / event"
+          label={t("fields.album")}
           onPress={() => router.push("/admin/add-album")}
         />
 
         {isAdmin && (
           <AdminActionRow
             icon={<Users size={17} color="#DAA520" strokeWidth={1.6} />}
-            label="Ajouter un groupe"
+            label={t("fields.group")}
             onPress={() => router.push("/admin/add-group")}
           />
         )}
 
         {/* ── Gérer ── */}
-        <AdminSectionTitle title="Gérer" />
+        <AdminSectionTitle title={t("common.edit")} />
         <AdminActionRow
           icon={<Edit size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Modifier une photocard"
-          sublabel="Rechercher et éditer"
+          label={t("admin.sections.editPhotocard")}
           onPress={() => router.push("/admin/edit-photocard")}
         />
 
         <AdminActionRow
           icon={<Edit size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label="Modifier un album"
+          label={t("fields.album")}
           onPress={() => router.push("/admin/edit-album")}
         />
 
@@ -171,15 +167,14 @@ export default function AdminScreen() {
           <>
             <AdminActionRow
               icon={<Edit size={17} color="#DAA520" strokeWidth={1.6} />}
-              label="Modifier un groupe"
+              label={t("fields.group")}
               onPress={() => router.push("/admin/edit-group")}
             />
             <AdminActionRow
               icon={
                 <UserCheck size={17} color={Colors.accent} strokeWidth={1.6} />
               }
-              label="Admins par groupe"
-              sublabel="Gérer les droits d'administration"
+              label={t("admin.sections.groupAdmins")}
               onPress={() => router.push("/admin/group-admins")}
             />
           </>
@@ -188,8 +183,7 @@ export default function AdminScreen() {
         {isAdmin && (
           <AdminActionRow
             icon={<Zap size={17} color={Colors.accent} strokeWidth={1.6} />}
-            label="Générer les embeddings"
-            sublabel="Calcul CLIP on-device pour le scan"
+            label="Embeddings"
             onPress={() => router.push("/admin/generate-embeddings")}
           />
         )}

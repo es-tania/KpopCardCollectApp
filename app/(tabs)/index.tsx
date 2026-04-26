@@ -1,5 +1,6 @@
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { router } from "expo-router";
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -9,7 +10,6 @@ import {
 } from "react-native";
 
 import { useGroups } from "@/src/hooks/group/useGroups";
-import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { useRecentPhotocards } from "@/src/hooks/useRecentPhotocards";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
@@ -25,12 +25,11 @@ import { Theme } from "../../src/constants/theme";
 // ─── Composant principal ─────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   // ── Data BDD ──────────────────────────────────────────────────────────
   const { followedGroups, loading: followedLoading } = useFollowedGroups();
   const { groups, loading: groupsLoading } = useGroups(true);
   const { photocards, loading: photocardsLoading } = useRecentPhotocards(10);
-  const followedGroupIds = followedGroups.map((g) => g.id).join(",");
-  const { photocards: allPhotocards } = usePhotocards({});
 
   const {
     collectionIds,
@@ -48,28 +47,6 @@ export default function HomeScreen() {
     isFavorite: favoriteIds.has(card.id),
     isWishlisted: wishlistIds.has(card.id),
   }));
-
-  // ── Progression — uniquement les groupes suivis ───────────────────────
-  const followedGroupsWithProgress = useMemo(() => {
-    return followedGroups.map((group) => {
-      // Photocards de ce groupe
-      const groupCards = allPhotocards.filter((c) => c.groupId === group.id);
-
-      const owned = groupCards.filter((c) => collectionIds.has(c.id)).length;
-
-      const wishlisted = groupCards.filter((c) => wishlistIds.has(c.id)).length;
-
-      return {
-        ...group,
-        ownedPhotocards: owned,
-        wishlistPhotocards: wishlisted,
-        completionPercentage:
-          group.totalPhotocards > 0
-            ? Math.round((owned / group.totalPhotocards) * 100)
-            : 0,
-      };
-    });
-  }, [followedGroups, allPhotocards, collectionIds, wishlistIds]);
 
   const handlePressGroup = useCallback((groupId: string) => {
     router.push(`/group/${groupId}`);
@@ -90,7 +67,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Groupes suivis */}
-        <SectionLabel label="Groupes suivis" />
+        <SectionLabel label={t("home.followedGroups")} />
         {followedLoading ? (
           <ActivityIndicator
             color={Colors.accent}
@@ -107,7 +84,7 @@ export default function HomeScreen() {
         <GlowDivider />
 
         {/* Derniers ajouts */}
-        <SectionLabel label="Derniers ajouts" />
+        <SectionLabel label={t("home.recentCards")} />
         {photocardsLoading ? (
           <ActivityIndicator
             color={Colors.accent}
@@ -125,14 +102,14 @@ export default function HomeScreen() {
         <GlowDivider />
 
         {/* Progression collection */}
-        <SectionLabel label="Progression de ma collection" />
+        <SectionLabel label={t("home.collectionProgress")} />
         {groupsLoading ? (
           <ActivityIndicator
             color={Colors.accent}
             style={styles.sectionLoading}
           />
         ) : (
-          <CollectionProgress groups={followedGroupsWithProgress} />
+          <CollectionProgress groups={followedGroups} />
         )}
 
         {/* Padding bas */}

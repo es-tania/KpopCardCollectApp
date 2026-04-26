@@ -1,4 +1,5 @@
 import { AdminSearchBar, GroupManageRow } from "@/src/components/admin";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { GroupEditForm } from "@/src/components/admin/group/GroupEditForm";
 import { STATUS_FILTER_OPTIONS } from "@/src/constants/options";
 import { useEditGroup } from "@/src/hooks/group/useEditGroup";
@@ -41,7 +42,7 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
     "Supprimer le groupe",
     `Es-tu sûre de vouloir supprimer "${name}" ? Tous ses membres, albums et photocards seront également supprimés.`,
     [
-      { text: "Annuler", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
       { text: "Supprimer", style: "destructive", onPress: onConfirm },
     ],
   );
@@ -50,6 +51,7 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EditGroupScreen() {
+  const { t } = useTranslation();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
 
   const { groups, loading: groupsLoading, refetch } = useGroups();
@@ -141,7 +143,7 @@ export default function EditGroupScreen() {
         "Supprimer le groupe",
         `Es-tu sûre de vouloir supprimer "${group.name}" ? Tous ses membres, albums et photocards seront supprimés.`,
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
             text: "Supprimer",
             style: "destructive",

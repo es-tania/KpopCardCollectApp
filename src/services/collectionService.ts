@@ -1,26 +1,29 @@
 import { supabase } from "../lib/supabase";
-import { PhotocardWithDetails } from "../types";
 import { mapGroup } from "./groupsService";
 
 export const collectionService = {
   // ── Collection ────────────────────────────────────────────────────────
 
-  getCollection: async (userId: string): Promise<PhotocardWithDetails[]> => {
-    const { data, error } = await supabase
-      .from("user_collection")
-      .select(
-        `
-        photocard_id,
-        photocards_with_details (*)
-      `,
-      )
-      .eq("user_id", userId);
+  getCollection: async (userId: string): Promise<string[]> => {
+    let allIds: string[] = [];
+    let from = 0;
 
-    if (error) throw error;
-    return data.map((d: any) => ({
-      ...mapPhotocard(d.photocards_with_details),
-      isInCollection: true,
-    }));
+    while (true) {
+      const { data, error } = await supabase
+        .from("user_collection")
+        .select("photocard_id")
+        .eq("user_id", userId)
+        .range(from, from + 999);
+
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allIds = [...allIds, ...data.map((d: any) => d.photocard_id)];
+      if (data.length < 1000) break;
+      from += 1000;
+    }
+
+    return allIds;
   },
 
   addToCollection: async (
@@ -48,23 +51,26 @@ export const collectionService = {
   },
 
   // ── Favoris ────────────────────────────────────────────────────────────
+  getFavorites: async (userId: string): Promise<string[]> => {
+    let allIds: string[] = [];
+    let from = 0;
 
-  getFavorites: async (userId: string): Promise<PhotocardWithDetails[]> => {
-    const { data, error } = await supabase
-      .from("user_favorites")
-      .select(
-        `
-        photocard_id,
-        photocards_with_details (*)
-      `,
-      )
-      .eq("user_id", userId);
+    while (true) {
+      const { data, error } = await supabase
+        .from("user_favorites")
+        .select("photocard_id")
+        .eq("user_id", userId)
+        .range(from, from + 999);
 
-    if (error) throw error;
-    return data.map((d: any) => ({
-      ...mapPhotocard(d.photocards_with_details),
-      isFavorite: true,
-    }));
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allIds = [...allIds, ...data.map((d: any) => d.photocard_id)];
+      if (data.length < 1000) break;
+      from += 1000;
+    }
+
+    return allIds;
   },
 
   toggleFavorite: async (
@@ -88,23 +94,26 @@ export const collectionService = {
   },
 
   // ── Wishlist ───────────────────────────────────────────────────────────
+  getWishlist: async (userId: string): Promise<string[]> => {
+    let allIds: string[] = [];
+    let from = 0;
 
-  getWishlist: async (userId: string): Promise<PhotocardWithDetails[]> => {
-    const { data, error } = await supabase
-      .from("user_wishlist")
-      .select(
-        `
-        photocard_id,
-        photocards_with_details (*)
-      `,
-      )
-      .eq("user_id", userId);
+    while (true) {
+      const { data, error } = await supabase
+        .from("user_wishlist")
+        .select("photocard_id")
+        .eq("user_id", userId)
+        .range(from, from + 999);
 
-    if (error) throw error;
-    return data.map((d: any) => ({
-      ...mapPhotocard(d.photocards_with_details),
-      isWishlisted: true,
-    }));
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+
+      allIds = [...allIds, ...data.map((d: any) => d.photocard_id)];
+      if (data.length < 1000) break;
+      from += 1000;
+    }
+
+    return allIds;
   },
 
   toggleWishlist: async (
@@ -159,19 +168,3 @@ export const collectionService = {
     }
   },
 };
-
-const mapPhotocard = (data: any): PhotocardWithDetails => ({
-  id: data.id,
-  memberId: data.member_id,
-  albumId: data.album_id,
-  groupId: data.group_id,
-  imageUrl: data.image_url ? { uri: data.image_url } : undefined,
-  type: data.type,
-  version: data.version,
-  rarity: data.rarity,
-  status: data.status,
-  createdAt: data.created_at,
-  memberName: data.member_name,
-  albumTitle: data.album_title,
-  groupName: data.group_name,
-});

@@ -18,6 +18,7 @@ import {
     MOCK_PHOTOCARDS,
 } from "@/src/data";
 import { SelectOption } from "@/src/types";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { router } from "expo-router";
 import {
     ChevronDown,
@@ -43,6 +44,8 @@ import { Theme } from "../src/constants/theme";
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ExportScreen() {
+  const { t } = useTranslation();
+
   // ── Filtres ─────────────────────────────────────────────────────────────
   const [selectedSource, setSelectedSource] = useState<string[]>([
     "collection",
@@ -196,33 +199,33 @@ export default function ExportScreen() {
 
   const handleExport = useCallback(() => {
     if (selectedCardIds.size === 0) {
-      Alert.alert("Aucune carte", "Sélectionne au moins une carte à exporter.");
+      Alert.alert(t("empty.noCards"), t("export.noCardsSelected"));
       return;
     }
     Alert.alert(
-      "Exporter",
+      t("export.exportTitle"),
       `Génération d'une image avec ${selectedCardIds.size} carte${selectedCardIds.size > 1 ? "s" : ""}...`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Générer",
+          text: t("export.generate"),
           onPress: () => {
             // TODO: ViewShot + expo-media-library pour capturer et sauvegarder
-            Alert.alert("✅ Image générée !", "Sauvegardée dans ta galerie.");
+            Alert.alert(t("export.imageGenerated"), t("export.savedToGallery"));
           },
         },
       ],
     );
-  }, [selectedCardIds]);
+  }, [selectedCardIds, t]);
 
   const handleShare = useCallback(() => {
     if (selectedCardIds.size === 0) {
-      Alert.alert("Aucune carte", "Sélectionne au moins une carte à partager.");
+      Alert.alert(t("empty.noCards"), t("export.noCardsShare"));
       return;
     }
     // TODO: expo-sharing
-    Alert.alert("Partager", "Fonctionnalité de partage à venir.");
-  }, [selectedCardIds]);
+    Alert.alert(t("export.shareTitle"), t("export.shareComingSoon"));
+  }, [selectedCardIds, t]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -231,7 +234,7 @@ export default function ExportScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Exporter mes cartes</Text>
+        <Text style={styles.navTitle}>{t("export.title")}</Text>
         <TouchableOpacity style={styles.navBtn} onPress={handleShare}>
           <Share2 size={18} color={Colors.text} strokeWidth={1.6} />
         </TouchableOpacity>
@@ -244,14 +247,14 @@ export default function ExportScreen() {
       >
         {/* ── Panneau filtres ── */}
         <View style={styles.filterHeader}>
-          <Text style={styles.filterHeaderTitle}>Filtres</Text>
+          <Text style={styles.filterHeaderTitle}>{t("export.filters")}</Text>
           <TouchableOpacity
             style={styles.filterToggleBtn}
             onPress={toggleFilters}
             activeOpacity={0.75}
           >
             <Text style={styles.filterToggleText}>
-              {showFilters ? "Masquer" : "Afficher"}
+              {showFilters ? t("export.hide") : t("export.show")}
             </Text>
             {showFilters ? (
               <ChevronUp size={14} color={Colors.accent} strokeWidth={1.8} />
@@ -276,7 +279,7 @@ export default function ExportScreen() {
           <View style={styles.filtersPanelInner}>
             {/* Source */}
             <ExportFilterSection
-              title="Source des cartes"
+              title={t("export.source")}
               chips={SOURCE_OPTIONS}
               selected={selectedSource}
               onSelect={(key) =>
@@ -286,7 +289,7 @@ export default function ExportScreen() {
 
             {/* Groupe */}
             <ExportFilterSection
-              title="Groupe"
+              title={t("fields.group")}
               chips={groupChips}
               selected={selectedGroups}
               onSelect={(key) =>
@@ -300,7 +303,7 @@ export default function ExportScreen() {
 
             {/* Album */}
             <ExportFilterSection
-              title="Album"
+              title={t("fields.album")}
               chips={albumChips}
               selected={selectedAlbums}
               onSelect={(key) =>
@@ -310,7 +313,7 @@ export default function ExportScreen() {
 
             {/* Membre */}
             <ExportFilterSection
-              title="Membre"
+              title={t("fields.member")}
               chips={memberChips}
               selected={selectedMembers}
               onSelect={(key) =>
@@ -320,7 +323,7 @@ export default function ExportScreen() {
 
             {/* Type */}
             <ExportFilterSection
-              title="Type de carte"
+              title={t("export.cardType")}
               chips={PHOTOCARD_FILTER_OPTIONS}
               selected={selectedTypes}
               onSelect={(key) => {
@@ -339,13 +342,13 @@ export default function ExportScreen() {
 
         {/* ── Apparence ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Apparence</Text>
+          <Text style={styles.sectionTitle}>{t("export.appearance")}</Text>
           <ExportLayoutPicker value={layout} onChange={setLayout} />
           <ExportStylePicker value={exportStyle} onChange={setExportStyle} />
 
           {/* Infos affichées sur les cartes */}
           <ExportFilterSection
-            title="Informations affichées"
+            title={t("export.displayedInfo")}
             chips={EXPORT_INFO_OPTIONS}
             selected={selectedInfos}
             onSelect={(key) => toggleChip(key, selectedInfos, setSelectedInfos)}
@@ -356,7 +359,7 @@ export default function ExportScreen() {
 
         {/* ── Sélection cartes ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cartes à exporter</Text>
+          <Text style={styles.sectionTitle}>{t("export.cardsToExport")}</Text>
           <ExportPreviewGrid
             cards={filteredCards}
             selectedIds={selectedCardIds}
@@ -389,7 +392,7 @@ export default function ExportScreen() {
           activeOpacity={0.8}
         >
           <Download size={18} color={Colors.bg} strokeWidth={2} />
-          <Text style={styles.exportBtnText}>Générer l'image</Text>
+          <Text style={styles.exportBtnText}>{t("export.generateImage")}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -1,5 +1,6 @@
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
@@ -12,6 +13,7 @@ import { Theme } from "../../src/constants/theme";
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function ChangeEmailScreen() {
+  const { t } = useTranslation();
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,11 +21,11 @@ export default function ChangeEmailScreen() {
   const handleSubmit = async () => {
     const trimmed = value.trim();
     if (!trimmed) {
-      setError("L'email ne peut pas être vide");
+      setError(t("errors.required"));
       return;
     }
     if (!EMAIL_REGEX.test(trimmed)) {
-      setError("Format d'email invalide");
+      setError(t("errors.invalidEmail"));
       return;
     }
 
@@ -38,8 +40,8 @@ export default function ChangeEmailScreen() {
       setError(supaError.message);
     } else {
       Alert.alert(
-        "Email de confirmation envoyé",
-        "Vérifie ta nouvelle adresse email pour confirmer le changement.",
+        t("success.emailSent"),
+        t("settings.account.emailHint"),
         [{ text: "OK", onPress: () => router.back() }],
       );
     }
@@ -51,17 +53,14 @@ export default function ChangeEmailScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Changer l'email</Text>
+        <Text style={styles.navTitle}>{t("settings.account.changeEmail")}</Text>
         <View style={styles.navBtn} />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.hint}>
-          Un email de confirmation sera envoyé à la nouvelle adresse. Le
-          changement sera effectif après confirmation.
-        </Text>
+        <Text style={styles.hint}>{t("settings.account.emailHint")}</Text>
         <FormField
-          label="Nouvel email"
+          label={t("settings.account.newEmail")}
           required
           value={value}
           onChangeText={setValue}
@@ -73,7 +72,7 @@ export default function ChangeEmailScreen() {
           onSubmitEditing={handleSubmit}
         />
         <FormSubmitButton
-          label="Envoyer la confirmation"
+          label={t("settings.account.sendConfirmation")}
           onPress={handleSubmit}
           loading={loading}
           disabled={!value.trim()}

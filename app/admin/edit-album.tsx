@@ -1,4 +1,5 @@
 import { AdminSearchBar, AlbumManageRow } from "@/src/components/admin";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { AlbumEditForm } from "@/src/components/admin/album/AlbumEditForm";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
@@ -38,7 +39,7 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
     "Supprimer l'album",
     `Es-tu sûre de vouloir supprimer "${name}" ? Toutes ses photocards seront également supprimées.`,
     [
-      { text: "Annuler", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
       { text: "Supprimer", style: "destructive", onPress: onConfirm },
     ],
   );
@@ -47,6 +48,7 @@ const confirmDelete = (name: string, onConfirm: () => void) => {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EditAlbumScreen() {
+  const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
   const { albums, loading: albumsLoading, refetch } = useAlbums();
@@ -149,7 +151,7 @@ export default function EditAlbumScreen() {
         "Supprimer l'album",
         `Es-tu sûre de vouloir supprimer "${album.title}" ?`,
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
             text: "Supprimer",
             style: "destructive",
@@ -248,7 +250,7 @@ export default function EditAlbumScreen() {
           >
             <View style={styles.filtersPanelInner}>
               <FilterSelector
-                label="Groupe"
+                label={t("fields.group")}
                 value={selectedGroupId}
                 placeholder="Tous les groupes"
                 options={groupOptions}

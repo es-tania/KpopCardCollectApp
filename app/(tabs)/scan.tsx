@@ -1,9 +1,12 @@
+import { PhotocardModal } from "@/src/components/photocard";
 import { useClipEmbedding } from "@/src/hooks/useClipEmbedding";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { mapPhotocard } from "@/src/services/photocardsService";
 import { Camera, CameraView } from "expo-camera";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
+import * as ScreenOrientation from "expo-screen-orientation";
 import { ImagePlus, X } from "lucide-react-native";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -41,6 +44,7 @@ interface NotFoundItem {
 }
 
 export default function ScanScreen() {
+  const { t } = useTranslation();
   const cameraRef = useRef<CameraView>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [status, setStatus] = useState<ScanStatus>("idle");
@@ -50,6 +54,9 @@ export default function ScanScreen() {
   const [pendingPhotos, setPendingPhotos] = useState<string[]>([]);
   const [multiResults, setMultiResults] = useState<PhotocardWithDetails[]>([]);
   const [notFoundItems, setNotFoundItems] = useState<NotFoundItem[]>([]);
+  const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
+    null,
+  );
 
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const SHEET_PEEK = 80;
@@ -68,6 +75,14 @@ export default function ScanScreen() {
     Camera.requestCameraPermissionsAsync().then(({ status }) => {
       setHasPermission(status === "granted");
     });
+  }, []);
+
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
   }, []);
 
   const openSheet = useCallback(() => {
@@ -213,7 +228,7 @@ export default function ScanScreen() {
       );
       openSheet();
     } catch (err: any) {
-      Alert.alert("Erreur", err.message);
+      Alert.alert(t("common.error"), err.message);
       setStatus("not_found");
     } finally {
       setScanStep("");
@@ -231,10 +246,7 @@ export default function ScanScreen() {
     if (!cameraRef.current || status === "scanning") return;
 
     if (pendingPhotos.length >= 5) {
-      Alert.alert(
-        "Maximum atteint",
-        "Tu peux scanner au maximum 5 cartes à la fois.",
-      );
+      Alert.alert(t("scan.title"), t("scan.states.notFound"));
       return;
     }
 
@@ -249,14 +261,14 @@ export default function ScanScreen() {
         setPendingPhotos((prev) => [...prev, photo.uri]);
       }
     } catch {
-      Alert.alert("Erreur", "Impossible de prendre la photo.");
+      Alert.alert(t("common.error"), t("errors.generic"));
     }
-  }, [status, pendingPhotos.length]);
+  }, [status, pendingPhotos.length, t]);
 
   const handlePickFromGallery = useCallback(async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert("Permission refusée", "L'accès à la galerie est nécessaire.");
+      Alert.alert(t("common.error"), t("errors.galleryPermission"));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -269,10 +281,7 @@ export default function ScanScreen() {
     if (!result.canceled) {
       const remaining = 5 - pendingPhotos.length;
       if (remaining <= 0) {
-        Alert.alert(
-          "Maximum atteint",
-          "Tu peux scanner au maximum 5 cartes à la fois.",
-        );
+        Alert.alert(t("scan.title"), t("scan.states.notFound"));
         return;
       }
       const toAdd = result.assets.slice(0, remaining).map((a) => a.uri);
@@ -298,7 +307,7 @@ export default function ScanScreen() {
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <View style={styles.navBtn} />
-        <Text style={styles.navTitle}>Scanner</Text>
+        <Text style={styles.navTitle}>{t("scan.title")}</Text>
         <TouchableOpacity style={styles.navBtn} onPress={handlePickFromGallery}>
           <ImagePlus size={18} color={Colors.text} strokeWidth={1.6} />
         </TouchableOpacity>
@@ -307,7 +316,9 @@ export default function ScanScreen() {
       <View style={styles.cameraArea}>
         {hasPermission === false ? (
           <View style={styles.noPermission}>
-            <Text style={styles.noPermissionText}>Accès caméra refusé</Text>
+            <Text style={styles.noPermissionText}>
+              {t("errors.cameraPermission")}
+            </Text>
           </View>
         ) : (
           <CameraView
@@ -357,8 +368,7 @@ export default function ScanScreen() {
         {pendingPhotos.length > 0 && status !== "scanning" && (
           <TouchableOpacity style={styles.sendBtn} onPress={performMultiScan}>
             <Text style={styles.sendBtnText}>
-              Analyser {pendingPhotos.length} carte
-              {pendingPhotos.length > 1 ? "s" : ""}
+              {t("scan.analyze")} {pendingPhotos.length}
             </Text>
           </TouchableOpacity>
         )}
@@ -413,13 +423,18 @@ export default function ScanScreen() {
                         fontSize: Theme.fontSize.sm,
                       }}
                     >
-                      Tout effacer
+                      {t("scan.clearAll")}
                     </Text>
                   </TouchableOpacity>
                 </View>
 
                 {multiResults.map((card) => (
-                  <View key={card.id} style={styles.multiCardItem}>
+                  <TouchableOpacity
+                    key={card.id}
+                    style={styles.multiCardItem}
+                    onPress={() => setSelectedCard(card)}
+                    activeOpacity={0.85}
+                  >
                     <ScanResultCard
                       card={card}
                       onDismiss={() => {
@@ -435,7 +450,7 @@ export default function ScanScreen() {
                         }
                       }}
                     />
-                  </View>
+                  </TouchableOpacity>
                 ))}
 
                 {/* Cartes non trouvées */}
@@ -460,14 +475,14 @@ export default function ScanScreen() {
                     />
                     <View style={styles.notFoundInfo}>
                       <Text style={styles.notFoundText}>
-                        Carte non identifiée
+                        {t("scan.states.notFound")}
                       </Text>
                       <TouchableOpacity
                         style={styles.submitBtn}
                         onPress={() => handleSubmitNew(item.uri)}
                       >
                         <Text style={styles.submitBtnText}>
-                          Soumettre cette carte
+                          {t("admin.sections.addPhotocard")}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -497,12 +512,18 @@ export default function ScanScreen() {
           {status === "idle" && (
             <Text style={styles.idleText}>
               {pendingPhotos.length === 0
-                ? "Place une carte dans le cadre et appuie sur le bouton"
-                : `${pendingPhotos.length} photo${pendingPhotos.length > 1 ? "s" : ""} en attente — appuie sur "Analyser"`}
+                ? t("scan.hints.center")
+                : t("scan.analyze")}
             </Text>
           )}
         </ScrollView>
       </Animated.View>
+      {/* ── Modal photocard ── */}
+      <PhotocardModal
+        card={selectedCard}
+        visible={selectedCard !== null}
+        onClose={() => setSelectedCard(null)}
+      />
     </SafeAreaView>
   );
 }

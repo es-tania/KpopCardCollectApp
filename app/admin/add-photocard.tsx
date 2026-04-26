@@ -1,4 +1,5 @@
 import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   PHOTOCARD_TYPE_OPTIONS,
@@ -56,6 +57,7 @@ const INITIAL_FORM: PhotocardFormState = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardScreen() {
+  const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
   const { groupId: preGroupId, memberId: preMemberId } = useLocalSearchParams<{
     groupId?: string;
@@ -83,17 +85,15 @@ export default function AddPhotocardScreen() {
 
   const { loading, progress, error, submit } = useAddPhotocard(() => {
     Alert.alert(
-      "✅ Succès",
-      isAdmin
-        ? `Photocard ajoutée et approuvée !`
-        : `Photocard soumise ! Elle sera visible après validation par un admin.`,
+      t("success.cardAdded"),
+      "",
       [{ text: "OK", onPress: () => router.back() }],
     );
   });
 
   useEffect(() => {
-    if (error) Alert.alert("Erreur", error);
-  }, [error]);
+    if (error) Alert.alert(t("common.error"), error);
+  }, [error, t]);
 
   const set = (key: keyof PhotocardFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -158,11 +158,11 @@ export default function AddPhotocardScreen() {
 
   const validate = (): boolean => {
     const e: Partial<Record<keyof PhotocardFormState, string>> = {};
-    if (!form.groupId) e.groupId = "Groupe requis";
-    if (!form.albumId) e.albumId = "Album requis";
-    if (!form.memberId) e.memberId = "Membre requis";
-    if (!form.type) e.type = "Type requis";
-    if (!form.imageUri) e.imageUri = "Image requise";
+    if (!form.groupId) e.groupId = t("errors.required");
+    if (!form.albumId) e.albumId = t("errors.required");
+    if (!form.memberId) e.memberId = t("errors.required");
+    if (!form.type) e.type = t("errors.required");
+    if (!form.imageUri) e.imageUri = t("errors.required");
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -183,8 +183,8 @@ export default function AddPhotocardScreen() {
   };
 
   const screenTitle = isUserSubmission
-    ? "Proposer une photocard"
-    : "Ajouter une photocard";
+    ? t("admin.sections.addPhotocard")
+    : t("admin.sections.addPhotocard");
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -211,9 +211,9 @@ export default function AddPhotocardScreen() {
         >
           {/* ── Image + IA ── */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Image</Text>
+            <Text style={styles.sectionTitle}>{t("fields.front")}</Text>
             <FormImagePicker
-              label="Recto"
+              label={t("fields.front")}
               imageUri={form.imageUri}
               onPick={() => pickLocalImage((uri) => set("imageUri")(uri))}
               onRemove={() => set("imageUri")("")}
@@ -222,7 +222,7 @@ export default function AddPhotocardScreen() {
               aspectRatio={2 / 3}
             />
             <FormImagePicker
-              label="Verso (optionnel)"
+              label={`${t("fields.back")} (${t("common.optional")})`}
               imageUri={form.backImageUri}
               onPick={() => pickLocalImage((uri) => set("backImageUri")(uri))}
               onRemove={() => set("backImageUri")("")}
@@ -245,9 +245,9 @@ export default function AddPhotocardScreen() {
 
           {/* ── Identification ── */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Identification</Text>
+            <Text style={styles.sectionTitle}>{t("fields.group")}</Text>
             <FormSelect
-              label="Groupe"
+              label={t("fields.group")}
               options={groupOptions}
               value={form.groupId}
               onChange={handleSelectGroup}
@@ -256,7 +256,7 @@ export default function AddPhotocardScreen() {
               searchable
             />
             <FormSelect
-              label="Album / Event"
+              label={t("fields.album")}
               options={albumOptions}
               value={form.albumId}
               onChange={handleSelectAlbum}
@@ -265,7 +265,7 @@ export default function AddPhotocardScreen() {
               searchable
             />
             <MemberMultiSelect
-              label="Membre(s)"
+              label={t("fields.member")}
               members={members}
               selectedIds={form.memberIds}
               onChange={(ids) =>
@@ -284,9 +284,9 @@ export default function AddPhotocardScreen() {
 
           {/* ── Détails ── */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Détails</Text>
+            <Text style={styles.sectionTitle}>{t("fields.type")}</Text>
             <FormSelect
-              label="Type"
+              label={t("fields.type")}
               options={PHOTOCARD_TYPE_OPTIONS}
               value={form.type}
               onChange={set("type")}
@@ -294,31 +294,21 @@ export default function AddPhotocardScreen() {
               error={errors.type}
             />
             <FormField
-              label="Version"
+              label={t("fields.version")}
               value={form.version}
               onChangeText={set("version")}
               placeholder="ex: A ver., Digipack..."
             />
             <FormSelect
-              label="Shop / Plateforme"
+              label={t("fields.shop")}
               options={sortedOptions}
               value={form.shopName}
               onChange={set("shopName")}
-              placeholder="Sélectionner un shop..."
               loading={shopsLoading}
               searchable
             />
-            {/* Champ libre si "Autre" sélectionné */}
-            {form.shopName === "other" && (
-              <FormField
-                label="Précise le shop"
-                value={form.shopName}
-                onChangeText={set("eventName")}
-                placeholder="ex: Nom du shop..."
-              />
-            )}
             <FormSelect
-              label="Rareté"
+              label={t("fields.rarity")}
               options={RARITY_OPTIONS}
               value={form.rarity}
               onChange={set("rarity")}
@@ -326,7 +316,7 @@ export default function AddPhotocardScreen() {
           </View>
           {/* ── Soumettre ── */}
           <FormSubmitButton
-            label="Ajouter la photocard"
+            label={t("common.add")}
             onPress={handleSubmit}
             loading={loading}
           />

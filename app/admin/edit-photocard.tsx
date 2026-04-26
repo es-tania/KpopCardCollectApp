@@ -1,4 +1,5 @@
 import { AdminSearchBar } from "@/src/components/admin";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
 import { PhotocardManageRow } from "@/src/components/admin/photocard/PhotocardManageRow";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
@@ -47,7 +48,7 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
     `Supprimer ${label}`,
     `Es-tu sûre de vouloir supprimer "${name}" ? Cette action est irréversible.`,
     [
-      { text: "Annuler", style: "cancel" },
+      { text: t("common.cancel"), style: "cancel" },
       { text: "Supprimer", style: "destructive", onPress: onConfirm },
     ],
   );
@@ -56,6 +57,7 @@ const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function EditPhotocardScreen() {
+  const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
   const { confirmDeleteOne, confirmDeleteMany } = useDeletePhotocards();
   const { id: preselectedId } = useLocalSearchParams<{ id?: string }>();
@@ -320,14 +322,14 @@ export default function EditPhotocardScreen() {
           >
             <View style={styles.filtersPanelInner}>
               <FilterSelector
-                label="Groupe"
+                label={t("fields.group")}
                 value={selectedGroupId}
                 placeholder="Tous les groupes"
                 options={groupOptions}
                 onSelect={handleSelectGroup}
               />
               <FilterSelector
-                label="Album"
+                label={t("fields.album")}
                 value={selectedAlbumId}
                 placeholder={
                   selectedGroupId
@@ -339,7 +341,7 @@ export default function EditPhotocardScreen() {
                 disabled={!selectedGroupId}
               />
               <FilterSelector
-                label="Membre"
+                label={t("fields.member")}
                 value={selectedMemberId}
                 placeholder={
                   selectedGroupId

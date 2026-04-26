@@ -1,4 +1,5 @@
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   ALBUM_TYPE_OPTIONS,
@@ -31,6 +32,7 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
 export default function AddAlbumScreen() {
+  const { t } = useTranslation();
   const { groups } = useAccessibleGroups();
 
   const groupOptions: SelectOption[] = groups.map((g) => ({
@@ -139,7 +141,7 @@ export default function AddAlbumScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Identification</Text>
             <FormSelect
-              label="Groupe"
+              label={t("fields.group")}
               options={groupOptions}
               value={form.groupId}
               onChange={setGroup("groupId")}
@@ -148,7 +150,7 @@ export default function AddAlbumScreen() {
               searchable
             />
             <FormField
-              label="Titre"
+              label={t("fields.title")}
               value={form.title}
               onChangeText={set("title")}
               placeholder="ex: UNIQUE"
@@ -163,7 +165,7 @@ export default function AddAlbumScreen() {
               placeholder="ex: 유니크"
             />
             <FormSelect
-              label="Type"
+              label={t("fields.type")}
               options={ALBUM_TYPE_OPTIONS}
               value={form.type}
               onChange={set("type")}
@@ -171,7 +173,7 @@ export default function AddAlbumScreen() {
               error={errors.type}
             />
             <FormSelect
-              label="Catégorie"
+              label={t("fields.category")}
               options={CATEGORY_OPTIONS}
               value={form.category}
               onChange={set("category")}
@@ -222,7 +224,7 @@ export default function AddAlbumScreen() {
               placeholder="ex: A, B, Digipack (séparées par virgule)"
             />
             <FormField
-              label="Tags"
+              label={t("fields.tags")}
               value={form.tags}
               onChangeText={set("tags")}
               placeholder="ex: 1st mini, debut (séparés par virgule)"
@@ -245,7 +247,7 @@ export default function AddAlbumScreen() {
           <ProgressIndicator message={progress} />
 
           <FormSubmitButton
-            label="Ajouter l'album"
+            label={t("common.add")}
             onPress={handleSubmit}
             loading={loading}
           />

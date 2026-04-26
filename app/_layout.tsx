@@ -1,6 +1,7 @@
 import { Colors } from "@/src/constants/colors";
 import { useAuth } from "@/src/hooks/useAuth";
 import { useCollectionStore } from "@/src/store/collectionStore";
+import { useLanguageStore } from "@/src/store/languageStore";
 import { useShopsStore } from "@/src/store/shopsStore";
 import { router, Stack } from "expo-router";
 import React, { useEffect } from "react";
@@ -10,9 +11,11 @@ export default function RootLayout() {
   const { user, isAuthenticated, loading } = useAuth();
   const initStore = useCollectionStore((s) => s.init);
   const loadShops = useShopsStore((s) => s.load);
+  const loadLocale = useLanguageStore((s) => s.loadLocale);
 
   useEffect(() => {
     loadShops();
+    loadLocale();
   }, []);
 
   useEffect(() => {

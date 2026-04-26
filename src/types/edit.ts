@@ -27,6 +27,8 @@ export interface PhotocardEditFormState {
   backImageUri: string;
   removeImage: boolean;
   removeBackImage: boolean;
+  newImageUrl?: string | null;
+  newBackImageUrl?: string | null;
 }
 
 export interface GroupEditFormState {

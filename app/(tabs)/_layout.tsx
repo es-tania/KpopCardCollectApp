@@ -1,3 +1,4 @@
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { Tabs } from "expo-router";
 import { Home, ScanLine, Search, User } from "lucide-react-native";
 import React from "react";
@@ -23,6 +24,7 @@ const TabIcon: React.FC<TabIconProps> = ({ icon, label, focused }) => (
 );
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   return (
     <Tabs
       screenOptions={{
@@ -38,7 +40,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon
-              label="Accueil"
+              label={t("nav.home")}
               focused={focused}
               icon={
                 <Home
@@ -56,7 +58,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon
-              label="Recherche"
+              label={t("nav.search")}
               focused={focused}
               icon={
                 <Search
@@ -105,7 +107,7 @@ export default function TabLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon
-              label="Profil"
+              label={t("nav.profile")}
               focused={focused}
               icon={
                 <User

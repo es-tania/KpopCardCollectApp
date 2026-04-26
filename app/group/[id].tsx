@@ -6,6 +6,7 @@ import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
 import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { useGroup } from "@/src/hooks/useGroup";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useCollectionStore } from "@/src/store/collectionStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -27,6 +28,7 @@ import { Theme } from "../../src/constants/theme";
 import { Album, Member } from "../../src/types";
 
 export default function GroupScreen() {
+  const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
 
@@ -96,17 +98,6 @@ export default function GroupScreen() {
     if (group) toggleFollow(group.id);
   }, [group, toggleFollow]);
 
-  const enrichedPhotocards = useMemo(
-    () =>
-      photocards.map((card) => ({
-        ...card,
-        isInCollection: collectionIds.has(card.id),
-        isFavorite: favoriteIds.has(card.id),
-        isWishlisted: wishlistIds.has(card.id),
-      })),
-    [photocards, collectionIds, favoriteIds, wishlistIds],
-  );
-
   const albumsWithStats = useMemo(() => {
     // Récupère tous les IDs de photocards chargées par album
     const idsByAlbum = new Map<string, string[]>();
@@ -149,7 +140,7 @@ export default function GroupScreen() {
     () => (
       <>
         <GroupHeader group={{ ...group!, ...groupStats }} />
-        <SectionLabel label="Membres" style={styles.sectionLabel} />
+        <SectionLabel label={t("search.members")} style={styles.sectionLabel} />
         {membersLoading ? (
           <ActivityIndicator
             color={Colors.accent}
@@ -162,7 +153,7 @@ export default function GroupScreen() {
           />
         )}
         <SectionLabel
-          label="Albums"
+          label={t("search.albums")}
           style={[styles.sectionLabel, { marginTop: Theme.spacing.lg }]}
         />
         {albumsLoading && (

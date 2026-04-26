@@ -1,4 +1,5 @@
 import { useClipEmbedding } from "@/src/hooks/useClipEmbedding";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
@@ -18,6 +19,7 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
 export default function GenerateEmbeddingsScreen() {
+  const { t } = useTranslation();
   const { isAdmin } = useAuthStore();
   const { generateAndSave } = useClipEmbedding();
 
@@ -34,7 +36,7 @@ export default function GenerateEmbeddingsScreen() {
       "Générer les embeddings",
       "Ceci va calculer les embeddings CLIP pour toutes les cartes sans embedding. Ça peut prendre plusieurs minutes.",
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
           text: "Lancer",
           onPress: async () => {

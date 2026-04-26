@@ -84,7 +84,14 @@ export const useEditPhotocard = (
 
       // ── 3. Met à jour la photocard ───────────────────────────────────
       setProgress("Mise à jour de la photocard...");
-      await photocardsService.update(photocardId, {
+      // Dans useEditPhotocard.ts — juste avant photocardsService.update
+      console.log("🖼️ imageUrl calculé:", imageUrl);
+      console.log("🖼️ backImageUrl calculé:", backImageUrl);
+      console.log(
+        "📤 newImageUrl dans le form:",
+        imageUrl !== undefined ? imageUrl : "undefined — pas de changement",
+      );
+      const updateData: PhotocardEditFormState = {
         type: form.type as any,
         version: form.version || "",
         shopName: form.shopName || "",
@@ -96,13 +103,18 @@ export const useEditPhotocard = (
         backImageUri: form.backImageUri,
         removeImage: form.removeImage,
         removeBackImage: form.removeBackImage,
-        ...(imageUrl !== undefined && {
-          imageUrl: imageUrl === null ? null : { uri: imageUrl },
-        }),
-        ...(backImageUrl !== undefined && {
-          backImageUrl: backImageUrl === null ? null : { uri: backImageUrl },
-        }),
+      };
+
+      // ← Assigne explicitement au lieu du spread conditionnel
+      if (imageUrl !== undefined) updateData.newImageUrl = imageUrl;
+      if (backImageUrl !== undefined) updateData.newBackImageUrl = backImageUrl;
+
+      console.log("📤 updateData final:", {
+        newImageUrl: updateData.newImageUrl,
+        newBackImageUrl: updateData.newBackImageUrl,
       });
+
+      await photocardsService.update(photocardId, updateData);
 
       setProgress(null);
       onSuccess();

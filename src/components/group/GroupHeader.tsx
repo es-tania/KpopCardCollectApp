@@ -62,12 +62,6 @@ interface GroupHeaderProps {
 export const GroupHeader: React.FC<GroupHeaderProps> = ({ group }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const completionPct =
-    group.completionPercentage ??
-    (group.totalPhotocards > 0
-      ? Math.round(((group.ownedPhotocards ?? 0) / group.totalPhotocards) * 100)
-      : 0);
-
   return (
     <View style={styles.container}>
       {/* Bannière */}

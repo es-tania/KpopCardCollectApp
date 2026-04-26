@@ -1,4 +1,5 @@
 import { BulkPhotocardCard } from "@/src/components/admin/photocard/BulkPhotocardCard";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSelect } from "@/src/components/ui/FormSelect";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
@@ -59,6 +60,7 @@ const INITIAL_FORM: BulkFormState = {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardsBulkScreen() {
+  const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
   const { groups } = useAccessibleGroups();
   const { shopOptions, loading: shopsLoading } = useShops();
@@ -234,7 +236,7 @@ export default function AddPhotocardsBulkScreen() {
             </Text>
 
             <FormSelect
-              label="Groupe"
+              label={t("fields.group")}
               options={groupOptions}
               value={form.groupId}
               onChange={handleSelectGroup}
@@ -242,7 +244,7 @@ export default function AddPhotocardsBulkScreen() {
               searchable
             />
             <FormSelect
-              label="Album / Event"
+              label={t("fields.album")}
               options={albumOptions}
               value={form.albumId}
               onChange={handleSelectAlbum}
@@ -255,19 +257,19 @@ export default function AddPhotocardsBulkScreen() {
               searchable
             />
             <FormSelect
-              label="Type"
+              label={t("fields.type")}
               options={PHOTOCARD_TYPE_OPTIONS}
               value={form.type}
               onChange={setField("type")}
             />
             <FormField
-              label="Version"
+              label={t("fields.version")}
               value={form.version}
               onChangeText={setField("version")}
               placeholder="ex: A ver., Digipack..."
             />
             <FormSelect
-              label="Shop"
+              label={t("fields.shop")}
               options={shopOptions}
               value={form.shopName}
               onChange={setField("shopName")}
@@ -276,7 +278,7 @@ export default function AddPhotocardsBulkScreen() {
               searchable
             />
             <FormSelect
-              label="Rareté"
+              label={t("fields.rarity")}
               options={RARITY_OPTIONS}
               value={form.rarity}
               onChange={setField("rarity")}

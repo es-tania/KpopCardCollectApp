@@ -3,6 +3,7 @@ import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { authService } from "@/src/services";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -40,6 +41,7 @@ const PASSWORD_RULES = [
 ];
 
 export default function RegisterScreen() {
+  const { t } = useTranslation();
   const [form, setForm] = useState<FormState>({
     username: "",
     email: "",
@@ -55,14 +57,14 @@ export default function RegisterScreen() {
 
   const validate = (): boolean => {
     const e: FormErrors = {};
-    if (!form.username.trim()) e.username = "Pseudo requis";
-    else if (form.username.length < 3) e.username = "3 caractères minimum";
-    if (!form.email.trim()) e.email = "Email requis";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Email invalide";
-    if (!form.password) e.password = "Mot de passe requis";
-    else if (form.password.length < 8) e.password = "8 caractères minimum";
+    if (!form.username.trim()) e.username = t("errors.required");
+    else if (form.username.length < 3) e.username = t("errors.minLength", { count: 3 });
+    if (!form.email.trim()) e.email = t("errors.required");
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = t("errors.invalidEmail");
+    if (!form.password) e.password = t("errors.required");
+    else if (form.password.length < 8) e.password = t("errors.minLength", { count: 8 });
     if (form.password !== form.confirmPassword)
-      e.confirmPassword = "Les mots de passe ne correspondent pas";
+      e.confirmPassword = t("errors.passwordMismatch");
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -77,12 +79,12 @@ export default function RegisterScreen() {
         form.username,
       );
       Alert.alert(
-        "✅ Compte créé !",
+        t("success.emailSent"),
         "Vérifie ton email pour confirmer ton compte.",
         [{ text: "OK", onPress: () => router.replace("/(auth)/login") }],
       );
     } catch (error: any) {
-      Alert.alert("Erreur d'inscription", error.message);
+      Alert.alert(t("common.error"), error.message);
     } finally {
       setLoading(false);
     }
@@ -118,8 +120,8 @@ export default function RegisterScreen() {
         >
           {/* Header */}
           <AuthHeader
-            title="Créer un compte"
-            subtitle="Rejoins KardVault et gère ta collection"
+            title={t("auth.registerTitle")}
+            subtitle={t("auth.registerSubtitle")}
           />
 
           {/* Social */}
@@ -135,7 +137,7 @@ export default function RegisterScreen() {
           {/* Formulaire */}
           <View style={styles.form}>
             <FormField
-              label="Pseudo"
+              label={t("fields.username")}
               value={form.username}
               onChangeText={set("username")}
               placeholder="ton_pseudo"
@@ -145,7 +147,7 @@ export default function RegisterScreen() {
               error={errors.username}
             />
             <FormField
-              label="Email"
+              label={t("fields.email")}
               value={form.email}
               onChangeText={set("email")}
               placeholder="ton@email.com"
@@ -156,7 +158,7 @@ export default function RegisterScreen() {
               error={errors.email}
             />
             <PasswordField
-              label="Mot de passe"
+              label={t("fields.password")}
               value={form.password}
               onChangeText={set("password")}
               required
@@ -185,7 +187,7 @@ export default function RegisterScreen() {
             )}
 
             <PasswordField
-              label="Confirmer le mot de passe"
+              label={t("settings.account.confirmPassword")}
               value={form.confirmPassword}
               onChangeText={set("confirmPassword")}
               placeholder="••••••••"
@@ -206,15 +208,12 @@ export default function RegisterScreen() {
               {acceptedTerms && <Text style={styles.checkmark}>✓</Text>}
             </View>
             <Text style={styles.termsText}>
-              J'accepte les{" "}
-              <Text style={styles.termsLink}>conditions d'utilisation</Text> et
-              la{" "}
-              <Text style={styles.termsLink}>politique de confidentialité</Text>
+              {t("auth.termsAccept")}
             </Text>
           </TouchableOpacity>
 
           <FormSubmitButton
-            label="Créer mon compte"
+            label={t("auth.registerButton")}
             onPress={handleRegister}
             loading={loading}
             disabled={!acceptedTerms}
@@ -222,8 +221,8 @@ export default function RegisterScreen() {
 
           {/* Footer */}
           <AuthFooter
-            text="Déjà un compte ?"
-            linkLabel="Se connecter"
+            text={t("auth.alreadyAccount")}
+            linkLabel={t("auth.signIn")}
             onPress={() => router.push("/(auth)/login")}
           />
         </ScrollView>

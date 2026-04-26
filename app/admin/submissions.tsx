@@ -1,4 +1,5 @@
 import { useSubmissions } from "@/src/hooks/useSubmissions";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
 import { useShopsStore } from "@/src/store/shopsStore";
 import { router } from "expo-router";
@@ -20,12 +21,7 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { PhotocardWithDetails, SubmissionStatus } from "../../src/types";
 
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-const TABS: { key: SubmissionStatus; label: string }[] = [
-  { key: "pending", label: "En attente" },
-  { key: "approved", label: "Approuvées" },
-  { key: "rejected", label: "Refusées" },
-];
+// TABS are built inside the component to use t()
 
 // ─── Composant ligne soumission ───────────────────────────────────────────────
 
@@ -200,8 +196,15 @@ const rowStyles = StyleSheet.create({
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function SubmissionsScreen() {
+  const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
   const [activeTab, setActiveTab] = useState<SubmissionStatus>("pending");
+
+  const TABS: { key: SubmissionStatus; label: string }[] = [
+    { key: "pending", label: t("submissions.status.pending") },
+    { key: "approved", label: t("submissions.status.approved") },
+    { key: "rejected", label: t("submissions.status.rejected") },
+  ];
   const [previewCard, setPreviewCard] = useState<PhotocardWithDetails | null>(
     null,
   );
@@ -214,48 +217,48 @@ export default function SubmissionsScreen() {
   const handleApprove = useCallback(
     (card: PhotocardWithDetails) => {
       Alert.alert(
-        "Approuver la soumission",
-        `Approuver "${card.memberName} — ${card.albumTitle}" ?`,
+        t("admin.approve"),
+        `${card.memberName} — ${card.albumTitle}`,
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Approuver",
+            text: t("admin.approve"),
             onPress: async () => {
               try {
                 await approve(card.id);
               } catch (err: any) {
-                Alert.alert("Erreur", err.message);
+                Alert.alert(t("common.error"), err.message);
               }
             },
           },
         ],
       );
     },
-    [approve],
+    [approve, t],
   );
 
   const handleReject = useCallback(
     (card: PhotocardWithDetails) => {
       Alert.alert(
-        "Refuser la soumission",
-        `Refuser "${card.memberName} — ${card.albumTitle}" ?`,
+        t("admin.reject"),
+        `${card.memberName} — ${card.albumTitle}`,
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Refuser",
+            text: t("admin.reject"),
             style: "destructive",
             onPress: async () => {
               try {
                 await reject(card.id);
               } catch (err: any) {
-                Alert.alert("Erreur", err.message);
+                Alert.alert(t("common.error"), err.message);
               }
             },
           },
         ],
       );
     },
-    [reject],
+    [reject, t],
   );
 
   const accessibleSubmissions = useMemo(() => {
@@ -270,7 +273,7 @@ export default function SubmissionsScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Soumissions</Text>
+        <Text style={styles.navTitle}>{t("admin.sections.submissions")}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -305,8 +308,7 @@ export default function SubmissionsScreen() {
         <Clock size={12} color={Colors.textMuted} strokeWidth={1.6} />
         <Text style={styles.countText}>
           <Text style={styles.countNum}>{accessibleSubmissions.length}</Text>{" "}
-          soumission
-          {accessibleSubmissions.length !== 1 ? "s" : ""}
+          {t("admin.sections.submissions")}
         </Text>
       </View>
 
@@ -335,9 +337,7 @@ export default function SubmissionsScreen() {
                 {activeTab === "pending" ? "🎉" : "📭"}
               </Text>
               <Text style={styles.emptyTitle}>
-                {activeTab === "pending"
-                  ? "Aucune soumission en attente"
-                  : `Aucune soumission ${activeTab === "approved" ? "approuvée" : "refusée"}`}
+                {t("admin.noSubmissions")}
               </Text>
             </View>
           }

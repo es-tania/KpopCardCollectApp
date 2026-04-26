@@ -1,5 +1,6 @@
 import { FormField } from "@/src/components/ui/FormField";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
@@ -17,6 +18,7 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
 export default function ChangeUsernameScreen() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
@@ -25,15 +27,15 @@ export default function ChangeUsernameScreen() {
   const handleSubmit = async () => {
     const trimmed = value.trim();
     if (!trimmed) {
-      setError("Le pseudo ne peut pas être vide");
+      setError(t("errors.required"));
       return;
     }
     if (trimmed.length < 3) {
-      setError("Minimum 3 caractères");
+      setError(t("errors.minLength", { count: 3 }));
       return;
     }
     if (trimmed.length > 30) {
-      setError("Maximum 30 caractères");
+      setError(t("errors.maxLength", { count: 30 }));
       return;
     }
 
@@ -48,7 +50,7 @@ export default function ChangeUsernameScreen() {
     if (supaError) {
       setError(supaError.message);
     } else {
-      Alert.alert("Pseudo mis à jour", "", [
+      Alert.alert(t("success.usernameUpdated"), "", [
         { text: "OK", onPress: () => router.back() },
       ]);
     }
@@ -60,16 +62,14 @@ export default function ChangeUsernameScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Changer le pseudo</Text>
+        <Text style={styles.navTitle}>{t("settings.account.changeUsername")}</Text>
         <View style={styles.navBtn} />
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.hint}>
-          Le pseudo sera visible par les autres utilisateurs.
-        </Text>
+        <Text style={styles.hint}>{t("settings.account.usernameHint")}</Text>
         <FormField
-          label="Nouveau pseudo"
+          label={t("settings.account.newUsername")}
           required
           value={value}
           onChangeText={setValue}
@@ -81,7 +81,7 @@ export default function ChangeUsernameScreen() {
           onSubmitEditing={handleSubmit}
         />
         <FormSubmitButton
-          label="Enregistrer"
+          label={t("common.save")}
           onPress={handleSubmit}
           loading={loading}
           disabled={!value.trim()}

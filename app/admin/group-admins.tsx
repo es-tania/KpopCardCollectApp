@@ -1,4 +1,5 @@
 import { useGroups } from "@/src/hooks/group/useGroups";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { router } from "expo-router";
 import { ChevronLeft, Plus, Trash2, UserCheck } from "lucide-react-native";
@@ -28,6 +29,7 @@ interface GroupAdmin {
 }
 
 export default function GroupAdminsScreen() {
+  const { t } = useTranslation();
   const { groups } = useGroups();
   const [admins, setAdmins] = useState<GroupAdmin[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +140,7 @@ export default function GroupAdminsScreen() {
         "Retirer l'admin",
         `Retirer ${admin.username} comme admin de ${admin.groupName} ?`,
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
             text: "Retirer",
             style: "destructive",

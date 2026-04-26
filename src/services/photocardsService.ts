@@ -1,16 +1,16 @@
 import { supabase } from "../lib/supabase";
 import {
+  photocardCreateSchema,
+  photocardEditSchema,
+  validateOrThrow,
+} from "../lib/validation";
+import {
   CardMember,
   PhotocardEditFormState,
   PhotocardFormState,
   PhotocardWithDetails,
 } from "../types";
 import { extractUrl } from "../utils/extractUrl";
-import {
-  photocardCreateSchema,
-  photocardEditSchema,
-  validateOrThrow,
-} from "../lib/validation";
 
 export const photocardsService = {
   getAll: async (): Promise<PhotocardWithDetails[]> => {
@@ -204,24 +204,38 @@ export const photocardsService = {
     validateOrThrow(photocardEditSchema, data);
     const isMulti = data.memberIds.length > 1;
 
+    // ── Construit le payload ──────────────────────────────────────────────
+    const payload: Record<string, any> = {
+      member_id: isMulti ? null : (data.memberIds[0] ?? data.memberId),
+      album_id: data.albumId,
+      type: data.type,
+      version: data.version || null,
+      shop_name: data.shopName || null,
+      rarity: data.rarity || "common",
+    };
+
+    if (data.newImageUrl !== undefined) {
+      payload.image_url = data.newImageUrl;
+    }
+    if (data.newBackImageUrl !== undefined) {
+      payload.back_image_url = data.newBackImageUrl;
+    }
+
+    // ── Update en BDD avec le payload complet ────────────────────────────
     const { error } = await supabase
       .from("photocards")
-      .update({
-        member_id: isMulti ? null : (data.memberIds[0] ?? data.memberId),
-        album_id: data.albumId,
-        type: data.type,
-        version: data.version || null,
-        shop_name: data.shopName || null,
-        rarity: data.rarity || "common",
-      })
+      .update(payload)
       .eq("id", id);
 
     if (error) throw error;
 
+    // ── Membres ───────────────────────────────────────────────────────────
     const { error: deleteError } = await supabase
       .from("photocard_members")
       .delete()
       .eq("photocard_id", id);
+
+    if (deleteError) throw deleteError;
 
     if (data.memberIds.length > 0) {
       const { error: insertError } = await supabase
@@ -232,7 +246,6 @@ export const photocardsService = {
             member_id: memberId,
           })),
         );
-
       if (insertError) throw insertError;
     }
   },

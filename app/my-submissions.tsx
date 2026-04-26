@@ -1,4 +1,5 @@
 import { useFetchOnFocus } from "@/src/hooks/useFetchOnFocus";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { mapPhotocard } from "@/src/services/photocardsService";
 import { useAuthStore } from "@/src/store/authStore";
@@ -19,29 +20,10 @@ import { Colors } from "../src/constants/colors";
 import { Theme } from "../src/constants/theme";
 import { PhotocardWithDetails } from "../src/types";
 
-// ─── Config statut ────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG = {
-  pending: {
-    label: "En attente",
-    color: Colors.warning,
-    icon: Clock,
-  },
-  approved: {
-    label: "Approuvée",
-    color: Colors.accent,
-    icon: Check,
-  },
-  rejected: {
-    label: "Refusée",
-    color: Colors.danger,
-    icon: X,
-  },
-} as const;
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MySubmissionsScreen() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [submissions, setSubmissions] = useState<PhotocardWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +51,12 @@ export default function MySubmissionsScreen() {
     fetchSubmissions();
   }, [fetchSubmissions]);
   useFetchOnFocus(fetchSubmissions);
+
+  const STATUS_CONFIG = {
+    pending: { label: t("submissions.status.pending"), color: Colors.warning, icon: Clock },
+    approved: { label: t("submissions.status.approved"), color: Colors.accent, icon: Check },
+    rejected: { label: t("submissions.status.rejected"), color: Colors.danger, icon: X },
+  } as const;
 
   const renderItem = useCallback(({ item }: { item: PhotocardWithDetails }) => {
     const statusCfg =
@@ -130,7 +118,7 @@ export default function MySubmissionsScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Mes soumissions</Text>
+        <Text style={styles.navTitle}>{t("submissions.title")}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -150,9 +138,9 @@ export default function MySubmissionsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>📭</Text>
-              <Text style={styles.emptyTitle}>Aucune soumission</Text>
+              <Text style={styles.emptyTitle}>{t("submissions.empty")}</Text>
               <Text style={styles.emptySubtitle}>
-                Tu n'as pas encore proposé de photocard
+                {t("empty.noSubmissions")}
               </Text>
               <TouchableOpacity
                 style={styles.addBtn}
@@ -160,7 +148,7 @@ export default function MySubmissionsScreen() {
                   router.push("/admin/add-photocard?userSubmission=true")
                 }
               >
-                <Text style={styles.addBtnText}>Proposer une photocard</Text>
+                <Text style={styles.addBtnText}>{t("admin.sections.addPhotocard")}</Text>
               </TouchableOpacity>
             </View>
           }

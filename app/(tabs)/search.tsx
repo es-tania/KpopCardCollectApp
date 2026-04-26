@@ -1,4 +1,5 @@
 import { GroupAlphaList } from "@/src/components/group";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import {
   SearchAlbumResult,
@@ -30,6 +31,7 @@ import { Colors } from "../../src/constants/colors";
 import { PhotocardWithDetails } from "../../src/types";
 
 export default function SearchScreen() {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const inputRef = useRef<TextInput>(null);
 
@@ -118,7 +120,7 @@ export default function SearchScreen() {
       ) : !inputValue.trim() ? (
         <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           <View style={styles.defaultHeader}>
-            <Text style={styles.defaultTitle}>Tous les groupes</Text>
+            <Text style={styles.defaultTitle}>{t("search.groups")}</Text>
             <Text style={styles.defaultCount}>{allGroups.length}</Text>
           </View>
 
@@ -155,7 +157,7 @@ export default function SearchScreen() {
           {results.members.length > 0 && (
             <>
               <SearchSectionHeader
-                title="Membres"
+                title={t("search.members")}
                 count={results.members.length}
               />
               {results.members.map((member) => (
@@ -175,7 +177,7 @@ export default function SearchScreen() {
           {results.albums.length > 0 && (
             <>
               <SearchSectionHeader
-                title="Albums"
+                title={t("search.albums")}
                 count={results.albums.length}
               />
               {results.albums.map((album) => (
@@ -193,7 +195,7 @@ export default function SearchScreen() {
           {enrichedPhotocards.length > 0 && (
             <>
               <SearchSectionHeader
-                title="Photocards"
+                title={t("search.photocards")}
                 count={enrichedPhotocards.length}
               />
               {enrichedPhotocards.map((card) => (

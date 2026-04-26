@@ -1,13 +1,21 @@
-import { PhotocardMiniGrid } from "@/src/components/photocard";
+import { PhotocardMiniGrid, PhotocardModal } from "@/src/components/photocard";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useAlbum } from "@/src/hooks/useAlbum";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
-import { router, useLocalSearchParams } from "expo-router";
+import { useNavigationStateStore } from "@/src/store/navigationStateStore";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Download } from "lucide-react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -26,14 +34,21 @@ import {
 } from "../../src/constants/options/filterOptions";
 import { Theme } from "../../src/constants/theme";
 import { useScrollToTop } from "../../src/hooks/useScrollToTop";
-import { Member } from "../../src/types";
+import { Member, PhotocardWithDetails } from "../../src/types";
 
 export default function AlbumScreen() {
+  const { t } = useTranslation();
   const { id, groupId } = useLocalSearchParams<{
     id: string;
     groupId: string;
   }>();
   const { scrollRef, scrollToTop } = useScrollToTop();
+  const { saveAlbumState, getAlbumState } = useNavigationStateStore();
+
+  const [modalCard, setModalCard] = useState<PhotocardWithDetails | null>(null);
+
+  const gridRef = useRef<any>(null);
+  const currentScrollOffset = useRef(0);
 
   // ── UI state ──────────────────────────────────────────────────────────
   const [selectedMemberId, setSelectedMemberId] =
@@ -97,6 +112,44 @@ export default function AlbumScreen() {
         return cards;
     }
   }, [enrichedPhotocards, activeFilter, deletedIds]);
+
+  useEffect(() => {
+    if (!id) return;
+    const saved = getAlbumState(id);
+    if (saved) {
+      setSelectedMemberId(saved.selectedMemberId);
+      setActiveFilter(saved.activeFilter);
+    }
+  }, []);
+
+  // ── Sauvegarde au départ ──────────────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (id) {
+          saveAlbumState(id, {
+            selectedMemberId,
+            activeFilter,
+            scrollOffset: currentScrollOffset.current,
+          });
+        }
+      };
+    }, [id, selectedMemberId, activeFilter, saveAlbumState]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const saved = getAlbumState(id);
+      if (!saved?.scrollOffset) return;
+      const timer = setTimeout(() => {
+        gridRef.current?.scrollToOffset({
+          offset: saved.scrollOffset,
+          animated: false,
+        });
+      }, 50);
+      return () => clearTimeout(timer);
+    }, []),
+  );
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -171,18 +224,27 @@ export default function AlbumScreen() {
       </View>
 
       <PhotocardMiniGrid
+        ref={gridRef}
         cards={filteredCards}
         loadingMore={loadingMore}
         onEndReached={loadMore}
+        onPressCard={(card) => setModalCard(card)}
+        onScroll={(offset) => {
+          currentScrollOffset.current = offset;
+        }}
         ListHeaderComponent={
           <>
             {album && <AlbumHeader album={{ ...album, ...albumStats }} />}
-            <SectionLabel label="Membres" style={styles.sectionLabel} />
+            <SectionLabel
+              label={t("search.members")}
+              style={styles.sectionLabel}
+            />
             <AlbumMembersSelector
               members={albumMembers}
               selectedMemberId={selectedMemberId}
               onSelectAll={handleSelectAll}
               onSelectMember={handleSelectMember}
+              albumId={id}
             />
             <View style={styles.filtersRow}>
               <FilterPills
@@ -197,6 +259,11 @@ export default function AlbumScreen() {
             />
           </>
         }
+      />
+      <PhotocardModal
+        card={modalCard}
+        visible={modalCard !== null}
+        onClose={() => setModalCard(null)}
       />
     </SafeAreaView>
   );

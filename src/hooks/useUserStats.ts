@@ -16,17 +16,58 @@ export const useUserStats = (filters: Filters) => {
   const fetchIds = useCallback(async () => {
     if (!filters.groupId && !filters.albumId && !filters.memberId) return;
 
-    let query = supabase
-      .from("photocards")
-      .select("id")
-      .eq("status", "approved");
+    let allIds: string[] = [];
+    let from = 0;
+    const batchSize = 1000;
 
-    if (filters.groupId) query = query.eq("group_id", filters.groupId);
-    if (filters.albumId) query = query.eq("album_id", filters.albumId);
-    if (filters.memberId) query = query.eq("member_id", filters.memberId);
+    while (true) {
+      let query;
 
-    const { data } = await query;
-    setCardIds(new Set((data ?? []).map((c: any) => c.id)));
+      if (filters.memberId) {
+        query = supabase
+          .from("photocard_members")
+          .select(
+            "photocard_id, photocards!inner(id, status, album_id, group_id)",
+          )
+          .eq("member_id", filters.memberId)
+          .eq("photocards.status", "approved");
+
+        if (filters.albumId) {
+          query = query.eq("photocards.album_id", filters.albumId);
+        }
+        if (filters.groupId) {
+          query = query.eq("photocards.group_id", filters.groupId);
+        }
+
+        query = query.range(from, from + batchSize - 1);
+
+        const { data } = await query;
+        if (!data || data.length === 0) break;
+
+        allIds = [...allIds, ...data.map((c: any) => c.photocard_id)];
+        if (data.length < batchSize) break;
+        from += batchSize;
+      } else {
+        // ── Cas sans memberId — requête directe sur photocards ────────────
+        let q = supabase
+          .from("photocards")
+          .select("id")
+          .eq("status", "approved")
+          .range(from, from + batchSize - 1);
+
+        if (filters.groupId) q = q.eq("group_id", filters.groupId);
+        if (filters.albumId) q = q.eq("album_id", filters.albumId);
+
+        const { data } = await q;
+        if (!data || data.length === 0) break;
+
+        allIds = [...allIds, ...data.map((c: any) => c.id)];
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+    }
+
+    setCardIds(new Set(allIds));
   }, [filters.groupId, filters.albumId, filters.memberId]);
 
   useEffect(() => {
