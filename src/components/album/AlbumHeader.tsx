@@ -4,12 +4,11 @@ import {
   ChevronDown,
   ChevronUp,
   Hash,
-  Heart,
   MapPin,
   Star,
   Tag,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
@@ -64,9 +63,14 @@ const infoStyles = StyleSheet.create({
 });
 
 // ─── Composant principal ──────────────────────────────────────────────────────
+const COVER_BASE = 110;
 
 export const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
   const [expanded, setExpanded] = useState(false);
+  const [coverDimensions, setCoverDimensions] = useState({
+    width: COVER_BASE,
+    height: COVER_BASE,
+  });
 
   const typeLabel = ALBUM_TYPE_LABELS[album.type] ?? album.type;
   const completionPct =
@@ -75,11 +79,34 @@ export const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
       ? Math.round(((album.ownedPhotocards ?? 0) / album.totalPhotocards) * 100)
       : 0);
 
+  useEffect(() => {
+    if (!album.coverUrl) return;
+    const uri =
+      typeof album.coverUrl === "string"
+        ? album.coverUrl
+        : (album.coverUrl as any)?.uri;
+    if (!uri) return;
+
+    Image.getSize(uri, (w, h) => {
+      const ratio = w / h;
+      const height = COVER_BASE / ratio;
+      setCoverDimensions({ width: COVER_BASE, height: Math.round(height) });
+    });
+  }, [album.coverUrl]);
+
   return (
     <View style={styles.container}>
       {/* ── Cover + infos ── */}
       <View style={styles.topRow}>
-        <View style={styles.coverWrap}>
+        <View
+          style={[
+            styles.coverWrap,
+            {
+              width: coverDimensions.width,
+              height: coverDimensions.height,
+            },
+          ]}
+        >
           {album.coverUrl ? (
             <Image
               source={album.coverUrl as any}
@@ -89,17 +116,6 @@ export const AlbumHeader: React.FC<AlbumHeaderProps> = ({ album }) => {
           ) : (
             <View style={styles.coverFallback}>
               <Text style={styles.coverEmoji}>📀</Text>
-            </View>
-          )}
-          {/* Favori */}
-          {album.isFavorite && (
-            <View style={styles.favoriteBadge}>
-              <Heart
-                size={10}
-                color={Colors.bg}
-                fill={Colors.bg}
-                strokeWidth={0}
-              />
             </View>
           )}
         </View>
@@ -300,10 +316,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: Theme.spacing.md,
     padding: Theme.spacing.lg,
+    alignItems: "center",
   },
   coverWrap: {
-    width: 110,
-    height: 110,
     borderRadius: Theme.borderRadius.md,
     overflow: "hidden",
     backgroundColor: Colors.surface2,

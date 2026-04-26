@@ -7,7 +7,6 @@ import { useIsGroupAdmin } from "@/src/hooks/useIsGroupAdmin";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { useShopsStore } from "@/src/store/shopsStore";
-import { router } from "expo-router";
 import {
   Calendar,
   Check,
@@ -37,6 +36,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 import { PhotocardWithDetails } from "../../types";
+import { EditPhotocardModal } from "./EditPhotocardModal";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.72;
@@ -105,6 +105,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   onClose,
 }) => {
   const [showBack, setShowBack] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
 
   const isGroupAdmin = useIsGroupAdmin(card?.groupId);
 
@@ -179,13 +180,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
                 {/* Bouton éditer */}
                 <TouchableOpacity
                   style={styles.closeBtn}
-                  onPress={() => {
-                    onClose();
-                    router.push({
-                      pathname: "/edit-photocard/[id]",
-                      params: { id: card.id },
-                    });
-                  }}
+                  onPress={() => setShowEdit(true)}
                 >
                   <Edit2 size={17} color={Colors.accent} strokeWidth={1.6} />
                 </TouchableOpacity>
@@ -426,6 +421,16 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      <EditPhotocardModal
+        card={card}
+        visible={showEdit}
+        onClose={() => setShowEdit(false)}
+        onSuccess={() => {
+          setShowEdit(false);
+          onClose();
+        }}
+      />
     </Modal>
   );
 };

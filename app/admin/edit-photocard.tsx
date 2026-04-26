@@ -1,5 +1,4 @@
 import { AdminSearchBar } from "@/src/components/admin";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
 import { PhotocardManageRow } from "@/src/components/admin/photocard/PhotocardManageRow";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
@@ -9,6 +8,7 @@ import { useGroups } from "@/src/hooks/group/useGroups";
 import { useDeletePhotocards } from "@/src/hooks/photocard/useDeletePhotocards";
 import { useEditPhotocard } from "@/src/hooks/photocard/useEditPhotocard";
 import { useFilteredPhotocards } from "@/src/hooks/photocard/useFilteredPhotocards";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { photocardsService } from "@/src/services";
 import { useAuthStore } from "@/src/store/authStore";
 import { router, useLocalSearchParams } from "expo-router";
@@ -43,16 +43,16 @@ import { PhotocardWithDetails, ViewMode } from "../../src/types";
 
 // ─── Helpers suppression ──────────────────────────────────────────────────────
 
-const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
-  Alert.alert(
-    `Supprimer ${label}`,
-    `Es-tu sûre de vouloir supprimer "${name}" ? Cette action est irréversible.`,
-    [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: "Supprimer", style: "destructive", onPress: onConfirm },
-    ],
-  );
-};
+// const confirmDelete = (label: string, name: string, onConfirm: () => void) => {
+//   Alert.alert(
+//     `Supprimer ${label}`,
+//     `Es-tu sûre de vouloir supprimer "${name}" ? Cette action est irréversible.`,
+//     [
+//       { text: t("common.cancel"), style: "cancel" },
+//       { text: "Supprimer", style: "destructive", onPress: onConfirm },
+//     ],
+//   );
+// };
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 
