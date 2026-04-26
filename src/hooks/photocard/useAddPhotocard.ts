@@ -76,6 +76,9 @@ export const useAddPhotocard = (
           imageUrl: imageUrl ? { uri: imageUrl } : undefined,
           backImageUrl: backImageUrl ? { uri: backImageUrl } : undefined,
           status: "pending",
+          aspectRatio: form.aspectRatio ?? "photocard",
+          customWidth: form.customWidth ?? undefined,
+          customHeight: form.customHeight ?? undefined,
         },
         isAdmin,
       );

@@ -1,22 +1,27 @@
 import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
 } from "@/src/constants/options";
+import {
+  CARD_FORMAT_OPTIONS,
+  CardFormat,
+  getCardRatio,
+} from "@/src/constants/options/cardFormatOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useAddPhotocard } from "@/src/hooks/photocard/useAddPhotocard";
 import { useGroupShops } from "@/src/hooks/shops/useGroupShops";
 import { useShops } from "@/src/hooks/shops/useShops";
 import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardFormState, SelectOption } from "@/src/types";
-import { pickLocalImage } from "@/src/utils/pickLocalImage";
+import { pickCardImage } from "@/src/utils/pickCardImage";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -52,6 +57,9 @@ const INITIAL_FORM: PhotocardFormState = {
   rarity: "common",
   imageUri: "",
   backImageUri: "",
+  aspectRatio: "photocard",
+  customWidth: undefined,
+  customHeight: undefined,
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -74,6 +82,9 @@ export default function AddPhotocardScreen() {
     ...INITIAL_FORM,
     groupId: preGroupId ?? "",
     memberId: preMemberId ?? "",
+    aspectRatio: "photocard" as CardFormat,
+    customWidth: undefined as number | undefined,
+    customHeight: undefined as number | undefined,
   });
 
   const { sortedOptions } = useGroupShops(form.groupId, shopOptions);
@@ -84,11 +95,9 @@ export default function AddPhotocardScreen() {
   const [aiDetecting, setAiDetecting] = useState(false);
 
   const { loading, progress, error, submit } = useAddPhotocard(() => {
-    Alert.alert(
-      t("success.cardAdded"),
-      "",
-      [{ text: "OK", onPress: () => router.back() }],
-    );
+    Alert.alert(t("success.cardAdded"), "", [
+      { text: "OK", onPress: () => router.back() },
+    ]);
   });
 
   useEffect(() => {
@@ -100,6 +109,12 @@ export default function AddPhotocardScreen() {
 
   const { albums } = useAlbums(form.groupId || undefined);
   const { members } = useGroupMembers(form.groupId || null);
+
+  const currentRatio = getCardRatio(
+    form.aspectRatio,
+    form.customWidth,
+    form.customHeight,
+  );
 
   const accessibleGroups = useMemo(() => {
     if (isAdmin) return groups;
@@ -186,6 +201,26 @@ export default function AddPhotocardScreen() {
     ? t("admin.sections.addPhotocard")
     : t("admin.sections.addPhotocard");
 
+  const pickImage = useCallback(
+    (field: "imageUri" | "backImageUri") => {
+      pickCardImage({
+        aspectRatio: form.aspectRatio,
+        currentRatio,
+        onPicked: (uri, dimensions) => {
+          setForm((prev) => ({
+            ...prev,
+            [field]: uri,
+            ...(dimensions && {
+              customWidth: dimensions.width,
+              customHeight: dimensions.height,
+            }),
+          }));
+        },
+      });
+    },
+    [form.aspectRatio, currentRatio],
+  );
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       {/* Navbar */}
@@ -212,21 +247,59 @@ export default function AddPhotocardScreen() {
           {/* ── Image + IA ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t("fields.front")}</Text>
+            <FormSelect
+              label="Format"
+              options={CARD_FORMAT_OPTIONS.map((f) => ({
+                key: f.key,
+                label: f.label,
+              }))}
+              value={form.aspectRatio}
+              onChange={(v) => set("aspectRatio")(v)}
+            />
+
+            {/* Dimensions custom */}
+            {form.aspectRatio === "custom" && (
+              <View style={styles.customSizeRow}>
+                <FormField
+                  label="Largeur (mm)"
+                  value={form.customWidth?.toString() ?? ""}
+                  onChangeText={(v) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      customWidth: parseInt(v) || undefined,
+                    }))
+                  }
+                  keyboardType="numeric"
+                  style={{ flex: 1 }}
+                />
+                <FormField
+                  label="Hauteur (mm)"
+                  value={form.customHeight?.toString() ?? ""}
+                  onChangeText={(v) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      customHeight: parseInt(v) || undefined,
+                    }))
+                  }
+                  keyboardType="numeric"
+                  style={{ flex: 1 }}
+                />
+              </View>
+            )}
+
             <FormImagePicker
-              label={t("fields.front")}
+              label="Recto"
               imageUri={form.imageUri}
-              onPick={() => pickLocalImage((uri) => set("imageUri")(uri))}
+              onPick={() => pickImage("imageUri")}
               onRemove={() => set("imageUri")("")}
-              required
-              error={errors.imageUri}
-              aspectRatio={2 / 3}
+              aspectRatio={currentRatio}
             />
             <FormImagePicker
-              label={`${t("fields.back")} (${t("common.optional")})`}
+              label="Verso (optionnel)"
               imageUri={form.backImageUri}
-              onPick={() => pickLocalImage((uri) => set("backImageUri")(uri))}
+              onPick={() => pickImage("backImageUri")}
               onRemove={() => set("backImageUri")("")}
-              aspectRatio={2 / 3}
+              aspectRatio={currentRatio}
             />
 
             {/* Bouton IA */}
@@ -285,6 +358,7 @@ export default function AddPhotocardScreen() {
           {/* ── Détails ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t("fields.type")}</Text>
+
             <FormSelect
               label={t("fields.type")}
               options={PHOTOCARD_TYPE_OPTIONS}
@@ -387,5 +461,10 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSize.base,
     color: Colors.accent,
     fontWeight: Theme.fontWeight.medium,
+  },
+  customSizeRow: {
+    flexDirection: "row",
+    gap: Theme.spacing.md,
+    alignItems: "flex-start",
   },
 });

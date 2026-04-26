@@ -1,5 +1,4 @@
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
   ALBUM_TYPE_OPTIONS,
@@ -8,6 +7,7 @@ import {
 } from "@/src/constants/options";
 import { useAddAlbum } from "@/src/hooks/album/useAddAlbum";
 import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router } from "expo-router";
@@ -129,7 +129,7 @@ export default function AddAlbumScreen() {
               imageUri={form.coverUri}
               onPick={() =>
                 pickLocalImage((uri) => set("coverUri")(uri), {
-                  aspect: [1, 1],
+                  allowsEditing: false,
                 })
               }
               onRemove={() => set("coverUri")("")}

@@ -114,13 +114,10 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
             label="Nouvelle couverture"
             imageUri={form.coverUri || (album.coverUrl as any)?.uri || ""}
             onPick={() =>
-              pickLocalImage(
-                (uri) => {
-                  set("coverUri")(uri);
-                  setForm((prev) => ({ ...prev, removeCover: false }));
-                },
-                { aspect: [1, 1] },
-              )
+              pickLocalImage((uri) => {
+                set("coverUri")(uri);
+                setForm((prev) => ({ ...prev, removeCover: false }));
+              })
             }
             onRemove={() =>
               setForm((prev) => ({

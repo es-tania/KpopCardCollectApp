@@ -1,3 +1,7 @@
+import {
+  CardFormat,
+  getCardRatio,
+} from "../constants/options/cardFormatOptions";
 import { supabase } from "../lib/supabase";
 import {
   photocardCreateSchema,
@@ -161,6 +165,9 @@ export const photocardsService = {
       rarity: data.rarity ?? "common",
       status: isAdmin ? "approved" : "pending",
       created_by: (await supabase.auth.getUser()).data.user?.id,
+      aspect_ratio: (data as any).aspectRatio ?? "photocard",
+      custom_width: (data as any).customWidth ?? null,
+      custom_height: (data as any).customHeight ?? null,
     };
 
     // ✅ Extrait les URLs depuis ImageSourcePropType
@@ -212,6 +219,9 @@ export const photocardsService = {
       version: data.version || null,
       shop_name: data.shopName || null,
       rarity: data.rarity || "common",
+      aspect_ratio: data.aspectRatio ?? "photocard",
+      custom_width: data.customWidth ?? null,
+      custom_height: data.customHeight ?? null,
     };
 
     if (data.newImageUrl !== undefined) {
@@ -222,10 +232,14 @@ export const photocardsService = {
     }
 
     // ── Update en BDD avec le payload complet ────────────────────────────
-    const { error } = await supabase
+    const { data: result, error } = await supabase
       .from("photocards")
       .update(payload)
-      .eq("id", id);
+      .eq("id", id)
+      .select("id, aspect_ratio, custom_width, custom_height");
+
+    console.log("✅ Résultat BDD:", JSON.stringify(result, null, 2));
+    console.log("❌ Erreur:", error);
 
     if (error) throw error;
 
@@ -265,6 +279,9 @@ export const photocardsService = {
         shop_name: data.shopName || null,
         rarity: data.rarity || "common",
         status: isAdmin ? "approved" : "pending",
+        aspect_ratio: data.aspectRatio ?? "photocard",
+        custom_width: data.customWidth ?? null,
+        custom_height: data.customHeight ?? null,
         created_by: (await supabase.auth.getUser()).data.user?.id,
       })
       .select()
@@ -300,6 +317,9 @@ export const mapPhotocard = (d: any): PhotocardWithDetails => {
 
   const isMultiMember = cardMembers.length > 1;
 
+  const aspectRatio = (d.aspect_ratio as CardFormat) ?? "photocard";
+  const cardRatio = getCardRatio(aspectRatio, d.custom_width, d.custom_height);
+
   return {
     id: d.id,
     memberId: d.member_id ?? cardMembers[0]?.id ?? "",
@@ -321,5 +341,9 @@ export const mapPhotocard = (d: any): PhotocardWithDetails => {
     createdAt: d.created_at,
     updatedAt: d.updated_at,
     createdBy: d.created_by,
+    aspectRatio,
+    customWidth: d.custom_width ?? undefined,
+    customHeight: d.custom_height ?? undefined,
+    cardRatio,
   };
 };

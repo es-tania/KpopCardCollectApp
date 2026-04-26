@@ -4,6 +4,7 @@ import { Alert } from "react-native";
 interface PickLocalImageOptions {
   aspect?: [number, number];
   quality?: number;
+  allowsEditing?: boolean;
 }
 
 export const pickLocalImage = async (
@@ -20,10 +21,13 @@ export const pickLocalImage = async (
     return;
   }
 
+  const allowsEditing = options?.allowsEditing ?? true;
+  const aspect = options?.aspect;
+
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsEditing: true,
-    aspect: options?.aspect ?? [2, 3],
+    allowsEditing,
+    ...(aspect !== undefined ? { aspect } : {}),
     quality: options?.quality ?? 0.85,
   });
 

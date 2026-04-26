@@ -1,4 +1,5 @@
 import { ImageSourcePropType } from "react-native";
+import { CardFormat } from "../constants/options/cardFormatOptions";
 
 export type PhotocardType =
   | "normal"
@@ -58,6 +59,10 @@ export interface PhotocardWithDetails extends Photocard {
   createdBy: string;
   cardMembers: CardMember[];
   isMultiMember: boolean;
+  aspectRatio: CardFormat;
+  customWidth?: number;
+  customHeight?: number;
+  cardRatio: number;
 
   // 📊 États utilisateur
   isInCollection?: boolean;

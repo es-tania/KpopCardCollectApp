@@ -103,6 +103,9 @@ export const useEditPhotocard = (
         backImageUri: form.backImageUri,
         removeImage: form.removeImage,
         removeBackImage: form.removeBackImage,
+        aspectRatio: form.aspectRatio,
+        customWidth: form.customWidth,
+        customHeight: form.customHeight,
       };
 
       // ← Assigne explicitement au lieu du spread conditionnel

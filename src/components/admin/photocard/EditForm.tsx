@@ -3,6 +3,11 @@ import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
 } from "@/src/constants/options";
+import {
+  CARD_FORMAT_OPTIONS,
+  CardFormat,
+  getCardRatio,
+} from "@/src/constants/options/cardFormatOptions";
 import { Theme } from "@/src/constants/theme";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
@@ -13,8 +18,8 @@ import {
   PhotocardWithDetails,
   SelectOption,
 } from "@/src/types";
-import { pickLocalImage } from "@/src/utils/pickLocalImage";
-import { useState } from "react";
+import { pickCardImage } from "@/src/utils/pickCardImage";
+import { useCallback, useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
@@ -59,7 +64,11 @@ export const EditForm: React.FC<EditFormProps> = ({
     backImageUri: "",
     removeImage: false,
     removeBackImage: false,
+    aspectRatio: (card.aspectRatio as CardFormat) ?? "photocard",
+    customWidth: card.customWidth,
+    customHeight: card.customHeight,
   });
+
   const { albums } = useAlbums(card.groupId);
   const { members } = useGroupMembers(card.groupId);
   const { shopOptions, loading: shopsLoading } = useShops();
@@ -74,10 +83,36 @@ export const EditForm: React.FC<EditFormProps> = ({
     label: a.title,
   }));
 
-  const memberOptions: SelectOption[] = members.map((m) => ({
-    key: m.id,
-    label: m.stageName,
-  }));
+  const currentRatio = getCardRatio(
+    form.aspectRatio,
+    form.customWidth,
+    form.customHeight,
+  );
+  const previewHeight = currentRatio > 0 ? Math.round(52 / currentRatio) : 76;
+
+  const pickImage = useCallback(
+    (
+      field: "imageUri" | "backImageUri",
+      removeField: "removeImage" | "removeBackImage",
+    ) => {
+      pickCardImage({
+        aspectRatio: form.aspectRatio,
+        currentRatio,
+        onPicked: (uri, dimensions) => {
+          setForm((prev) => ({
+            ...prev,
+            [field]: uri,
+            [removeField]: false,
+            ...(dimensions && {
+              customWidth: dimensions.width,
+              customHeight: dimensions.height,
+            }),
+          }));
+        },
+      });
+    },
+    [form.aspectRatio, currentRatio],
+  );
 
   return (
     <KeyboardAvoidingView
@@ -93,8 +128,14 @@ export const EditForm: React.FC<EditFormProps> = ({
       >
         {/* Aperçu de la carte */}
         <View style={editStyles.previewCard}>
-          <View style={editStyles.previewImage}>
-            {card.imageUrl ? (
+          <View style={[editStyles.previewImage, { height: previewHeight }]}>
+            {form.imageUri ? (
+              <Image
+                source={{ uri: form.imageUri }}
+                style={editStyles.previewImg}
+                resizeMode="cover"
+              />
+            ) : card.imageUrl && !form.removeImage ? (
               <Image
                 source={card.imageUrl as any}
                 style={editStyles.previewImg}
@@ -111,38 +152,43 @@ export const EditForm: React.FC<EditFormProps> = ({
           </View>
         </View>
 
+        <View style={editStyles.section}>
+          <Text style={editStyles.sectionTitle}>Format</Text>
+          <FormSelect
+            label="Format de la carte"
+            options={CARD_FORMAT_OPTIONS.map((f) => ({
+              key: f.key,
+              label: f.label,
+            }))}
+            value={form.aspectRatio}
+            onChange={(v) =>
+              setForm((prev) => ({
+                ...prev,
+                aspectRatio: v as CardFormat,
+                customWidth: undefined,
+                customHeight: undefined,
+              }))
+            }
+          />
+        </View>
+
         {/* Images */}
         <View style={editStyles.section}>
           <Text style={editStyles.sectionTitle}>Images</Text>
           <FormImagePicker
             label="Recto"
             imageUri={form.imageUri || (card.imageUrl as any)?.uri || ""}
-            onPick={() =>
-              pickLocalImage((uri) => {
-                set("imageUri")(uri);
-                setForm((prev) => ({ ...prev, removeImage: false }));
-              })
-            }
+            onPick={() => pickImage("imageUri", "removeImage")}
             onRemove={() =>
-              setForm((prev) => ({
-                ...prev,
-                imageUri: "",
-                removeImage: true,
-              }))
+              setForm((prev) => ({ ...prev, imageUri: "", removeImage: true }))
             }
-            aspectRatio={2 / 3}
           />
           <FormImagePicker
             label="Verso (optionnel)"
             imageUri={
               form.backImageUri || (card.backImageUrl as any)?.uri || ""
             }
-            onPick={() =>
-              pickLocalImage((uri) => {
-                set("backImageUri")(uri);
-                setForm((prev) => ({ ...prev, removeBackImage: false }));
-              })
-            }
+            onPick={() => pickImage("backImageUri", "removeBackImage")}
             onRemove={() =>
               setForm((prev) => ({
                 ...prev,
@@ -150,7 +196,6 @@ export const EditForm: React.FC<EditFormProps> = ({
                 removeBackImage: true,
               }))
             }
-            aspectRatio={2 / 3}
           />
         </View>
 
@@ -243,10 +288,10 @@ const editStyles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: Colors.borderActive,
     padding: Theme.spacing.md,
+    alignItems: "center",
   },
   previewImage: {
     width: 52,
-    height: 76,
     borderRadius: Theme.borderRadius.sm,
     backgroundColor: Colors.surface2,
     overflow: "hidden",
@@ -261,14 +306,8 @@ const editStyles = StyleSheet.create({
     fontWeight: Theme.fontWeight.semibold,
     color: Colors.text,
   },
-  previewGroup: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.accent,
-  },
-  previewAlbum: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.textMuted,
-  },
+  previewGroup: { fontSize: Theme.fontSize.base, color: Colors.accent },
+  previewAlbum: { fontSize: Theme.fontSize.base, color: Colors.textMuted },
   section: { gap: Theme.spacing.md },
   sectionTitle: {
     fontSize: Theme.fontSize.lg,
@@ -277,6 +316,11 @@ const editStyles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     paddingBottom: Theme.spacing.sm,
+  },
+  customSizeRow: {
+    flexDirection: "row",
+    gap: Theme.spacing.md,
+    alignItems: "flex-start",
   },
   btnGroup: {
     flexDirection: "row",

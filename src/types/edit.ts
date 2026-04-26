@@ -1,3 +1,5 @@
+import { CardFormat } from "../constants/options/cardFormatOptions";
+
 export interface AlbumEditFormState {
   title: string;
   koreanTitle: string;
@@ -29,6 +31,9 @@ export interface PhotocardEditFormState {
   removeBackImage: boolean;
   newImageUrl?: string | null;
   newBackImageUrl?: string | null;
+  aspectRatio: CardFormat;
+  customWidth?: number;
+  customHeight?: number;
 }
 
 export interface GroupEditFormState {

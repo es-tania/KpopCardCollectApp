@@ -1,5 +1,7 @@
 // ─── Types génériques formulaires ─────────────────────────────────────────────
 
+import { CardFormat } from "../constants/options/cardFormatOptions";
+
 export interface SelectOption {
   key: string;
   label: string;
@@ -67,6 +69,9 @@ export interface PhotocardFormState {
   rarity: string;
   imageUri: string;
   backImageUri: string;
+  aspectRatio: CardFormat;
+  customWidth?: number;
+  customHeight?: number;
 }
 
 export type PhotocardFormErrors = FormErrors<PhotocardFormState>;

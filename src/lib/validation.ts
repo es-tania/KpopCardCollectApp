@@ -127,6 +127,9 @@ export const photocardEditSchema = z.object({
   version: optText(50),
   shopName: optText(100),
   rarity: rarityField,
+  aspectRatio: z.string().optional(),
+  customWidth: z.number().optional(),
+  customHeight: z.number().optional(),
 });
 
 // ─── Schéma Groupe ────────────────────────────────────────────────────────────

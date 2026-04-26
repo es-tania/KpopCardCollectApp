@@ -22,7 +22,7 @@ import {
   Trash2,
   X,
 } from "lucide-react-native";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Dimensions,
   Image,
@@ -40,7 +40,7 @@ import { PhotocardWithDetails } from "../../types";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH * 0.72;
-const CARD_HEIGHT = CARD_WIDTH / 0.68;
+const MAX_HEIGHT = SCREEN_HEIGHT * 0.55;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -104,6 +104,8 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   visible,
   onClose,
 }) => {
+  const [showBack, setShowBack] = useState(false);
+
   const isGroupAdmin = useIsGroupAdmin(card?.groupId);
 
   const { confirmDeleteOne } = useDeletePhotocards();
@@ -120,12 +122,26 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
 
   const markDeleted = useDeletedCardsStore((s) => s.markDeleted);
 
+  useEffect(() => {
+    setShowBack(false);
+  }, [card?.id]);
+
+  const mainImage = showBack ? card?.backImageUrl : card?.imageUrl;
+  const thumbImage = showBack ? card?.imageUrl : card?.backImageUrl;
+
   const handleDelete = useCallback(() => {
     if (!card) return;
     confirmDeleteOne(card, () => onClose());
   }, [card, confirmDeleteOne, onClose]);
 
   if (!card) return null;
+
+  const cardRatio = card.cardRatio > 0 ? card.cardRatio : 2 / 3;
+  const rawHeight = CARD_WIDTH / cardRatio;
+  const cardHeight = rawHeight > MAX_HEIGHT ? MAX_HEIGHT : rawHeight;
+  const cardWidth =
+    rawHeight > MAX_HEIGHT ? MAX_HEIGHT * cardRatio : CARD_WIDTH;
+  const thumbHeight = 64 / cardRatio;
 
   // États calculés depuis les Sets
   const isInCollection = collectionIds.has(card.id);
@@ -193,19 +209,43 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
         >
           {/* ── Image grande ── */}
           <View style={styles.imageWrap}>
-            {card.imageUrl ? (
+            {/* Image principale */}
+            {mainImage ? (
               <Image
-                source={card.imageUrl as any}
-                style={styles.image}
+                source={mainImage as any}
+                style={[styles.image, { width: cardWidth, height: cardHeight }]}
                 resizeMode="cover"
               />
             ) : (
-              <View style={styles.imageFallback}>
+              <View style={[styles.imageFallback, { height: cardHeight }]}>
+                {" "}
+                // ← height dynamique
                 <Text style={styles.imageFallbackEmoji}>🧑‍🎤</Text>
               </View>
             )}
 
-            {/* Badge type */}
+            {/* Miniature — visible seulement si verso existe */}
+            {card.backImageUrl && thumbImage && (
+              <TouchableOpacity
+                style={[styles.thumbWrap, { height: thumbHeight }]}
+                onPress={() => setShowBack((v) => !v)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={thumbImage as any}
+                  style={styles.thumb}
+                  resizeMode="cover"
+                />
+                {/* Label recto/verso */}
+                <View style={styles.thumbLabel}>
+                  <Text style={styles.thumbLabelText}>
+                    {showBack ? "Recto" : "Verso"}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+
+            {/* Badges */}
             {isSpecialType && (
               <View style={styles.typeBadge}>
                 <Text style={styles.typeBadgeText}>{typeLabel}</Text>
@@ -445,6 +485,39 @@ const styles = StyleSheet.create({
   },
 
   // Image
+  thumbWrap: {
+    position: "absolute",
+    bottom: Theme.spacing.xl + 4,
+    right: Theme.spacing.xl,
+    width: 64,
+    borderRadius: Theme.borderRadius.md,
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: Colors.accent,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  thumb: {
+    width: "100%",
+    height: "100%",
+  },
+  thumbLabel: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(9,12,18,0.75)",
+    paddingVertical: 2,
+    alignItems: "center",
+  },
+  thumbLabelText: {
+    fontSize: Theme.fontSize.xs,
+    color: Colors.accent,
+    fontWeight: Theme.fontWeight.semibold,
+  },
   imageWrap: {
     alignItems: "center",
     paddingVertical: Theme.spacing.xl,
@@ -452,13 +525,9 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   image: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
     borderRadius: Theme.borderRadius.lg,
   },
   imageFallback: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
     borderRadius: Theme.borderRadius.md,
     backgroundColor: Colors.surface2,
     alignItems: "center",
