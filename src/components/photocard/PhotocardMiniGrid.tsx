@@ -1,5 +1,6 @@
 import { PHOTOCARD_FILTER_OPTIONS } from "@/src/constants/options";
 import { Theme } from "@/src/constants/theme";
+import { useShopsStore } from "@/src/store/shopsStore";
 import React, {
   forwardRef,
   useCallback,
@@ -11,10 +12,8 @@ import React, {
 import {
   ActivityIndicator,
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { Colors } from "../../constants/colors";
@@ -23,6 +22,8 @@ import {
   PhotocardTypeFilter,
   PhotocardWithDetails,
 } from "../../types";
+import { FilterToggle } from "../ui/FilterToggle";
+import { SectionLabel } from "../ui/SectionLabel";
 import { PhotocardMini } from "./PhotocardMini";
 import { PhotocardModal } from "./PhotocardModal";
 
@@ -37,6 +38,10 @@ interface PhotocardMiniGridProps {
   hideEmpty?: boolean;
   onPressCard?: (card: PhotocardWithDetails) => void;
   onScroll?: (offset: number) => void;
+  activeType?: PhotocardTypeFilter;
+  onTypeChange?: (type: PhotocardTypeFilter) => void;
+  activeShop?: string;
+  onShopChange?: (shop: string) => void;
 }
 
 const NUM_COLUMNS = 3;
@@ -55,10 +60,24 @@ export const PhotocardMiniGrid = forwardRef<any, PhotocardMiniGridProps>(
       ListFooterComponent,
       hideEmpty = false,
       onPressCard,
+      activeType,
+      onTypeChange,
+      activeShop,
+      onShopChange,
     },
     ref,
   ) => {
-    const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
+    const [localActiveType, setLocalActiveType] =
+      useState<PhotocardTypeFilter>("all");
+
+    const currentType = activeType ?? localActiveType;
+    const setCurrentType = onTypeChange ?? setLocalActiveType;
+
+    const [localActiveShop, setLocalActiveShop] = useState("all");
+    const currentShop = activeShop ?? localActiveShop;
+    const setCurrentShop = onShopChange ?? setLocalActiveShop;
+    const { getLabel } = useShopsStore();
+
     const [selectedCard, setSelectedCard] =
       useState<PhotocardWithDetails | null>(null);
     const [visibleCount, setVisibleCount] = useState(LOCAL_PAGE);
@@ -82,10 +101,30 @@ export const PhotocardMiniGrid = forwardRef<any, PhotocardMiniGridProps>(
     }, [cards]);
 
     // ── Cartes filtrées par type ──────────────────────────────────────────
+    // ── Shops disponibles dans les cartes ─────────────────────────────────
+    const availableShops = useMemo(() => {
+      const shops = new Set(cards.map((c) => c.shopName).filter(Boolean));
+      if (shops.size === 0) return [];
+      return [
+        { key: "all", label: "Tous" },
+        ...[...shops].map((shop) => ({
+          key: shop!,
+          label: getLabel(shop),
+        })),
+      ];
+    }, [cards, getLabel]);
+
+    // ── Filtre par type ET par shop ───────────────────────────────────────
     const typeFilteredCards = useMemo(() => {
-      if (activeType === "all") return cards;
-      return cards.filter((c) => c.type === activeType);
-    }, [cards, activeType]);
+      let filtered = cards;
+      if (currentType !== "all") {
+        filtered = filtered.filter((c) => c.type === currentType);
+      }
+      if (currentShop !== "all") {
+        filtered = filtered.filter((c) => c.shopName === currentShop);
+      }
+      return filtered;
+    }, [cards, currentType, currentShop]);
 
     // ── Cartes visibles ───────────────────────────────────────────────────
     const visibleCards = useMemo(
@@ -163,42 +202,50 @@ export const PhotocardMiniGrid = forwardRef<any, PhotocardMiniGridProps>(
       () => (
         <>
           {ListHeaderComponent}
-          {availableTypes.length > 1 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filtersContent}
-              style={styles.filters}
-            >
-              {availableTypes.map((opt) => {
-                const isActive = opt.key === activeType;
-                return (
-                  <TouchableOpacity
-                    key={opt.key}
-                    style={[styles.pill, isActive && styles.pillActive]}
-                    onPress={() => {
-                      setActiveType(opt.key as PhotocardTypeFilter);
-                      setVisibleCount(LOCAL_PAGE);
-                      cooldown.current = false;
-                    }}
-                    activeOpacity={0.75}
-                  >
-                    <Text
-                      style={[
-                        styles.pillText,
-                        isActive && styles.pillTextActive,
-                      ]}
-                    >
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+          {(availableTypes.length > 1 || availableShops.length > 1) && (
+            <FilterToggle
+              groups={[
+                ...(availableTypes.length > 1
+                  ? [
+                      {
+                        id: "type",
+                        label: "Type",
+                        options: availableTypes,
+                        selected: currentType,
+                        onSelect: (k: string) => {
+                          setCurrentType(k as PhotocardTypeFilter);
+                          setVisibleCount(LOCAL_PAGE);
+                          cooldown.current = false;
+                        },
+                      },
+                    ]
+                  : []),
+                ...(availableShops.length > 1
+                  ? [
+                      {
+                        id: "shop",
+                        label: "Shop",
+                        options: availableShops,
+                        selected: currentShop,
+                        onSelect: (k: string) => {
+                          setCurrentShop(k);
+                          setVisibleCount(LOCAL_PAGE);
+                          cooldown.current = false;
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
+            />
           )}
+
+          <SectionLabel
+            label={`${typeFilteredCards.length} photocard${typeFilteredCards.length !== 1 ? "s" : ""}`}
+            style={styles.sectionLabel}
+          />
         </>
       ),
-      [ListHeaderComponent, availableTypes, activeType],
+      [ListHeaderComponent, availableTypes, currentType, currentShop],
     );
 
     // ── Footer ────────────────────────────────────────────────────────────
@@ -280,13 +327,36 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   // Filtres
-  filters: {
-    marginBottom: Theme.spacing.md,
-  },
-  filtersContent: {
-    paddingHorizontal: Theme.spacing.lg,
-    paddingBottom: Theme.spacing.xs,
+  filtersWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 6,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingBottom: Theme.spacing.md,
+  },
+  filterToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
+    marginBottom: Theme.spacing.sm,
+  },
+  filterToggleText: {
+    flex: 1,
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.textMuted,
+  },
+  filterToggleTextActive: {
+    color: Colors.accent,
+  },
+  filterActiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.accent,
   },
   pill: {
     paddingHorizontal: 12,
@@ -350,5 +420,10 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: Theme.fontSize.base,
     color: Colors.textMuted,
+  },
+
+  sectionLabel: {
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm,
   },
 });

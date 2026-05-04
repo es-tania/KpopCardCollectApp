@@ -2,9 +2,10 @@ import { AlbumCard } from "@/src/components/album/AlbumCard";
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid, PhotocardModal } from "@/src/components/photocard";
 import {
-  FILTER_OPTIONS,
-  FilterKey,
-} from "@/src/constants/options/filterOptions";
+  COLLECTION_FILTER_CHIPS,
+  QuickFilterChips,
+} from "@/src/components/ui/QuickFilterChips";
+import { FilterKey } from "@/src/constants/options/filterOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
@@ -33,11 +34,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MembersList } from "../../src/components/member/MembersList";
-import { FilterPills } from "../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { Album, Member, PhotocardWithDetails } from "../../src/types";
+import {
+  Album,
+  Member,
+  PhotocardTypeFilter,
+  PhotocardWithDetails,
+} from "../../src/types";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -54,10 +59,20 @@ export default function MemberScreen() {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [modalCard, setModalCard] = useState<PhotocardWithDetails | null>(null);
+  const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
+  const [activeShop, setActiveShop] = useState<string>("all");
 
   const memberStats = useUserStats({ memberId: activeMemberId });
   const albumFlatListRef = useRef<FlatList>(null);
   const photocardsScrollRef = useRef<any>(null);
+
+  const FILTER_CHIPS = [
+    { key: "all", label: "Tout", emoji: "🃏" },
+    { key: "collection", label: "Collection", emoji: "✓" },
+    { key: "favorites", label: "Favoris", emoji: "⭐" },
+    { key: "wishlist", label: "Wishlist", emoji: "🛒" },
+    { key: "none", label: "Non classé", emoji: "○" },
+  ];
 
   useEffect(() => {
     if (!groupId) return;
@@ -268,7 +283,7 @@ export default function MemberScreen() {
   const StaticHeader = useMemo(
     () => (
       <>
-        {activeMember && (
+        {!selectedAlbum && activeMember && (
           <MemberHeader member={{ ...activeMember, ...memberStats }} />
         )}
         <View style={styles.membersSection}>
@@ -282,13 +297,13 @@ export default function MemberScreen() {
             onPressMember={handleSelectMember}
           />
         </View>
-        <View style={styles.filtersRow}>
-          <FilterPills
-            options={FILTER_OPTIONS}
+        {selectedAlbum && (
+          <QuickFilterChips
+            options={COLLECTION_FILTER_CHIPS(activeFilter)}
             selected={activeFilter}
             onSelect={(k) => setActiveFilter(k as FilterKey)}
           />
-        </View>
+        )}
       </>
     ),
     [
@@ -298,6 +313,7 @@ export default function MemberScreen() {
       activeMemberId,
       handleSelectMember,
       activeFilter,
+      selectedAlbum,
     ],
   );
 
@@ -419,6 +435,10 @@ export default function MemberScreen() {
           <PhotocardMiniGrid
             ref={photocardsScrollRef}
             cards={filteredCards}
+            activeType={activeType}
+            onTypeChange={setActiveType}
+            activeShop={activeShop}
+            onShopChange={setActiveShop}
             ListHeaderComponent={PhotocardsHeader}
             onPressCard={handlePressCard}
             onScroll={(offset) => {
@@ -479,6 +499,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     marginBottom: Theme.spacing.md,
+  },
+  filterToggleBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
+  },
+  filterToggleText: {
+    flex: 1,
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.textMuted,
+  },
+  filterToggleTextActive: {
+    color: Colors.accent,
+  },
+  filterActiveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.accent,
   },
 
   // ── Albums ────────────────────────────────────────────────────────────

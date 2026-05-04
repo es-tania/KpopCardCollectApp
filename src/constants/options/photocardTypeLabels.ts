@@ -7,6 +7,8 @@ export const PHOTOCARD_TYPE_LABELS: Record<PhotocardType, string> = {
   broadcast: "Broadcast",
   event: "Event",
   benefit: "Benefit",
+  fansign: "Fansign",
+  video_call: "Video Call",
 };
 
 interface TypeFilterOption {
@@ -21,6 +23,8 @@ export const PHOTOCARD_TYPE_OPTIONS: TypeFilterOption[] = [
   { key: "lucky_draw", label: "Lucky Draw" },
   { key: "event", label: "Event" },
   { key: "benefit", label: "Benefit" },
+  { key: "fansign", label: "Fansign" },
+  { key: "video_call", label: "Video Call" },
 ];
 
 export const PHOTOCARD_FILTER_OPTIONS: TypeFilterOption[] = [
@@ -31,4 +35,6 @@ export const PHOTOCARD_FILTER_OPTIONS: TypeFilterOption[] = [
   { key: "lucky_draw", label: "Lucky Draw" },
   { key: "event", label: "Event" },
   { key: "benefit", label: "Benefit" },
+  { key: "fansign", label: "Fansign" },
+  { key: "video_call", label: "Video Call" },
 ];

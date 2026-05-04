@@ -7,7 +7,9 @@ export type PhotocardType =
   | "lucky_draw"
   | "broadcast"
   | "event"
-  | "benefit";
+  | "benefit"
+  | "fansign"
+  | "video_call";
 
 export type PhotocardTypeFilter = "all" | PhotocardType;
 

@@ -1,6 +1,6 @@
 import { SelectOption } from "@/src/types";
 import React from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 
@@ -15,11 +15,7 @@ export const FilterPills: React.FC<FilterPillsProps> = ({
   selected,
   onSelect,
 }) => (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.content}
-  >
+  <View style={styles.filtersWrap}>
     {options.map((opt) => {
       const isActive = opt.key === selected;
       return (
@@ -34,13 +30,19 @@ export const FilterPills: React.FC<FilterPillsProps> = ({
         </TouchableOpacity>
       );
     })}
-  </ScrollView>
+  </View>
 );
 
 const styles = StyleSheet.create({
   content: {
     gap: 6,
     paddingBottom: 4,
+  },
+  filtersWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    paddingBottom: Theme.spacing.md,
   },
   pill: {
     paddingHorizontal: 12,

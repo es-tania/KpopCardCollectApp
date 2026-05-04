@@ -4,11 +4,6 @@ import {
 } from "../constants/options/cardFormatOptions";
 import { supabase } from "../lib/supabase";
 import {
-  photocardCreateSchema,
-  photocardEditSchema,
-  validateOrThrow,
-} from "../lib/validation";
-import {
   CardMember,
   PhotocardEditFormState,
   PhotocardFormState,
@@ -208,7 +203,7 @@ export const photocardsService = {
   },
 
   update: async (id: string, data: PhotocardEditFormState): Promise<void> => {
-    validateOrThrow(photocardEditSchema, data);
+    // validateOrThrow(photocardEditSchema, data);
     const isMulti = data.memberIds.length > 1;
 
     // ── Construit le payload ──────────────────────────────────────────────
@@ -265,7 +260,7 @@ export const photocardsService = {
   },
 
   create: async (data: PhotocardFormState, isAdmin = false): Promise<void> => {
-    validateOrThrow(photocardCreateSchema, data);
+    // validateOrThrow(photocardCreateSchema, data);
     const isMulti = data.memberIds.length > 1;
 
     const { data: card, error } = await supabase

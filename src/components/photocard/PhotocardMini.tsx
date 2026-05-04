@@ -1,5 +1,6 @@
 import { PHOTOCARD_TYPE_LABELS } from "@/src/constants/options";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
+import { useShopsStore } from "@/src/store/shopsStore";
 import { Check, Plus, ShoppingBasket, Star, Users } from "lucide-react-native";
 import React, { useMemo } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -24,6 +25,7 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
 
   const { toggleCollection, toggleFavorite, toggleWishlist } =
     useUserCollection();
+  const { getLabel } = useShopsStore();
 
   const imageSource = useMemo(() => {
     if (!card.imageUrl) return null;
@@ -72,15 +74,22 @@ export const PhotocardMini: React.FC<PhotocardMiniProps> = ({
 
           {/* Infos bas */}
           <View style={styles.infoOverlay}>
-            <Text style={styles.albumTitle} numberOfLines={1}>
-              {card.version ? `${card.version}` : "-"}
-            </Text>
+            {card.version && (
+              <Text style={styles.albumTitle} numberOfLines={1}>
+                {card.version}
+              </Text>
+            )}
             <Text style={styles.memberName} numberOfLines={1}>
               {card.albumTitle}
               {!card.isMultiMember && card.memberName
                 ? ` · ${card.memberName}`
                 : ""}
             </Text>
+            {card.shopName && (
+              <Text style={styles.shopName} numberOfLines={1}>
+                {getLabel(card.shopName)}
+              </Text>
+            )}
           </View>
         </View>
       </View>

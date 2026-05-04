@@ -1,4 +1,8 @@
 import { PhotocardMiniGrid, PhotocardModal } from "@/src/components/photocard";
+import {
+  COLLECTION_FILTER_CHIPS,
+  QuickFilterChips,
+} from "@/src/components/ui/QuickFilterChips";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useAlbum } from "@/src/hooks/useAlbum";
 import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
@@ -24,17 +28,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AlbumHeader, AlbumMembersSelector } from "../../src/components/album";
-import { FilterPills } from "../../src/components/ui/FilterPills";
 import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import {
   ALL_MEMBERS_ID,
-  FILTER_OPTIONS,
-  FilterKey,
+  FilterKey
 } from "../../src/constants/options/filterOptions";
 import { Theme } from "../../src/constants/theme";
 import { useScrollToTop } from "../../src/hooks/useScrollToTop";
-import { Member, PhotocardWithDetails } from "../../src/types";
+import {
+  Member,
+  PhotocardTypeFilter,
+  PhotocardWithDetails,
+} from "../../src/types";
 
 export default function AlbumScreen() {
   const { t } = useTranslation();
@@ -46,6 +52,8 @@ export default function AlbumScreen() {
   const { saveAlbumState, getAlbumState } = useNavigationStateStore();
 
   const [modalCard, setModalCard] = useState<PhotocardWithDetails | null>(null);
+  const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
+  const [activeShop, setActiveShop] = useState<string>("all");
 
   const gridRef = useRef<any>(null);
   const currentScrollOffset = useRef(0);
@@ -226,6 +234,10 @@ export default function AlbumScreen() {
       <PhotocardMiniGrid
         ref={gridRef}
         cards={filteredCards}
+        activeType={activeType}
+        onTypeChange={setActiveType}
+        activeShop={activeShop}
+        onShopChange={setActiveShop}
         loadingMore={loadingMore}
         onEndReached={loadMore}
         onPressCard={(card) => setModalCard(card)}
@@ -246,16 +258,10 @@ export default function AlbumScreen() {
               onSelectMember={handleSelectMember}
               albumId={id}
             />
-            <View style={styles.filtersRow}>
-              <FilterPills
-                options={FILTER_OPTIONS}
-                selected={activeFilter}
-                onSelect={(k) => setActiveFilter(k as FilterKey)}
-              />
-            </View>
-            <SectionLabel
-              label={`${filteredCards.length} photocard${filteredCards.length !== 1 ? "s" : ""}`}
-              style={styles.sectionLabel}
+            <QuickFilterChips
+              options={COLLECTION_FILTER_CHIPS(activeFilter)}
+              selected={activeFilter}
+              onSelect={(k) => setActiveFilter(k as FilterKey)}
             />
           </>
         }
