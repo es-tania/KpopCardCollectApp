@@ -32,7 +32,7 @@ import { SectionLabel } from "../../src/components/ui/SectionLabel";
 import { Colors } from "../../src/constants/colors";
 import {
   ALL_MEMBERS_ID,
-  FilterKey
+  FilterKey,
 } from "../../src/constants/options/filterOptions";
 import { Theme } from "../../src/constants/theme";
 import { useScrollToTop } from "../../src/hooks/useScrollToTop";
@@ -76,6 +76,7 @@ export default function AlbumScreen() {
     loadingMore,
     hasMore,
     loadMore,
+    refresh: refreshPhotocards,
   } = usePaginatedPhotocards({
     albumId: id,
     memberId:
@@ -166,7 +167,6 @@ export default function AlbumScreen() {
       setSelectedMemberId((prev) =>
         prev === member.id ? ALL_MEMBERS_ID : member.id,
       );
-      setActiveFilter("all");
       scrollToTop();
     },
     [scrollToTop],
@@ -174,7 +174,6 @@ export default function AlbumScreen() {
 
   const handleSelectAll = useCallback(() => {
     setSelectedMemberId(ALL_MEMBERS_ID);
-    setActiveFilter("all");
     scrollToTop();
   }, [scrollToTop]);
 
@@ -208,6 +207,17 @@ export default function AlbumScreen() {
     },
     [hasMore, loadingMore, loadMore],
   );
+
+  const handleCardUpdated = useCallback(async () => {
+    const savedOffset = currentScrollOffset.current;
+    await refreshPhotocards();
+    setTimeout(() => {
+      gridRef.current?.scrollToOffset({
+        offset: savedOffset,
+        animated: false,
+      });
+    }, 100);
+  }, [refreshPhotocards]);
 
   if (albumLoading || membersLoading) {
     return (
@@ -270,6 +280,7 @@ export default function AlbumScreen() {
         card={modalCard}
         visible={modalCard !== null}
         onClose={() => setModalCard(null)}
+        onCardUpdated={handleCardUpdated}
       />
     </SafeAreaView>
   );

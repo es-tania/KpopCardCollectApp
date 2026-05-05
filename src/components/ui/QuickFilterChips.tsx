@@ -5,7 +5,7 @@ import {
   LayoutGrid,
   ShoppingBasket,
   Star,
-  Tag
+  Tag,
 } from "lucide-react-native";
 import React from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity } from "react-native";

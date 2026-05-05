@@ -1,8 +1,8 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { ALL_KEY } from "@/src/constants/key";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { useMyCards } from "@/src/hooks/photocard/useMyCards";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
 import { useCollectionStore } from "@/src/store/collectionStore";
 import { CardMode } from "@/src/types";
@@ -35,10 +35,25 @@ export default function MyCardsScreen() {
   const mode: CardMode =
     rawMode === "favorites" || rawMode === "wishlist" ? rawMode : "collection";
 
-  const MODE_CONFIG: Record<CardMode, { title: string; accentColor: string; table: string }> = {
-    collection: { title: t("myCards.titleCollection"), accentColor: Colors.accent, table: "user_collection" },
-    favorites: { title: t("myCards.titleFavorites"), accentColor: "#DAA520", table: "user_favorites" },
-    wishlist: { title: t("myCards.titleWishlist"), accentColor: Colors.accent, table: "user_wishlist" },
+  const MODE_CONFIG: Record<
+    CardMode,
+    { title: string; accentColor: string; table: string }
+  > = {
+    collection: {
+      title: t("myCards.titleCollection"),
+      accentColor: Colors.accent,
+      table: "user_collection",
+    },
+    favorites: {
+      title: t("myCards.titleFavorites"),
+      accentColor: "#DAA520",
+      table: "user_favorites",
+    },
+    wishlist: {
+      title: t("myCards.titleWishlist"),
+      accentColor: Colors.accent,
+      table: "user_wishlist",
+    },
   };
   const config = MODE_CONFIG[mode];
 

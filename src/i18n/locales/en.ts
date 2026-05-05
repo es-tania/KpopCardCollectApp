@@ -105,7 +105,7 @@ const en: Translations = {
 
   scan: {
     title: "Scan",
-    analyze: "Analyze",
+    analyze: "Click to analyze",
     clearAll: "Clear all",
     pickFromGallery: "Pick from gallery",
     hints: {
@@ -195,7 +195,8 @@ const en: Translations = {
       changeEmail: "Change email",
       changePassword: "Change password",
       usernameHint: "Your username will be visible to other users.",
-      emailHint: "A confirmation email will be sent to the new address. The change will take effect after confirmation.",
+      emailHint:
+        "A confirmation email will be sent to the new address. The change will take effect after confirmation.",
       passwordHint: "The new password must be at least 8 characters long.",
       newUsername: "New username",
       newEmail: "New email",
@@ -298,7 +299,12 @@ const en: Translations = {
     title: "Administration",
     sections: {
       addPhotocard: "Add a photocard",
+      addPhotocards: "Add many photocards",
       editPhotocard: "Edit a photocard",
+      addAlbum: "Add album",
+      addGroup: "Add group",
+      editAlbum: "Manage albums",
+      editGroup: "Manage groups",
       submissions: "Submissions",
       groupAdmins: "Group admins",
     },

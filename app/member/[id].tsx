@@ -66,14 +66,6 @@ export default function MemberScreen() {
   const albumFlatListRef = useRef<FlatList>(null);
   const photocardsScrollRef = useRef<any>(null);
 
-  const FILTER_CHIPS = [
-    { key: "all", label: "Tout", emoji: "🃏" },
-    { key: "collection", label: "Collection", emoji: "✓" },
-    { key: "favorites", label: "Favoris", emoji: "⭐" },
-    { key: "wishlist", label: "Wishlist", emoji: "🛒" },
-    { key: "none", label: "Non classé", emoji: "○" },
-  ];
-
   useEffect(() => {
     if (!groupId) return;
     const saved = getMemberState(groupId);
@@ -142,7 +134,11 @@ export default function MemberScreen() {
     useGroupMembers(groupId);
   const { albums, loading: albumsLoading } = useAlbums(groupId);
 
-  const { photocards, loading: photocardsLoading } = usePaginatedPhotocards({
+  const {
+    photocards,
+    loading: photocardsLoading,
+    refresh: refreshPhotocards,
+  } = usePaginatedPhotocards({
     memberId: activeMemberId,
     albumId: selectedAlbum?.id ?? undefined,
   });
@@ -278,6 +274,19 @@ export default function MemberScreen() {
     },
     [activeMemberId],
   );
+
+  const handleCardUpdated = useCallback(async () => {
+    const savedOffset = currentScrollOffset.current;
+
+    await refreshPhotocards();
+
+    setTimeout(() => {
+      photocardsScrollRef.current?.scrollToOffset({
+        offset: savedOffset,
+        animated: false,
+      });
+    }, 100);
+  }, [refreshPhotocards]);
 
   // ── Header statique — membres + filtres ──────────────────────────────
   const StaticHeader = useMemo(
@@ -451,6 +460,7 @@ export default function MemberScreen() {
         card={modalCard}
         visible={modalCard !== null}
         onClose={handleCloseModal}
+        onCardUpdated={handleCardUpdated}
       />
     </SafeAreaView>
   );

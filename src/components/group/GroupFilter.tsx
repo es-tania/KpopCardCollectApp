@@ -15,12 +15,14 @@ interface GroupFilterProps {
   groups: Group[];
   selectedId: string;
   onSelect: (id: string) => void;
+  showAll?: boolean;
 }
 
 export const GroupFilter: React.FC<GroupFilterProps> = ({
   groups,
   selectedId,
   onSelect,
+  showAll = true,
 }) => (
   <ScrollView
     horizontal
@@ -28,28 +30,30 @@ export const GroupFilter: React.FC<GroupFilterProps> = ({
     contentContainerStyle={styles.groupFilterContent}
   >
     {/* Pill "Tous" */}
-    <TouchableOpacity
-      style={styles.groupItem}
-      onPress={() => onSelect(ALL_KEY)}
-      activeOpacity={0.75}
-    >
-      <View
-        style={[
-          styles.groupAvatar,
-          selectedId === ALL_KEY && styles.groupAvatarActive,
-        ]}
+    {showAll && (
+      <TouchableOpacity
+        style={styles.groupItem}
+        onPress={() => onSelect(ALL_KEY)}
+        activeOpacity={0.75}
       >
-        <Text style={styles.groupAvatarAll}>✦</Text>
-      </View>
-      <Text
-        style={[
-          styles.groupName,
-          selectedId === ALL_KEY && styles.groupNameActive,
-        ]}
-      >
-        Tous
-      </Text>
-    </TouchableOpacity>
+        <View
+          style={[
+            styles.groupAvatar,
+            selectedId === ALL_KEY && styles.groupAvatarActive,
+          ]}
+        >
+          <Text style={styles.groupAvatarAll}>✦</Text>
+        </View>
+        <Text
+          style={[
+            styles.groupName,
+            selectedId === ALL_KEY && styles.groupNameActive,
+          ]}
+        >
+          Tous
+        </Text>
+      </TouchableOpacity>
+    )}
 
     {/* Groupes */}
     {groups.map((g) => (

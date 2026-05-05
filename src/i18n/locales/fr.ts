@@ -103,7 +103,7 @@ const fr = {
 
   scan: {
     title: "Scanner",
-    analyze: "Analyser",
+    analyze: "Clique pour analyser",
     clearAll: "Tout effacer",
     pickFromGallery: "Choisir depuis la galerie",
     hints: {
@@ -193,7 +193,8 @@ const fr = {
       changeEmail: "Changer l'email",
       changePassword: "Changer le mot de passe",
       usernameHint: "Le pseudo sera visible par les autres utilisateurs.",
-      emailHint: "Un email de confirmation sera envoyé à la nouvelle adresse. Le changement sera effectif après confirmation.",
+      emailHint:
+        "Un email de confirmation sera envoyé à la nouvelle adresse. Le changement sera effectif après confirmation.",
       passwordHint: "Le nouveau mot de passe doit faire au moins 8 caractères.",
       newUsername: "Nouveau pseudo",
       newEmail: "Nouvel email",
@@ -268,7 +269,8 @@ const fr = {
     alreadyAccount: "Déjà un compte ?",
     signUp: "S'inscrire",
     signIn: "Se connecter",
-    termsAccept: "J'accepte les conditions d'utilisation et la politique de confidentialité",
+    termsAccept:
+      "J'accepte les conditions d'utilisation et la politique de confidentialité",
   },
 
   export: {
@@ -296,7 +298,12 @@ const fr = {
     title: "Administration",
     sections: {
       addPhotocard: "Ajouter une photocard",
+      addPhotocards: "Ajouter plusieurs photocards",
       editPhotocard: "Modifier une photocard",
+      addAlbum: "Ajouter un album",
+      editAlbum: "Gérer les albums",
+      addGroup: "Ajouter un groupe",
+      editGroup: "Gérer les groupes",
       submissions: "Soumissions",
       groupAdmins: "Admins par groupe",
     },
@@ -315,7 +322,9 @@ export default fr;
 
 // Remplace toutes les valeurs feuilles par string, en gardant la structure
 type DeepString<T> = {
-  [K in keyof T]: T[K] extends Record<string, unknown> ? DeepString<T[K]> : string;
+  [K in keyof T]: T[K] extends Record<string, unknown>
+    ? DeepString<T[K]>
+    : string;
 };
 
 export type Translations = DeepString<typeof fr>;

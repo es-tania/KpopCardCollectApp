@@ -340,5 +340,6 @@ export const mapPhotocard = (d: any): PhotocardWithDetails => {
     customWidth: d.custom_width ?? undefined,
     customHeight: d.custom_height ?? undefined,
     cardRatio,
+    albumCoverUrl: d.album_cover_url ? { uri: d.album_cover_url } : undefined,
   };
 };

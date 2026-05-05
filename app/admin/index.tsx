@@ -45,32 +45,38 @@ export default function AdminScreen() {
   const { isAdmin } = useAuthStore();
   const [pending, setPending] = useState(MOCK_PENDING);
 
-  const handleApprove = useCallback((id: string) => {
-    Alert.alert(t("admin.approve"), t("common.confirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("admin.approve"),
-        onPress: () => {
-          setPending((prev) => prev.filter((p) => p.id !== id));
-          Alert.alert(t("submissions.status.approved"), "");
+  const handleApprove = useCallback(
+    (id: string) => {
+      Alert.alert(t("admin.approve"), t("common.confirm"), [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("admin.approve"),
+          onPress: () => {
+            setPending((prev) => prev.filter((p) => p.id !== id));
+            Alert.alert(t("submissions.status.approved"), "");
+          },
         },
-      },
-    ]);
-  }, [t]);
+      ]);
+    },
+    [t],
+  );
 
-  const handleReject = useCallback((id: string) => {
-    Alert.alert(t("admin.reject"), t("common.confirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("admin.reject"),
-        style: "destructive",
-        onPress: () => {
-          setPending((prev) => prev.filter((p) => p.id !== id));
-          Alert.alert(t("submissions.status.rejected"), "");
+  const handleReject = useCallback(
+    (id: string) => {
+      Alert.alert(t("admin.reject"), t("common.confirm"), [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("admin.reject"),
+          style: "destructive",
+          onPress: () => {
+            setPending((prev) => prev.filter((p) => p.id !== id));
+            Alert.alert(t("submissions.status.rejected"), "");
+          },
         },
-      },
-    ]);
-  }, [t]);
+      ]);
+    },
+    [t],
+  );
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -132,19 +138,19 @@ export default function AdminScreen() {
         />
         <AdminActionRow
           icon={<ImagePlus size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label={t("admin.sections.addPhotocard")}
+          label={t("admin.sections.addPhotocards")}
           onPress={() => router.push("/admin/add-photocards-bulk")}
         />
         <AdminActionRow
           icon={<Disc3 size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label={t("fields.album")}
+          label={t("admin.sections.addAlbum")}
           onPress={() => router.push("/admin/add-album")}
         />
 
         {isAdmin && (
           <AdminActionRow
             icon={<Users size={17} color="#DAA520" strokeWidth={1.6} />}
-            label={t("fields.group")}
+            label={t("admin.sections.addGroup")}
             onPress={() => router.push("/admin/add-group")}
           />
         )}
@@ -159,7 +165,7 @@ export default function AdminScreen() {
 
         <AdminActionRow
           icon={<Edit size={17} color={Colors.accent} strokeWidth={1.6} />}
-          label={t("fields.album")}
+          label={t("admin.sections.editAlbum")}
           onPress={() => router.push("/admin/edit-album")}
         />
 
@@ -167,7 +173,7 @@ export default function AdminScreen() {
           <>
             <AdminActionRow
               icon={<Edit size={17} color="#DAA520" strokeWidth={1.6} />}
-              label={t("fields.group")}
+              label={t("admin.sections.editGroup")}
               onPress={() => router.push("/admin/edit-group")}
             />
             <AdminActionRow

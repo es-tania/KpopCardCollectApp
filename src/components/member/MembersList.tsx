@@ -11,6 +11,7 @@ interface MembersListProps {
   selectedId?: string;
   albumId?: string; // ← nouveau — pour filtrer les stats par album
   onPressMember: (member: Member) => void;
+  showStats?: boolean;
 }
 
 // ─── Item individuel — utilise useUserStats ───────────────────────────────────
@@ -21,11 +22,13 @@ const MemberItem = React.memo(
     selected,
     albumId,
     onPress,
+    showStats = true,
   }: {
     member: Member;
     selected: boolean;
     albumId?: string;
     onPress: () => void;
+    showStats?: boolean;
   }) => {
     console.log(`📊 useUserStats memberId=${member.id} albumId=${albumId}`);
     const stats = useUserStats({ memberId: member.id, albumId });
@@ -57,9 +60,11 @@ const MemberItem = React.memo(
           {member.stageName}
         </Text>
 
-        <Text style={styles.count}>
-          {owned}/{total}
-        </Text>
+        {showStats && total > 0 && (
+          <Text style={styles.count}>
+            {owned}/{total}
+          </Text>
+        )}
       </TouchableOpacity>
     );
   },
@@ -72,6 +77,7 @@ export const MembersList: React.FC<MembersListProps> = ({
   selectedId,
   albumId,
   onPressMember,
+  showStats = true,
 }) => (
   <ScrollView
     horizontal
@@ -84,6 +90,7 @@ export const MembersList: React.FC<MembersListProps> = ({
         member={member}
         selected={member.id === selectedId}
         albumId={albumId}
+        showStats={showStats}
         onPress={() => onPressMember(member)}
       />
     ))}

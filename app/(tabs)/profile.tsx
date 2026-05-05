@@ -10,6 +10,7 @@ import { router } from "expo-router";
 import {
   Grid3x3,
   LogOut,
+  PackageSearch,
   Plus,
   ShieldCheck,
   ShoppingBasket,
@@ -152,18 +153,22 @@ export default function ProfileScreen() {
   }, [authUser, profile, t]);
 
   const handleLogout = useCallback(() => {
-    Alert.alert(t("settings.danger.logoutTitle"), t("settings.danger.logoutConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("settings.danger.logoutButton"),
-        style: "destructive",
-        onPress: async () => {
-          await signOut();
-          useCollectionStore.getState().reset();
-          router.replace("/(auth)/login");
+    Alert.alert(
+      t("settings.danger.logoutTitle"),
+      t("settings.danger.logoutConfirm"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("settings.danger.logoutButton"),
+          style: "destructive",
+          onPress: async () => {
+            await signOut();
+            useCollectionStore.getState().reset();
+            router.replace("/(auth)/login");
+          },
         },
-      },
-    ]);
+      ],
+    );
   }, [signOut, t]);
 
   if (profileLoading) {
@@ -204,6 +209,13 @@ export default function ProfileScreen() {
           label={t("profile.stats.photocards")}
           badge={collectionIds.size}
           onPress={() => router.push("/my-cards")}
+        />
+        <ProfileMenuRow
+          icon={
+            <PackageSearch size={17} color={Colors.danger} strokeWidth={1.6} />
+          }
+          label={"Cartes manquantes"}
+          onPress={() => router.push("/missing-cards")}
         />
 
         {/* ── Listes ── */}

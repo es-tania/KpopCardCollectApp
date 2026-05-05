@@ -23,6 +23,7 @@ import {
   PhotocardWithDetails,
 } from "../../types";
 import { FilterToggle } from "../ui/FilterToggle";
+import { QuickFilterChips } from "../ui/QuickFilterChips";
 import { SectionLabel } from "../ui/SectionLabel";
 import { PhotocardMini } from "./PhotocardMini";
 import { PhotocardModal } from "./PhotocardModal";
@@ -202,40 +203,29 @@ export const PhotocardMiniGrid = forwardRef<any, PhotocardMiniGridProps>(
       () => (
         <>
           {ListHeaderComponent}
-          {(availableTypes.length > 1 || availableShops.length > 1) && (
+          {availableTypes.length > 1 && (
+            <QuickFilterChips
+              options={availableTypes}
+              selected={currentType}
+              onSelect={(k) => {
+                setCurrentType(k as PhotocardTypeFilter);
+                setVisibleCount(LOCAL_PAGE);
+                cooldown.current = false;
+              }}
+            />
+          )}
+
+          {/* ── Filtre shop — FilterToggle ── */}
+          {availableShops.length > 1 && (
             <FilterToggle
-              groups={[
-                ...(availableTypes.length > 1
-                  ? [
-                      {
-                        id: "type",
-                        label: "Type",
-                        options: availableTypes,
-                        selected: currentType,
-                        onSelect: (k: string) => {
-                          setCurrentType(k as PhotocardTypeFilter);
-                          setVisibleCount(LOCAL_PAGE);
-                          cooldown.current = false;
-                        },
-                      },
-                    ]
-                  : []),
-                ...(availableShops.length > 1
-                  ? [
-                      {
-                        id: "shop",
-                        label: "Shop",
-                        options: availableShops,
-                        selected: currentShop,
-                        onSelect: (k: string) => {
-                          setCurrentShop(k);
-                          setVisibleCount(LOCAL_PAGE);
-                          cooldown.current = false;
-                        },
-                      },
-                    ]
-                  : []),
-              ]}
+              options={availableShops}
+              selected={currentShop}
+              onSelect={(k: string) => {
+                setCurrentShop(k);
+                setVisibleCount(LOCAL_PAGE);
+                cooldown.current = false;
+              }}
+              label="Filtrer par shop"
             />
           )}
 
@@ -357,6 +347,15 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: Colors.accent,
+  },
+  typeFiltersRow: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
+  },
+  typeFiltersContent: {
+    paddingHorizontal: Theme.spacing.lg,
+    paddingVertical: Theme.spacing.sm + 2,
+    gap: 8,
   },
   pill: {
     paddingHorizontal: 12,

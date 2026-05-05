@@ -65,6 +65,7 @@ export interface PhotocardWithDetails extends Photocard {
   customWidth?: number;
   customHeight?: number;
   cardRatio: number;
+  albumCoverUrl?: { uri: string } | undefined;
 
   // 📊 États utilisateur
   isInCollection?: boolean;

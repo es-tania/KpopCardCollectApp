@@ -34,9 +34,10 @@ export const usePaginatedPhotocards = (filters: Filters = {}) => {
 
       // ── Cas memberId — utilise la fonction SQL ────────────────────
       if (f.memberId) {
+        console.log("🔍 getByMember:", f.memberId, "albumId:", f.albumId);
         const data = await photocardsService.getByMember(f.memberId, f.albumId);
+        console.log("📦 résultat:", data.length);
         setPhotocards(data);
-        setError(null);
         return;
       }
 
@@ -83,7 +84,7 @@ export const usePaginatedPhotocards = (filters: Filters = {}) => {
     loading,
     error,
     refetch: fetchAll,
-    // Garde la compatibilité avec les pages qui utilisaient loadMore
+    refresh: fetchAll,
     loadingMore: false,
     hasMore: false,
     loadMore: () => {},

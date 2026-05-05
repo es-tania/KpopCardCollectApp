@@ -95,6 +95,7 @@ interface PhotocardModalProps {
   card: PhotocardWithDetails | null;
   visible: boolean;
   onClose: () => void;
+  onCardUpdated?: () => void;
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
   card,
   visible,
   onClose,
+  onCardUpdated,
 }) => {
   const [showBack, setShowBack] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -428,6 +430,7 @@ export const PhotocardModal: React.FC<PhotocardModalProps> = ({
         onClose={() => setShowEdit(false)}
         onSuccess={() => {
           setShowEdit(false);
+          onCardUpdated?.();
           onClose();
         }}
       />
