@@ -1,3 +1,4 @@
+import { BackImagePickerModal } from "@/src/components/photocard/BackImagePickerModal";
 import { Colors } from "@/src/constants/colors";
 import {
   PHOTOCARD_TYPE_OPTIONS,
@@ -19,6 +20,7 @@ import {
   SelectOption,
 } from "@/src/types";
 import { pickCardImage } from "@/src/utils/pickCardImage";
+import { History } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import {
   Image,
@@ -69,6 +71,8 @@ export const EditForm: React.FC<EditFormProps> = ({
     customHeight: card.customHeight,
   });
 
+  const [showBackPicker, setShowBackPicker] = useState(false);
+
   const { albums } = useAlbums(card.groupId);
   const { members } = useGroupMembers(card.groupId);
   const { shopOptions, loading: shopsLoading } = useShops();
@@ -77,7 +81,6 @@ export const EditForm: React.FC<EditFormProps> = ({
   const set = (key: keyof PhotocardEditFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
-  // Options album et membre liés au groupe de la carte
   const albumOptions: SelectOption[] = albums.map((a) => ({
     key: a.id,
     label: a.title,
@@ -126,7 +129,7 @@ export const EditForm: React.FC<EditFormProps> = ({
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Aperçu de la carte */}
+        {/* ── Aperçu ── */}
         <View style={editStyles.previewCard}>
           <View style={[editStyles.previewImage, { height: previewHeight }]}>
             {form.imageUri ? (
@@ -152,6 +155,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           </View>
         </View>
 
+        {/* ── Format ── */}
         <View style={editStyles.section}>
           <Text style={editStyles.sectionTitle}>Format</Text>
           <FormSelect
@@ -172,7 +176,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           />
         </View>
 
-        {/* Images */}
+        {/* ── Images ── */}
         <View style={editStyles.section}>
           <Text style={editStyles.sectionTitle}>Images</Text>
           <FormImagePicker
@@ -182,6 +186,10 @@ export const EditForm: React.FC<EditFormProps> = ({
             onRemove={() =>
               setForm((prev) => ({ ...prev, imageUri: "", removeImage: true }))
             }
+            onImageResized={(uri) => {
+              set("imageUri")(uri);
+              setForm((prev) => ({ ...prev, removeImage: false }));
+            }}
           />
           <FormImagePicker
             label="Verso (optionnel)"
@@ -196,10 +204,27 @@ export const EditForm: React.FC<EditFormProps> = ({
                 removeBackImage: true,
               }))
             }
+            onImageResized={(uri) => {
+              set("backImageUri")(uri);
+              setForm((prev) => ({ ...prev, removeBackImage: false }));
+            }}
           />
+          {/* ← Bouton verso existant */}
+          {card.groupId && (
+            <TouchableOpacity
+              style={editStyles.backPickerBtn}
+              onPress={() => setShowBackPicker(true)}
+              activeOpacity={0.75}
+            >
+              <History size={15} color={Colors.accent} strokeWidth={1.6} />
+              <Text style={editStyles.backPickerText}>
+                Choisir un verso existant
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Identification */}
+        {/* ── Identification ── */}
         <View style={editStyles.section}>
           <Text style={editStyles.sectionTitle}>Identification</Text>
           <FormSelect
@@ -224,7 +249,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           />
         </View>
 
-        {/* Détails */}
+        {/* ── Détails ── */}
         <View style={editStyles.section}>
           <Text style={editStyles.sectionTitle}>Détails</Text>
           <FormSelect
@@ -256,7 +281,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           />
         </View>
 
-        {/* Actions */}
+        {/* ── Actions ── */}
         <View style={editStyles.btnGroup}>
           <TouchableOpacity style={editStyles.cancelBtn} onPress={onCancel}>
             <Text style={editStyles.cancelText}>Annuler</Text>
@@ -271,6 +296,21 @@ export const EditForm: React.FC<EditFormProps> = ({
           <ProgressIndicator message={progress} />
         </View>
       </ScrollView>
+
+      {/* ── Modal verso existant ── */}
+      <BackImagePickerModal
+        visible={showBackPicker}
+        onClose={() => setShowBackPicker(false)}
+        onSelect={(url) =>
+          setForm((prev) => ({
+            ...prev,
+            backImageUri: url,
+            removeBackImage: false,
+          }))
+        }
+        groupId={card.groupId}
+        albumId={form.albumId}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -316,6 +356,22 @@ const editStyles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     paddingBottom: Theme.spacing.sm,
+  },
+  backPickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Theme.spacing.sm + 2,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Colors.pillActive,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+  },
+  backPickerText: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.accent,
+    fontWeight: Theme.fontWeight.medium,
   },
   customSizeRow: {
     flexDirection: "row",

@@ -3,14 +3,14 @@ import { useCollectionStore } from "@/src/store/collectionStore";
 import { router } from "expo-router";
 import React, { useCallback } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -26,11 +26,11 @@ import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 
 import {
-    BookMarked,
-    Heart,
-    PackageSearch,
-    ShoppingCart,
-    Sparkles,
+  BookMarked,
+  Heart,
+  PackageSearch,
+  ShoppingCart,
+  Sparkles,
 } from "lucide-react-native";
 
 // ─── Raccourcis ───────────────────────────────────────────────────────────────

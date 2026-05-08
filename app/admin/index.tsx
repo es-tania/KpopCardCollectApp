@@ -79,7 +79,7 @@ export default function AdminScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>

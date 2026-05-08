@@ -267,7 +267,7 @@ export default function SubmissionsScreen() {
   }, [submissions, isAdmin, groupAdminIds]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
@@ -336,9 +336,7 @@ export default function SubmissionsScreen() {
               <Text style={styles.emptyEmoji}>
                 {activeTab === "pending" ? "🎉" : "📭"}
               </Text>
-              <Text style={styles.emptyTitle}>
-                {t("admin.noSubmissions")}
-              </Text>
+              <Text style={styles.emptyTitle}>{t("admin.noSubmissions")}</Text>
             </View>
           }
         />

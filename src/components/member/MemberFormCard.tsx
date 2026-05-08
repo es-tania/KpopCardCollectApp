@@ -128,6 +128,10 @@ export const MemberFormCard: React.FC<MemberFormCardProps> = ({
                   onChange(member.localId, "existingPhotoUrl", "");
                   onChange(member.localId, "removePhoto", true);
                 }}
+                onImageResized={(uri) => {
+                  (onChange(member.localId, "photoUri", uri),
+                    onChange(member.localId, "removePhoto", false));
+                }}
                 aspectRatio={1 / 1}
                 previewWidth={100}
               />

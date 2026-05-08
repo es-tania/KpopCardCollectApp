@@ -163,6 +163,7 @@ export const photocardsService = {
       aspect_ratio: (data as any).aspectRatio ?? "photocard",
       custom_width: (data as any).customWidth ?? null,
       custom_height: (data as any).customHeight ?? null,
+      back_image_shared: data.backImageShared ?? false,
     };
 
     // ✅ Extrait les URLs depuis ImageSourcePropType

@@ -237,7 +237,7 @@ export default function EditPhotocardScreen() {
       : "Modifier une photocard";
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={handleBack}>

@@ -65,13 +65,15 @@ export interface PhotocardFormState {
   type: string;
   version: string;
   shopName: string;
-  eventName: string;
   rarity: string;
   imageUri: string;
   backImageUri: string;
   aspectRatio: CardFormat;
   customWidth?: number;
   customHeight?: number;
+
+  eventName?: string;
+  commonBackImageUri?: string;
 }
 
 export type PhotocardFormErrors = FormErrors<PhotocardFormState>;

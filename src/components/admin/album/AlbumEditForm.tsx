@@ -126,6 +126,10 @@ export const AlbumEditForm: React.FC<AlbumEditFormProps> = ({
                 removeCover: true,
               }))
             }
+            onImageResized={(uri) => {
+              set("coverUri")(uri);
+              setForm((prev) => ({ ...prev, removeCover: false }));
+            }}
             aspectRatio={1}
           />
         </View>

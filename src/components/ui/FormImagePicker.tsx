@@ -1,6 +1,7 @@
-import { Camera, Image as ImageIcon, X } from "lucide-react-native";
+import { Camera, Crop, Image as ImageIcon, X } from "lucide-react-native";
 import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import ImageCropPicker from "react-native-image-crop-picker";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 
@@ -9,6 +10,7 @@ interface FormImagePickerProps {
   imageUri?: string;
   onPick: () => void;
   onRemove: () => void;
+  onImageResized?: (uri: string) => void;
   aspectRatio?: number;
   required?: boolean;
   error?: string;
@@ -20,113 +22,182 @@ export const FormImagePicker: React.FC<FormImagePickerProps> = ({
   imageUri,
   onPick,
   onRemove,
+  onImageResized,
   aspectRatio = 0.68,
   required,
   error,
-  previewWidth = 120,
-}) => (
-  <View style={styles.container}>
-    <Text style={styles.label}>
-      {label}
-      {required && <Text style={styles.required}> *</Text>}
-    </Text>
+  previewWidth = 140,
+}) => {
+  const handleResize = async () => {
+    if (!imageUri || !onImageResized) return;
+    try {
+      const image = await ImageCropPicker.openCropper({
+        path: imageUri,
+        mediaType: "photo",
+        width: Math.round(aspectRatio * 1000),
+        height: 1000,
+        cropping: true,
+        freeStyleCropEnabled: false,
+        compressImageQuality: 0.8,
+      });
+      onImageResized(image.path);
+    } catch {}
+  };
 
-    {imageUri ? (
-      <View style={styles.previewWrap}>
-        <Image
-          source={{ uri: imageUri }}
-          style={[styles.preview, { width: previewWidth, aspectRatio }]}
-          resizeMode="cover"
-        />
-        <TouchableOpacity style={styles.removeBtn} onPress={onRemove}>
-          <X size={14} color={Colors.text} strokeWidth={2} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.changeBtn} onPress={onPick}>
-          <Camera size={12} color={Colors.text} strokeWidth={2} />
-          <Text style={styles.changeBtnText}>Changer</Text>
-        </TouchableOpacity>
-      </View>
-    ) : (
-      <TouchableOpacity
-        style={[styles.picker, error ? styles.pickerError : {}]}
-        onPress={onPick}
-        activeOpacity={0.75}
-      >
-        <ImageIcon size={28} color={Colors.textMuted} strokeWidth={1.4} />
-        <Text style={styles.pickerText}>Appuie pour choisir une image</Text>
-        <Text style={styles.pickerSub}>JPG, PNG, WEBP</Text>
-      </TouchableOpacity>
-    )}
+  return (
+    <View style={styles.container}>
+      {/* Label */}
+      <Text style={styles.label}>
+        {label}
+        {required && <Text style={styles.required}> *</Text>}
+      </Text>
 
-    {error && <Text style={styles.error}>{error}</Text>}
-  </View>
-);
+      {imageUri ? (
+        // ── Preview ──────────────────────────────────────────────────────
+        <View style={[styles.card, { width: previewWidth }]}>
+          {/* Image */}
+          <View style={styles.imgWrap}>
+            <Image
+              source={{ uri: imageUri }}
+              style={[styles.img, { aspectRatio }]}
+              resizeMode="cover"
+            />
+            {/* Bouton suppression */}
+            <TouchableOpacity style={styles.removeBtn} onPress={onRemove}>
+              <X size={13} color={Colors.text} strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Barre d'actions */}
+          <View style={styles.actionBar}>
+            {onImageResized && (
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionBtnLeft]}
+                onPress={handleResize}
+                activeOpacity={0.7}
+              >
+                <Crop size={13} color={Colors.textMuted} strokeWidth={1.8} />
+                <Text style={styles.actionBtnText}>Recadrer</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[
+                styles.actionBtn,
+                onImageResized ? styles.actionBtnRight : styles.actionBtnFull,
+              ]}
+              onPress={onPick}
+              activeOpacity={0.7}
+            >
+              <Camera size={13} color={Colors.textMuted} strokeWidth={1.8} />
+              <Text style={styles.actionBtnText}>Changer</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        // ── Zone vide ─────────────────────────────────────────────────────
+        <TouchableOpacity
+          style={[styles.emptyZone, error ? styles.emptyZoneError : {}]}
+          onPress={onPick}
+          activeOpacity={0.75}
+        >
+          <ImageIcon size={28} color={Colors.textMuted} strokeWidth={1.4} />
+          <Text style={styles.emptyTitle}>Appuie pour choisir une image</Text>
+          <Text style={styles.emptySub}>JPG · PNG · WEBP</Text>
+        </TouchableOpacity>
+      )}
+
+      {error && <Text style={styles.error}>{error}</Text>}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  container: { gap: 6 },
+  container: { gap: 8 },
+
   label: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.text,
+    fontSize: Theme.fontSize.sm + 1,
     fontWeight: Theme.fontWeight.medium,
+    color: Colors.text,
   },
   required: { color: Colors.danger },
-  picker: {
-    backgroundColor: Colors.surface2,
-    borderWidth: 1,
+
+  // ── Zone vide
+  emptyZone: {
+    borderWidth: 1.5,
     borderColor: Colors.border,
     borderStyle: "dashed",
-    borderRadius: Theme.borderRadius.sm,
-    padding: Theme.spacing.xl,
+    borderRadius: Theme.borderRadius.lg,
+    paddingVertical: Theme.spacing.xl,
+    paddingHorizontal: Theme.spacing.lg,
     alignItems: "center",
     gap: 8,
+    backgroundColor: Colors.surface,
   },
-  pickerError: { borderColor: Colors.danger },
-  pickerText: {
-    fontSize: Theme.fontSize.base,
-    color: Colors.textMuted,
-  },
-  pickerSub: {
+  emptyZoneError: { borderColor: Colors.danger },
+  emptyTitle: {
     fontSize: Theme.fontSize.sm + 1,
     color: Colors.textMuted,
   },
-  previewWrap: {
-    position: "relative",
-    alignSelf: "flex-start",
+  emptySub: {
+    fontSize: Theme.fontSize.xs + 1,
+    color: Colors.textMuted,
+    opacity: 0.6,
   },
-  preview: {
-    width: 120,
-    borderRadius: Theme.borderRadius.md,
+
+  // ── Card preview
+  card: {
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    overflow: "hidden",
+  },
+  imgWrap: {
+    position: "relative",
+  },
+  img: {
+    width: "100%",
   },
   removeBtn: {
     position: "absolute",
-    top: -8,
-    right: -8,
+    top: 8,
+    right: 8,
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.bg,
     borderWidth: 0.5,
     borderColor: Colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  changeBtn: {
-    position: "absolute",
-    bottom: 8,
-    left: 8,
-    right: 8,
+
+  // ── Barre d'actions
+  actionBar: {
+    flexDirection: "row",
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border,
+  },
+  actionBtn: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    backgroundColor: "rgba(9,12,18,0.7)",
-    borderRadius: Theme.borderRadius.sm,
-    paddingVertical: 5,
+    gap: 5,
+    paddingVertical: 9,
+    backgroundColor: Colors.surface,
   },
-  changeBtnText: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.text,
+  actionBtnLeft: {
+    borderRightWidth: 0.5,
+    borderRightColor: Colors.border,
   },
+  actionBtnRight: {},
+  actionBtnFull: {},
+  actionBtnText: {
+    fontSize: Theme.fontSize.xs + 1,
+    color: Colors.textMuted,
+  },
+
   error: {
     fontSize: Theme.fontSize.sm + 1,
     color: Colors.danger,

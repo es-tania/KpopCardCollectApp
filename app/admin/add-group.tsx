@@ -2,11 +2,11 @@ import {
   MemberFormCard,
   newMemberForm,
 } from "@/src/components/member/MemberFormCard";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import { GENERATION_OPTIONS, STATUS_OPTIONS } from "@/src/constants/options";
 import { useAddGroup } from "@/src/hooks/group/useAddGroup";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import {
   GroupFormErrors,
   GroupFormState,
@@ -160,7 +160,7 @@ export default function AddGroupScreen() {
   }, [error]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
@@ -202,6 +202,7 @@ export default function AddGroupScreen() {
                 })
               }
               onRemove={() => setField("logoUri")("")}
+              onImageResized={(uri) => setField("logoUri")(uri)}
               aspectRatio={1}
             />
             <FormImagePicker
@@ -213,6 +214,7 @@ export default function AddGroupScreen() {
                 })
               }
               onRemove={() => setField("bannerUri")("")}
+              onImageResized={(uri) => setField("bannerUri")(uri)}
               aspectRatio={800 / 300}
               previewWidth={300}
             />

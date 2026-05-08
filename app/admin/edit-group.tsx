@@ -1,9 +1,9 @@
 import { AdminSearchBar, GroupManageRow } from "@/src/components/admin";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { GroupEditForm } from "@/src/components/admin/group/GroupEditForm";
 import { STATUS_FILTER_OPTIONS } from "@/src/constants/options";
 import { useEditGroup } from "@/src/hooks/group/useEditGroup";
 import { useGroups } from "@/src/hooks/group/useGroups";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { groupsService } from "@/src/services";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Filter } from "lucide-react-native";
@@ -34,19 +34,6 @@ import {
   StatusFilter,
   ViewMode,
 } from "../../src/types";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const confirmDelete = (name: string, onConfirm: () => void) => {
-  Alert.alert(
-    "Supprimer le groupe",
-    `Es-tu sûre de vouloir supprimer "${name}" ? Tous ses membres, albums et photocards seront également supprimés.`,
-    [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: "Supprimer", style: "destructive", onPress: onConfirm },
-    ],
-  );
-};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -199,7 +186,7 @@ export default function EditGroupScreen() {
       : "Modifier un groupe";
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={handleBack}>

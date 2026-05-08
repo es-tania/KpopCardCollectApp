@@ -7,6 +7,34 @@ import { extractUrl } from "@/src/utils/extractUrl";
 import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 
+// ── Supprime le verso en tenant compte du partage ─────────────────────────────
+const deleteBackImage = async (backImageUrl: string, cardId: string) => {
+  // ── Vérifie si le verso est partagé ────────────────────────────
+  const { data } = await supabase
+    .from("photocards")
+    .select("id, back_image_shared")
+    .eq("id", cardId)
+    .single();
+
+  const isShared = data?.back_image_shared ?? false;
+
+  if (!isShared) {
+    await storageService.deleteFromUrl("photocards", backImageUrl);
+    return;
+  }
+
+  // ← Verso partagé → supprime seulement si plus aucune carte l'utilise
+  const { count } = await supabase
+    .from("photocards")
+    .select("id", { count: "exact", head: true })
+    .eq("back_image_url", backImageUrl)
+    .neq("id", cardId);
+
+  if (count === 0) {
+    await storageService.deleteFromUrl("photocards", backImageUrl);
+  }
+};
+
 export const useDeletePhotocards = () => {
   const [loading, setLoading] = useState(false);
   const markDeleted = useDeletedCardsStore((s) => s.markDeleted);
@@ -20,10 +48,12 @@ export const useDeletePhotocards = () => {
         const imageUrl = extractUrl(card.imageUrl);
         const backImageUrl = extractUrl(card.backImageUrl);
 
+        console.log("🗑️ deleteOne:", card.id);
+        console.log("🖼️ backUrl extrait:", backImageUrl);
+
         if (imageUrl)
           await storageService.deleteFromUrl("photocards", imageUrl);
-        if (backImageUrl)
-          await storageService.deleteFromUrl("photocards", backImageUrl);
+        if (backImageUrl) await deleteBackImage(backImageUrl, card.id);
 
         // Supprime en BDD
         const { error } = await supabase
@@ -53,23 +83,67 @@ export const useDeletePhotocards = () => {
       if (cards.length === 0) return;
       setLoading(true);
       try {
-        // Supprime les images du bucket en parallèle
+        // ── Récupère les infos back_image_shared pour toutes les cartes ──
+        const { data: cardsData } = await supabase
+          .from("photocards")
+          .select("id, back_image_url, back_image_shared")
+          .in(
+            "id",
+            cards.map((c) => c.id),
+          );
+
+        const cardMap = new Map((cardsData ?? []).map((c: any) => [c.id, c]));
+
+        // ── Supprime les rectos en parallèle ─────────────────────────────
         await Promise.all(
-          cards.flatMap((card) => {
-            const ops = [];
+          cards.map((card) => {
             const imageUrl = extractUrl(card.imageUrl);
-            const backImageUrl = extractUrl(card.backImageUrl);
-            if (imageUrl)
-              ops.push(storageService.deleteFromUrl("photocards", imageUrl));
-            if (backImageUrl)
-              ops.push(
-                storageService.deleteFromUrl("photocards", backImageUrl),
-              );
-            return ops;
+            return imageUrl
+              ? storageService.deleteFromUrl("photocards", imageUrl)
+              : Promise.resolve();
           }),
         );
 
-        // Supprime en BDD
+        // ── Supprime les versos — séquentiel pour gérer le partage ───────
+        // Regroupe les URLs partagées pour éviter les doubles suppressions
+        const sharedBackUrls = new Map<string, string[]>(); // url → ids
+        const privateBackUrls: string[] = [];
+
+        cards.forEach((card) => {
+          const backUrl = extractUrl(card.backImageUrl);
+          if (!backUrl) return;
+          const dbCard = cardMap.get(card.id);
+          const isShared = dbCard?.back_image_shared ?? false;
+
+          if (isShared) {
+            if (!sharedBackUrls.has(backUrl)) sharedBackUrls.set(backUrl, []);
+            sharedBackUrls.get(backUrl)!.push(card.id);
+          } else {
+            privateBackUrls.push(backUrl);
+          }
+        });
+
+        // ← Versos propres → supprime directement
+        await Promise.all(
+          privateBackUrls.map((url) =>
+            storageService.deleteFromUrl("photocards", url),
+          ),
+        );
+
+        // ← Versos partagés → vérifie si d'autres cartes (hors suppression) l'utilisent
+        for (const [url, ids] of sharedBackUrls.entries()) {
+          const { count } = await supabase
+            .from("photocards")
+            .select("id", { count: "exact", head: true })
+            .eq("back_image_url", url)
+            .not("id", "in", `(${ids.join(",")})`);
+
+          if (count === 0) {
+            await storageService.deleteFromUrl("photocards", url);
+          }
+        }
+
+        // ── Supprime en BDD ───────────────────────────────────────────────
         const { error } = await supabase
           .from("photocards")
           .delete()
@@ -80,10 +154,8 @@ export const useDeletePhotocards = () => {
 
         if (error) throw error;
 
-        // Notifie toutes les pages
         cards.forEach((c) => markDeleted(c.id));
         useCacheStore.getState().invalidateAll("photocards:");
-
         onSuccess?.();
       } catch (err: any) {
         Alert.alert("Erreur", err.message);

@@ -100,7 +100,7 @@ export default function AddAlbumScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
@@ -133,6 +133,7 @@ export default function AddAlbumScreen() {
                 })
               }
               onRemove={() => set("coverUri")("")}
+              onImageResized={(uri) => set("coverUri")(uri)}
               aspectRatio={1}
             />
           </View>

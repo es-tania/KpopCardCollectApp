@@ -39,16 +39,14 @@ export default function ChangeEmailScreen() {
     if (supaError) {
       setError(supaError.message);
     } else {
-      Alert.alert(
-        t("success.emailSent"),
-        t("settings.account.emailHint"),
-        [{ text: "OK", onPress: () => router.back() }],
-      );
+      Alert.alert(t("success.emailSent"), t("settings.account.emailHint"), [
+        { text: "OK", onPress: () => router.back() },
+      ]);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />

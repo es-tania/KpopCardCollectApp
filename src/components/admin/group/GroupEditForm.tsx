@@ -302,6 +302,10 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
                 removeLogo: true,
               }))
             }
+            onImageResized={(uri) => {
+              set("logoUri")(uri);
+              setForm((prev) => ({ ...prev, removeLogo: false }));
+            }}
             aspectRatio={1}
           />
 
@@ -324,6 +328,10 @@ export const GroupEditForm: React.FC<GroupEditFormProps> = ({
                 removeBanner: true,
               }))
             }
+            onImageResized={(uri) => {
+              set("bannerUri")(uri);
+              setForm((prev) => ({ ...prev, removeBanner: false }));
+            }}
             aspectRatio={800 / 300}
           />
         </View>

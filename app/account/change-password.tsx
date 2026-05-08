@@ -5,13 +5,7 @@ import { supabase } from "@/src/lib/supabase";
 import { router } from "expo-router";
 import { ChevronLeft, Eye, EyeOff } from "lucide-react-native";
 import React, { useState } from "react";
-import {
-  Alert,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
@@ -52,12 +46,14 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>{t("settings.account.changePassword")}</Text>
+        <Text style={styles.navTitle}>
+          {t("settings.account.changePassword")}
+        </Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -78,9 +74,11 @@ export default function ChangePasswordScreen() {
               onPress={() => setShowPassword((v) => !v)}
               style={styles.eyeBtn}
             >
-              {showPassword
-                ? <EyeOff size={18} color={Colors.textMuted} strokeWidth={1.6} />
-                : <Eye size={18} color={Colors.textMuted} strokeWidth={1.6} />}
+              {showPassword ? (
+                <EyeOff size={18} color={Colors.textMuted} strokeWidth={1.6} />
+              ) : (
+                <Eye size={18} color={Colors.textMuted} strokeWidth={1.6} />
+              )}
             </TouchableOpacity>
           }
         />
@@ -99,9 +97,11 @@ export default function ChangePasswordScreen() {
               onPress={() => setShowConfirm((v) => !v)}
               style={styles.eyeBtn}
             >
-              {showConfirm
-                ? <EyeOff size={18} color={Colors.textMuted} strokeWidth={1.6} />
-                : <Eye size={18} color={Colors.textMuted} strokeWidth={1.6} />}
+              {showConfirm ? (
+                <EyeOff size={18} color={Colors.textMuted} strokeWidth={1.6} />
+              ) : (
+                <Eye size={18} color={Colors.textMuted} strokeWidth={1.6} />
+              )}
             </TouchableOpacity>
           }
         />

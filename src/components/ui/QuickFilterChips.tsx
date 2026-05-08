@@ -122,6 +122,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.lg,
     paddingVertical: Theme.spacing.sm + 2,
     gap: 8,
+    flexDirection: "row", // si ce n'est pas déjà là
+    alignItems: "flex-start", // ← empêche les enfants de s'étirer
+    flexWrap: "wrap",
   },
   chip: {
     flexDirection: "row",
@@ -133,6 +136,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderWidth: 0.5,
     borderColor: Colors.border,
+    alignSelf: "flex-start",
   },
   chipActive: {
     backgroundColor: "rgba(145,126,255,0.12)",

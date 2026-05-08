@@ -1,10 +1,10 @@
 import { AdminSearchBar, AlbumManageRow } from "@/src/components/admin";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { AlbumEditForm } from "@/src/components/admin/album/AlbumEditForm";
 import { FilterSelector } from "@/src/components/admin/FilterSelector";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useEditAlbum } from "@/src/hooks/album/useEditAlbum";
 import { useGroups } from "@/src/hooks/group/useGroups";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { albumsService, storageService } from "@/src/services";
 import { useAuthStore } from "@/src/store/authStore";
 import { extractUrl } from "@/src/utils/extractUrl";
@@ -31,19 +31,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
 import { Album, AlbumEditFormState, ViewMode } from "../../src/types";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const confirmDelete = (name: string, onConfirm: () => void) => {
-  Alert.alert(
-    "Supprimer l'album",
-    `Es-tu sûre de vouloir supprimer "${name}" ? Toutes ses photocards seront également supprimées.`,
-    [
-      { text: t("common.cancel"), style: "cancel" },
-      { text: "Supprimer", style: "destructive", onPress: onConfirm },
-    ],
-  );
-};
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -205,7 +192,7 @@ export default function EditAlbumScreen() {
   }, [viewMode, handleCancel]);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={handleBack}>

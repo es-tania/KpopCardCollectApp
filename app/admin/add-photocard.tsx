@@ -1,3 +1,4 @@
+import { BackImagePickerModal } from "@/src/components/photocard/BackImagePickerModal";
 import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
@@ -20,7 +21,7 @@ import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardFormState, SelectOption } from "@/src/types";
 import { pickCardImage } from "@/src/utils/pickCardImage";
 import { router, useLocalSearchParams } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, History } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -89,6 +90,7 @@ export default function AddPhotocardScreen() {
 
   const { sortedOptions } = useGroupShops(form.groupId, shopOptions);
 
+  const [showBackPicker, setShowBackPicker] = useState(false);
   const [errors, setErrors] = useState<
     Partial<Record<keyof PhotocardFormState, string>>
   >({});
@@ -222,7 +224,7 @@ export default function AddPhotocardScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* Navbar */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
@@ -244,7 +246,46 @@ export default function AddPhotocardScreen() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Image + IA ── */}
+          {/* ── Identification ── */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t("fields.group")}</Text>
+            <FormSelect
+              label={t("fields.group")}
+              options={groupOptions}
+              value={form.groupId}
+              onChange={handleSelectGroup}
+              required
+              error={errors.groupId}
+              searchable
+            />
+            <FormSelect
+              label={t("fields.album")}
+              options={albumOptions}
+              value={form.albumId}
+              onChange={handleSelectAlbum}
+              required
+              error={errors.albumId}
+              searchable
+            />
+            <MemberMultiSelect
+              label={t("fields.member")}
+              members={members}
+              selectedIds={form.memberIds}
+              onChange={(ids) =>
+                setForm((prev) => ({
+                  ...prev,
+                  memberIds: ids,
+                  memberId: ids[0] ?? "",
+                  memberName:
+                    members.find((m) => m.id === ids[0])?.stageName ?? "",
+                }))
+              }
+              required
+              error={errors.memberId}
+            />
+          </View>
+
+          {/* ── Image ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t("fields.front")}</Text>
             <FormSelect
@@ -292,6 +333,7 @@ export default function AddPhotocardScreen() {
               imageUri={form.imageUri}
               onPick={() => pickImage("imageUri")}
               onRemove={() => set("imageUri")("")}
+              onImageResized={(uri) => set("imageUri")(uri)}
               aspectRatio={currentRatio}
             />
             <FormImagePicker
@@ -299,60 +341,22 @@ export default function AddPhotocardScreen() {
               imageUri={form.backImageUri}
               onPick={() => pickImage("backImageUri")}
               onRemove={() => set("backImageUri")("")}
+              onImageResized={(uri) => set("backImageUri")(uri)}
               aspectRatio={currentRatio}
             />
 
-            {/* Bouton IA */}
-            {/* <TouchableOpacity
-            style={styles.aiBtn}
-            onPress={handleAiDetect}
-            disabled={aiDetecting}
-            activeOpacity={0.8}
-          >
-            <Sparkles size={16} color={Colors.accent} strokeWidth={1.8} />
-            <Text style={styles.aiBtnText}>
-              {aiDetecting ? "Détection en cours..." : "Détecter avec l'IA"}
-            </Text>
-          </TouchableOpacity> */}
-          </View>
-
-          {/* ── Identification ── */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t("fields.group")}</Text>
-            <FormSelect
-              label={t("fields.group")}
-              options={groupOptions}
-              value={form.groupId}
-              onChange={handleSelectGroup}
-              required
-              error={errors.groupId}
-              searchable
-            />
-            <FormSelect
-              label={t("fields.album")}
-              options={albumOptions}
-              value={form.albumId}
-              onChange={handleSelectAlbum}
-              required
-              error={errors.albumId}
-              searchable
-            />
-            <MemberMultiSelect
-              label={t("fields.member")}
-              members={members}
-              selectedIds={form.memberIds}
-              onChange={(ids) =>
-                setForm((prev) => ({
-                  ...prev,
-                  memberIds: ids,
-                  memberId: ids[0] ?? "",
-                  memberName:
-                    members.find((m) => m.id === ids[0])?.stageName ?? "",
-                }))
-              }
-              required
-              error={errors.memberId}
-            />
+            {form.groupId && (
+              <TouchableOpacity
+                style={styles.backPickerBtn}
+                onPress={() => setShowBackPicker(true)}
+                activeOpacity={0.75}
+              >
+                <History size={15} color={Colors.accent} strokeWidth={1.6} />
+                <Text style={styles.backPickerText}>
+                  Choisir un verso existant
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── Détails ── */}
@@ -397,6 +401,15 @@ export default function AddPhotocardScreen() {
           <ProgressIndicator message={progress} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* ── Modal verso existant ── */}
+      <BackImagePickerModal
+        visible={showBackPicker}
+        onClose={() => setShowBackPicker(false)}
+        onSelect={(url) => setForm((prev) => ({ ...prev, backImageUri: url }))}
+        groupId={form.groupId}
+        albumId={form.albumId}
+      />
     </SafeAreaView>
   );
 }
@@ -466,5 +479,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: Theme.spacing.md,
     alignItems: "flex-start",
+  },
+  backPickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Theme.spacing.sm + 2,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Colors.pillActive,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+  },
+  backPickerText: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.accent,
+    fontWeight: Theme.fontWeight.medium,
   },
 });

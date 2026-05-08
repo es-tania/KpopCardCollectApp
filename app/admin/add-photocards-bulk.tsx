@@ -1,6 +1,7 @@
 import { BulkPhotocardCard } from "@/src/components/admin/photocard/BulkPhotocardCard";
-import { useTranslation } from "@/src/hooks/useTranslation";
+import { BackImagePickerModal } from "@/src/components/photocard/BackImagePickerModal";
 import { FormField } from "@/src/components/ui/FormField";
+import { FormImagePicker } from "@/src/components/ui/FormImagePicker";
 import { FormSelect } from "@/src/components/ui/FormSelect";
 import { FormSubmitButton } from "@/src/components/ui/FormSubmitButton";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
@@ -9,9 +10,15 @@ import {
   PHOTOCARD_TYPE_OPTIONS,
   RARITY_OPTIONS,
 } from "@/src/constants/options";
+import {
+  CARD_FORMAT_OPTIONS,
+  CardFormat,
+  getCardRatio,
+} from "@/src/constants/options/cardFormatOptions";
 import { Theme } from "@/src/constants/theme";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { useGroupShops } from "@/src/hooks/shops/useGroupShops";
 import { useShops } from "@/src/hooks/shops/useShops";
 import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import {
@@ -19,10 +26,12 @@ import {
   BulkPhotocard,
   useBulkAddPhotocards,
 } from "@/src/hooks/useBulkAddPhotocards";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
-import { SelectOption } from "@/src/types";
+import { PhotocardFormState, SelectOption } from "@/src/types";
+import { pickCardImage } from "@/src/utils/pickCardImage";
 import { router } from "expo-router";
-import { ChevronLeft, Plus } from "lucide-react-native";
+import { ChevronLeft, History, Plus } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -41,22 +50,31 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const newCard = (): BulkPhotocard => ({
   localId: Math.random().toString(36).slice(2),
   memberId: "",
+  memberIds: [],
   memberName: "",
   imageUri: "",
   backImageUri: "",
 });
 
-const INITIAL_FORM: BulkFormState = {
+const INITIAL_FORM: PhotocardFormState = {
   groupId: "",
   groupName: "",
   albumId: "",
   albumTitle: "",
+  memberId: "",
+  memberIds: [],
+  memberName: "",
+  type: "normal",
   version: "",
   shopName: "",
-  type: "normal",
   rarity: "common",
+  imageUri: "",
+  backImageUri: "",
+  aspectRatio: "photocard",
+  customWidth: undefined,
+  customHeight: undefined,
+  commonBackImageUri: undefined,
 };
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AddPhotocardsBulkScreen() {
@@ -68,17 +86,17 @@ export default function AddPhotocardsBulkScreen() {
   const [form, setForm] = useState<BulkFormState>(INITIAL_FORM);
   const [photocards, setPhotocards] = useState<BulkPhotocard[]>([newCard()]);
   const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
+  const [showBackPicker, setShowBackPicker] = useState(false);
 
-  // Albums selon le groupe sélectionné
   const { albums } = useAlbums(form.groupId || undefined);
-
-  // Membres selon le groupe sélectionné
   const { members } = useGroupMembers(form.groupId || null);
+  const { sortedOptions } = useGroupShops(form.groupId, shopOptions);
 
-  const accessibleGroups = useMemo(() => {
-    if (isAdmin) return groups;
-    return groups.filter((g) => groupAdminIds.includes(g.id));
-  }, [groups, isAdmin, groupAdminIds]);
+  const currentRatio = getCardRatio(
+    form.aspectRatio as CardFormat,
+    form.customWidth,
+    form.customHeight,
+  );
 
   const groupOptions: SelectOption[] = useMemo(
     () => groups.map((g) => ({ key: g.id, label: g.name })),
@@ -120,6 +138,17 @@ export default function AddPhotocardsBulkScreen() {
     }));
   };
 
+  // ── Pick image commune ────────────────────────────────────────────────
+  const pickCommonBack = useCallback(() => {
+    pickCardImage({
+      aspectRatio: form.aspectRatio as CardFormat,
+      currentRatio,
+      onPicked: (uri) => {
+        setForm((prev) => ({ ...prev, commonBackImageUri: uri }));
+      },
+    });
+  }, [form.aspectRatio, currentRatio]);
+
   // ── Handlers photocards ───────────────────────────────────────────────
 
   const handleAddCard = useCallback(() => {
@@ -138,11 +167,10 @@ export default function AddPhotocardsBulkScreen() {
   );
 
   const handleChangeCard = useCallback(
-    (localId: string, key: keyof BulkPhotocard, value: string) => {
+    (localId: string, key: keyof BulkPhotocard, value: any) => {
       setPhotocards((prev) =>
         prev.map((c) => (c.localId === localId ? { ...c, [key]: value } : c)),
       );
-      // Efface l'erreur
       setCardErrors((prev) => {
         const next = { ...prev };
         delete next[localId];
@@ -180,22 +208,22 @@ export default function AddPhotocardsBulkScreen() {
     }
 
     photocards.forEach((card) => {
-      if (!card.memberId) {
-        errors[card.localId] = "Membre requis";
-        valid = false;
+      const errs: string[] = [];
+      if (!card.memberId && (!card.memberIds || card.memberIds.length === 0)) {
+        errs.push("Membre requis");
       }
       if (!card.imageUri) {
-        errors[card.localId] = errors[card.localId]
-          ? errors[card.localId] + " · Image requise"
-          : "Image requise";
+        errs.push("Image requise");
+      }
+      if (errs.length > 0) {
+        errors[card.localId] = errs.join(" · ");
         valid = false;
       }
     });
 
     setCardErrors(errors);
-    if (!valid) {
+    if (!valid)
       Alert.alert("Formulaire incomplet", "Vérifie chaque photocard.");
-    }
     return valid;
   };
 
@@ -206,7 +234,7 @@ export default function AddPhotocardsBulkScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* ── Navbar ── */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
@@ -270,7 +298,7 @@ export default function AddPhotocardsBulkScreen() {
             />
             <FormSelect
               label={t("fields.shop")}
-              options={shopOptions}
+              options={sortedOptions}
               value={form.shopName}
               onChange={setField("shopName")}
               placeholder="Sélectionner un shop..."
@@ -283,6 +311,83 @@ export default function AddPhotocardsBulkScreen() {
               value={form.rarity}
               onChange={setField("rarity")}
             />
+
+            {/* ── Format ── */}
+            <FormSelect
+              label="Format"
+              options={CARD_FORMAT_OPTIONS.map((f) => ({
+                key: f.key,
+                label: f.label,
+              }))}
+              value={form.aspectRatio ?? "photocard"}
+              onChange={(v) =>
+                setForm((prev) => ({
+                  ...prev,
+                  aspectRatio: v as CardFormat,
+                  customWidth: undefined,
+                  customHeight: undefined,
+                }))
+              }
+            />
+            {form.aspectRatio === "custom" && (
+              <View style={styles.customSizeRow}>
+                <View style={{ flex: 1 }}>
+                  <FormField
+                    label="Largeur (mm)"
+                    value={form.customWidth?.toString() ?? ""}
+                    onChangeText={(v) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        customWidth: parseInt(v) || undefined,
+                      }))
+                    }
+                    keyboardType="numeric"
+                    placeholder="ex: 54"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <FormField
+                    label="Hauteur (mm)"
+                    value={form.customHeight?.toString() ?? ""}
+                    onChangeText={(v) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        customHeight: parseInt(v) || undefined,
+                      }))
+                    }
+                    keyboardType="numeric"
+                    placeholder="ex: 86"
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* ── Verso commun ── */}
+            <FormImagePicker
+              label="Verso commun (optionnel)"
+              imageUri={form.commonBackImageUri ?? ""}
+              onPick={pickCommonBack}
+              onRemove={() =>
+                setForm((prev) => ({ ...prev, commonBackImageUri: undefined }))
+              }
+              onImageResized={(uri) =>
+                setForm((prev) => ({ ...prev, commonBackImageUri: uri }))
+              }
+              aspectRatio={currentRatio > 0 ? currentRatio : 2 / 3}
+            />
+            {/* ← Bouton verso existant */}
+            {form.groupId && (
+              <TouchableOpacity
+                style={styles.backPickerBtn}
+                onPress={() => setShowBackPicker(true)}
+                activeOpacity={0.75}
+              >
+                <History size={15} color={Colors.accent} strokeWidth={1.6} />
+                <Text style={styles.backPickerText}>
+                  Choisir un verso existant
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── Photocards ── */}
@@ -309,10 +414,14 @@ export default function AddPhotocardsBulkScreen() {
                 key={card.localId}
                 card={card}
                 index={index}
-                memberOptions={memberOptions}
+                groupId={form.groupId}
+                members={members}
                 onChange={handleChangeCard}
                 onRemove={handleRemoveCard}
                 error={cardErrors[card.localId]}
+                hasCommonBack={!!form.commonBackImageUri}
+                aspectRatio={form.aspectRatio as CardFormat}
+                currentRatio={currentRatio}
               />
             ))}
 
@@ -338,6 +447,15 @@ export default function AddPhotocardsBulkScreen() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+      <BackImagePickerModal
+        visible={showBackPicker}
+        onClose={() => setShowBackPicker(false)}
+        onSelect={(url) =>
+          setForm((prev) => ({ ...prev, commonBackImageUri: url }))
+        }
+        groupId={form.groupId}
+        albumId={form.albumId}
+      />
     </SafeAreaView>
   );
 }
@@ -397,6 +515,11 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 2,
   },
+  customSizeRow: {
+    flexDirection: "row",
+    gap: Theme.spacing.md,
+    alignItems: "flex-start",
+  },
   addBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -427,5 +550,21 @@ const styles = StyleSheet.create({
   addRowText: {
     fontSize: Theme.fontSize.base,
     color: Colors.accent,
+  },
+  backPickerBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: Theme.spacing.sm + 2,
+    borderRadius: Theme.borderRadius.md,
+    backgroundColor: Colors.pillActive,
+    borderWidth: 0.5,
+    borderColor: Colors.borderActive,
+  },
+  backPickerText: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.accent,
+    fontWeight: Theme.fontWeight.medium,
   },
 });
