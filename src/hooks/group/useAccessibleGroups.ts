@@ -1,6 +1,6 @@
 import { useAuthStore } from "@/src/store/authStore";
 import { useMemo } from "react";
-import { useGroups } from "./group/useGroups";
+import { useGroups } from "./useGroups";
 
 export const useAccessibleGroups = () => {
   const { isAdmin, groupAdminIds } = useAuthStore();

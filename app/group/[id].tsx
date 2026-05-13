@@ -2,24 +2,22 @@ import { AlbumCard } from "@/src/components/album/AlbumCard";
 import { MembersGrid } from "@/src/components/member/MembersGrid";
 import { SectionLabel } from "@/src/components/ui/SectionLabel";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
+import { useGroup } from "@/src/hooks/group/useGroup";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
-import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
-import { useGroup } from "@/src/hooks/useGroup";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserStats } from "@/src/hooks/useUserStats";
-import { useCollectionStore } from "@/src/store/collectionStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Download, Heart } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef } from "react";
 import {
-  ActivityIndicator,
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  StyleSheet,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    FlatList,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    StyleSheet,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GroupHeader } from "../../src/components/group/GroupHeader";
@@ -36,9 +34,7 @@ export default function GroupScreen() {
   const { membersWithStats, loading: membersLoading } =
     useGroupMembers(groupId);
   const { albums, loading: albumsLoading } = useAlbums(groupId);
-  const { photocards } = usePhotocards({ groupId });
   const { followedIds, toggleFollow } = useFollowedGroups();
-  const { collectionIds, favoriteIds, wishlistIds } = useCollectionStore();
   const groupStats = useUserStats({ groupId });
 
   const isMounted = useRef(false);
@@ -98,42 +94,15 @@ export default function GroupScreen() {
     if (group) toggleFollow(group.id);
   }, [group, toggleFollow]);
 
-  const albumsWithStats = useMemo(() => {
-    // Récupère tous les IDs de photocards chargées par album
-    const idsByAlbum = new Map<string, string[]>();
-    photocards.forEach((c) => {
-      if (!idsByAlbum.has(c.albumId)) idsByAlbum.set(c.albumId, []);
-      idsByAlbum.get(c.albumId)!.push(c.id);
-    });
-
-    return albums.map((album) => {
-      const ids = idsByAlbum.get(album.id) ?? [];
-      const owned = ids.filter((id) => collectionIds.has(id)).length;
-      const wished = ids.filter((id) => wishlistIds.has(id)).length;
-
-      return {
-        ...album,
-        // ✅ totalPhotocards vient de album.totalPhotocards (BDD)
-        // owned/wishlist calculés depuis collectionStore
-        ownedPhotocards: owned,
-        wishlistPhotocards: wished,
-        completionPercentage:
-          album.totalPhotocards > 0
-            ? Math.round((owned / album.totalPhotocards) * 100)
-            : 0,
-      };
-    });
-  }, [albums, photocards, collectionIds, wishlistIds]);
-
   // ── Data du FlatList principal ─────────────────────────────────────────
   // Chaque item = un row de 2 albums
   const albumRows = useMemo(() => {
     const rows: Album[][] = [];
-    for (let i = 0; i < albumsWithStats.length; i += 2) {
-      rows.push(albumsWithStats.slice(i, i + 2));
+    for (let i = 0; i < albums.length; i += 2) {
+      rows.push(albums.slice(i, i + 2));
     }
     return rows;
-  }, [albumsWithStats]);
+  }, [albums]);
 
   // ── Header — tout ce qui est au-dessus des albums ─────────────────────
   const ListHeader = useMemo(
@@ -190,7 +159,6 @@ export default function GroupScreen() {
     ),
     [handlePressAlbum],
   );
-
   if (groupLoading) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>

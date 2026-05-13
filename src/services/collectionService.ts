@@ -1,30 +1,41 @@
 import { supabase } from "../lib/supabase";
 import { mapGroup } from "./groupsService";
 
+const GROUP_COLUMNS =
+  "id, name, korean_name, logo_url, banner_url, fandom_name, total_photocards, generation, company, status, debut_date, disband_date";
+
+// ── Helper pagination — évite la répétition ───────────────────────────────────
+const fetchAllIds = async (
+  table: string,
+  column: string,
+  userId: string,
+): Promise<string[]> => {
+  let allIds: string[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from(table)
+      .select(column)
+      .eq("user_id", userId)
+      .range(from, from + 999);
+
+    if (error) throw error;
+    if (!data?.length) break;
+
+    allIds = [...allIds, ...data.map((d: any) => d[column])];
+    if (data.length < 1000) break;
+    from += 1000;
+  }
+
+  return allIds;
+};
+
 export const collectionService = {
   // ── Collection ────────────────────────────────────────────────────────
 
-  getCollection: async (userId: string): Promise<string[]> => {
-    let allIds: string[] = [];
-    let from = 0;
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("user_collection")
-        .select("photocard_id")
-        .eq("user_id", userId)
-        .range(from, from + 999);
-
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-
-      allIds = [...allIds, ...data.map((d: any) => d.photocard_id)];
-      if (data.length < 1000) break;
-      from += 1000;
-    }
-
-    return allIds;
-  },
+  getCollection: (userId: string) =>
+    fetchAllIds("user_collection", "photocard_id", userId),
 
   addToCollection: async (
     userId: string,
@@ -33,7 +44,6 @@ export const collectionService = {
     const { error } = await supabase
       .from("user_collection")
       .insert({ user_id: userId, photocard_id: photocardId });
-
     if (error) throw error;
   },
 
@@ -51,27 +61,8 @@ export const collectionService = {
   },
 
   // ── Favoris ────────────────────────────────────────────────────────────
-  getFavorites: async (userId: string): Promise<string[]> => {
-    let allIds: string[] = [];
-    let from = 0;
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("user_favorites")
-        .select("photocard_id")
-        .eq("user_id", userId)
-        .range(from, from + 999);
-
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-
-      allIds = [...allIds, ...data.map((d: any) => d.photocard_id)];
-      if (data.length < 1000) break;
-      from += 1000;
-    }
-
-    return allIds;
-  },
+  getFavorites: (userId: string) =>
+    fetchAllIds("user_favorites", "photocard_id", userId),
 
   toggleFavorite: async (
     userId: string,
@@ -94,27 +85,8 @@ export const collectionService = {
   },
 
   // ── Wishlist ───────────────────────────────────────────────────────────
-  getWishlist: async (userId: string): Promise<string[]> => {
-    let allIds: string[] = [];
-    let from = 0;
-
-    while (true) {
-      const { data, error } = await supabase
-        .from("user_wishlist")
-        .select("photocard_id")
-        .eq("user_id", userId)
-        .range(from, from + 999);
-
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-
-      allIds = [...allIds, ...data.map((d: any) => d.photocard_id)];
-      if (data.length < 1000) break;
-      from += 1000;
-    }
-
-    return allIds;
-  },
+  getWishlist: (userId: string) =>
+    fetchAllIds("user_wishlist", "photocard_id", userId),
 
   toggleWishlist: async (
     userId: string,
@@ -141,7 +113,7 @@ export const collectionService = {
   getFollowedGroups: async (userId: string) => {
     const { data, error } = await supabase
       .from("user_followed_groups")
-      .select("group_id, groups (*)")
+      .select(`group_id, groups (${GROUP_COLUMNS})`)
       .eq("user_id", userId);
 
     if (error) throw error;

@@ -2,6 +2,7 @@ import { supabase } from "@/src/lib/supabase";
 import { mapGroup } from "@/src/services/groupsService";
 import { Album, Group, Member, PhotocardWithDetails } from "@/src/types";
 import { useCallback, useState } from "react";
+import { mapPhotocard } from "../services/photocardsService";
 
 interface SearchResults {
   groups: Group[];
@@ -155,23 +156,4 @@ const mapAlbum = (data: any): Album => ({
   tags: data.tags ?? [],
   createdAt: data.created_at,
   updatedAt: data.updated_at,
-});
-
-const mapPhotocard = (data: any): PhotocardWithDetails => ({
-  id: data.id,
-  memberId: data.member_id,
-  albumId: data.album_id,
-  groupId: data.group_id,
-  imageUrl: data.image_url ? { uri: data.image_url } : null,
-  backImageUrl: data.back_image_url ? { uri: data.back_image_url } : null,
-  type: data.type,
-  version: data.version,
-  shopName: data.shop_name,
-  rarity: data.rarity,
-  status: data.status,
-  createdAt: data.created_at,
-  memberName: data.member_name,
-  albumTitle: data.album_title,
-  groupName: data.group_name,
-  createdBy: data.created_by,
 });

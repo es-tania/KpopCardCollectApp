@@ -2,20 +2,20 @@ import { BackImagePickerModal } from "@/src/components/photocard/BackImagePicker
 import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
-  PHOTOCARD_TYPE_OPTIONS,
-  RARITY_OPTIONS,
+    PHOTOCARD_TYPE_OPTIONS,
+    RARITY_OPTIONS,
 } from "@/src/constants/options";
 import {
-  CARD_FORMAT_OPTIONS,
-  CardFormat,
-  getCardRatio,
+    CARD_FORMAT_OPTIONS,
+    CardFormat,
+    getCardRatio,
 } from "@/src/constants/options/cardFormatOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
+import { useAccessibleGroups } from "@/src/hooks/group/useAccessibleGroups";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useAddPhotocard } from "@/src/hooks/photocard/useAddPhotocard";
 import { useGroupShops } from "@/src/hooks/shops/useGroupShops";
 import { useShops } from "@/src/hooks/shops/useShops";
-import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardFormState, SelectOption } from "@/src/types";
@@ -24,14 +24,14 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, History } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../src/components/ui/FormField";

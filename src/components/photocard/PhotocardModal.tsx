@@ -1,36 +1,36 @@
 import {
-  PHOTOCARD_TYPE_LABELS,
-  SUBMISSION_STATUS_LABELS,
+    PHOTOCARD_TYPE_LABELS,
+    SUBMISSION_STATUS_LABELS,
 } from "@/src/constants/options";
+import { useIsGroupAdmin } from "@/src/hooks/group/useIsGroupAdmin";
 import { useDeletePhotocards } from "@/src/hooks/photocard/useDeletePhotocards";
-import { useIsGroupAdmin } from "@/src/hooks/useIsGroupAdmin";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { useShopsStore } from "@/src/store/shopsStore";
 import {
-  Calendar,
-  Check,
-  Edit2,
-  Hash,
-  Layers,
-  Plus,
-  Share,
-  ShoppingCart,
-  Star,
-  Tag,
-  Trash2,
-  X,
+    Calendar,
+    Check,
+    Edit2,
+    Hash,
+    Layers,
+    Plus,
+    Share,
+    ShoppingCart,
+    Star,
+    Tag,
+    Trash2,
+    X,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  Dimensions,
-  Image,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../constants/colors";

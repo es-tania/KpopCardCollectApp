@@ -1,4 +1,4 @@
-import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
+import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { supabase } from "@/src/lib/supabase";
 import { storageService } from "@/src/services";
@@ -8,29 +8,29 @@ import { useCollectionStore } from "@/src/store/collectionStore";
 import { User } from "@/src/types";
 import { router } from "expo-router";
 import {
-  Grid3x3,
-  LogOut,
-  PackageSearch,
-  Plus,
-  ShieldCheck,
-  ShoppingBasket,
-  Star,
-  Users,
+    Grid3x3,
+    LogOut,
+    PackageSearch,
+    Plus,
+    ShieldCheck,
+    ShoppingBasket,
+    Star,
+    Users,
 } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  StyleSheet,
-  View,
+    ActivityIndicator,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  ProfileHeader,
-  ProfileMenuRow,
-  ProfileSectionTitle,
-  ProfileStats,
+    ProfileHeader,
+    ProfileMenuRow,
+    ProfileSectionTitle,
+    ProfileStats,
 } from "../../src/components/profile";
 import { Colors } from "../../src/constants/colors";
 

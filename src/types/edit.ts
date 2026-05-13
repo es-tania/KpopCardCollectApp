@@ -34,6 +34,7 @@ export interface PhotocardEditFormState {
   aspectRatio: CardFormat;
   customWidth?: number;
   customHeight?: number;
+  backImageShared?: boolean;
 }
 
 export interface GroupEditFormState {

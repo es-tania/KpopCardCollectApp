@@ -4,7 +4,7 @@ import {
   storageService,
 } from "@/src/services/storageService";
 import { useState } from "react";
-import { PhotocardFormState } from "../types";
+import { PhotocardFormState } from "../../types";
 
 export interface BulkPhotocard {
   localId: string;

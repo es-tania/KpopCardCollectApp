@@ -11,12 +11,41 @@ import {
 } from "../types";
 import { extractUrl } from "../utils/extractUrl";
 
+const PHOTOCARD_COLUMNS = [
+  "id",
+  "member_id",
+  "album_id",
+  "group_id",
+  "type",
+  "version",
+  "shop_name",
+  "rarity",
+  "status",
+  "image_url",
+  "back_image_url",
+  "back_image_shared",
+  "aspect_ratio",
+  "custom_width",
+  "custom_height",
+  "is_limited",
+  "created_at",
+  "member_name",
+  "album_title",
+  "album_cover_url",
+  "group_name",
+  "card_members",
+].join(", ");
+
+const RECENT_COLUMNS =
+  "id, image_url, back_image_url, type, version, member_name, album_title, group_name, aspect_ratio, card_members, is_limited, shop_name, rarity, album_cover_url";
+
 export const photocardsService = {
   getAll: async (): Promise<PhotocardWithDetails[]> => {
     const { data, error } = await supabase
       .from("photocards_with_details")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .select(PHOTOCARD_COLUMNS)
+      .order("created_at", { ascending: false })
+      .limit(100);
 
     if (error) throw error;
     return data.map(mapPhotocard);
@@ -25,7 +54,7 @@ export const photocardsService = {
   getByAlbum: async (albumId: string): Promise<PhotocardWithDetails[]> => {
     const { data, error } = await supabase
       .from("photocards_with_details")
-      .select("*")
+      .select(PHOTOCARD_COLUMNS)
       .eq("album_id", albumId)
       .eq("status", "approved");
 
@@ -48,7 +77,7 @@ export const photocardsService = {
   getById: async (id: string): Promise<PhotocardWithDetails | null> => {
     const { data, error } = await supabase
       .from("photocards_with_details")
-      .select("*")
+      .select(PHOTOCARD_COLUMNS)
       .eq("id", id)
       .single();
 
@@ -59,7 +88,7 @@ export const photocardsService = {
   getPending: async (): Promise<PhotocardWithDetails[]> => {
     const { data, error } = await supabase
       .from("photocards_with_details")
-      .select("*")
+      .select(PHOTOCARD_COLUMNS)
       .eq("status", "pending")
       .order("created_at", { ascending: false });
 
@@ -70,7 +99,7 @@ export const photocardsService = {
   getRecent: async (limit: number = 10): Promise<PhotocardWithDetails[]> => {
     const { data, error } = await supabase
       .from("photocards_with_details")
-      .select("*")
+      .select(PHOTOCARD_COLUMNS)
       .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -134,7 +163,7 @@ export const photocardsService = {
     // Fetch les détails des photocards
     const { data, error } = await supabase
       .from("photocards_with_details")
-      .select("*")
+      .select(RECENT_COLUMNS)
       .in("id", sortedIds);
 
     if (error) throw error;
@@ -178,7 +207,7 @@ export const photocardsService = {
     const { data: created, error } = await supabase
       .from("photocards")
       .insert(payload)
-      .select()
+      .select("id")
       .single();
 
     if (error) throw error;
@@ -220,22 +249,21 @@ export const photocardsService = {
       custom_height: data.customHeight ?? null,
     };
 
-    if (data.newImageUrl !== undefined) {
-      payload.image_url = data.newImageUrl;
-    }
+    if (data.newImageUrl !== undefined) payload.image_url = data.newImageUrl;
     if (data.newBackImageUrl !== undefined) {
       payload.back_image_url = data.newBackImageUrl;
+      payload.back_image_shared = data.backImageShared ?? false;
     }
 
     // ── Update en BDD avec le payload complet ────────────────────────────
     const { data: result, error } = await supabase
       .from("photocards")
       .update(payload)
-      .eq("id", id)
-      .select("id, aspect_ratio, custom_width, custom_height");
+      .eq("id", id);
+    //   .select("id, aspect_ratio, custom_width, custom_height");
 
-    console.log("✅ Résultat BDD:", JSON.stringify(result, null, 2));
-    console.log("❌ Erreur:", error);
+    // console.log("✅ Résultat BDD:", JSON.stringify(result, null, 2));
+    // console.log("❌ Erreur:", error);
 
     if (error) throw error;
 
@@ -280,7 +308,7 @@ export const photocardsService = {
         custom_height: data.customHeight ?? null,
         created_by: (await supabase.auth.getUser()).data.user?.id,
       })
-      .select()
+      .select("id")
       .single();
 
     if (error) throw error;
@@ -342,5 +370,6 @@ export const mapPhotocard = (d: any): PhotocardWithDetails => {
     customHeight: d.custom_height ?? undefined,
     cardRatio,
     albumCoverUrl: d.album_cover_url ? { uri: d.album_cover_url } : undefined,
+    backImageShared: d.back_image_shared ?? false,
   };
 };

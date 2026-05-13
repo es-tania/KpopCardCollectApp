@@ -45,24 +45,32 @@ export const useAddPhotocard = (
 
       // ── 2. Upload verso ──────────────────────────────────────────────
       let backImageUrl: string | undefined;
+      let backImageShared = false;
+
       if (form.backImageUri) {
-        setProgress("Upload de l'image verso...");
-        backImageUrl = await storageService.uploadImage(
-          "photocards",
-          buildStoragePath.photocard(
-            form.groupName,
-            form.memberName,
-            form.albumTitle,
-            `${form.version || "back"}_back`,
-          ),
-          form.backImageUri,
-        );
+        if (form.backImageUri.startsWith("http")) {
+          backImageUrl = form.backImageUri;
+        } else {
+          setProgress("Upload de l'image verso...");
+          backImageUrl = await storageService.uploadImage(
+            "photocards",
+            buildStoragePath.photocard(
+              form.groupName,
+              "_shared",
+              form.albumTitle,
+              `${form.version || "common"}_back_shared`,
+            ),
+            form.backImageUri,
+          );
+        }
       }
+
+      backImageShared = true;
 
       // ── 3. Soumet la photocard ───────────────────────────────────────
       setProgress("Soumission de la photocard...");
 
-      console.log("Images avant submit:", { imageUrl, backImageUrl }); // ← debug
+      console.log("Images avant submit:", { imageUrl, backImageUrl });
 
       await photocardsService.submit(
         {
@@ -79,6 +87,7 @@ export const useAddPhotocard = (
           aspectRatio: form.aspectRatio ?? "photocard",
           customWidth: form.customWidth ?? undefined,
           customHeight: form.customHeight ?? undefined,
+          backImageShared,
         },
         isAdmin,
       );

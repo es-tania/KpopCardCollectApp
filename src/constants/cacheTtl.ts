@@ -18,11 +18,11 @@
 // } as const;
 
 export const CACHE_TTL = {
-  groups: 0 * 60 * 1000, // 10 min — change peu
-  albums: 0 * 60 * 1000, // 10 min
-  members: 0 * 60 * 1000, // 10 min
+  groups: 10 * 60 * 1000, // 10 min — change peu
+  albums: 10 * 60 * 1000, // 10 min
+  members: 15 * 60 * 1000, // 10 min
   photocards: 0 * 60 * 1000, // 5 min
   profile: 0 * 60 * 1000, // 5 min
   collection: 0 * 60 * 1000, // 1 min — change souvent
-  shops: 5 * 60 * 1000,
+  shops: 60 * 60 * 1000,
 } as const;

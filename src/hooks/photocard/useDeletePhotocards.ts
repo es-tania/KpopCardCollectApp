@@ -8,7 +8,7 @@ import { useCallback, useState } from "react";
 import { Alert } from "react-native";
 
 // ── Supprime le verso en tenant compte du partage ─────────────────────────────
-const deleteBackImage = async (backImageUrl: string, cardId: string) => {
+export const deleteBackImage = async (backImageUrl: string, cardId: string) => {
   // ── Vérifie si le verso est partagé ────────────────────────────
   const { data } = await supabase
     .from("photocards")

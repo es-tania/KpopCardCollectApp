@@ -1,38 +1,47 @@
 import { GroupFilter } from "@/src/components/group/GroupFilter";
+import { MembersList } from "@/src/components/member/MembersList";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import { PhotocardsByAlbum } from "@/src/components/photocard/PhotocardsByAlbum";
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
+import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { supabase } from "@/src/lib/supabase";
-import { mapPhotocard } from "@/src/services/photocardsService";
 import { useAuthStore } from "@/src/store/authStore";
 import { useCollectionStore } from "@/src/store/collectionStore";
-import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { PhotocardWithDetails } from "@/src/types";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+interface AlbumInfo {
+  albumId: string;
+  albumTitle: string;
+  albumCoverUrl?: string;
+  missingCount: number;
+}
+
 export default function MissingCardsScreen() {
   const { user } = useAuthStore();
-  const { collectionIds, favoriteIds, wishlistIds } = useCollectionStore();
-  const deletedIds = useDeletedCardsStore((s) => s.deletedIds);
+  const { collectionIds } = useCollectionStore();
   const { followedGroups, loading: groupsLoading } = useFollowedGroups();
 
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [rawCards, setRawCards] = useState<PhotocardWithDetails[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState<string | undefined>(
+    undefined,
+  );
   const [loading, setLoading] = useState(false);
+  const [silentRefreshing, setSilentRefreshing] = useState(false);
   const [modalCard, setModalCard] = useState<PhotocardWithDetails | null>(null);
+  const [albumInfos, setAlbumInfos] = useState<AlbumInfo[]>([]);
 
   const { membersWithStats } = useGroupMembers(selectedGroupId ?? "");
 
@@ -43,55 +52,53 @@ export default function MissingCardsScreen() {
     }
   }, [followedGroups]);
 
-  // ── Charge les cartes manquantes du groupe sélectionné ───────────────
-  const fetchMissing = useCallback(async () => {
-    if (!user || !selectedGroupId) return;
-    setLoading(true);
-    try {
-      let allCards: PhotocardWithDetails[] = [];
-      let from = 0;
-
-      while (true) {
-        const { data, error } = await supabase
-          .rpc("get_missing_photocards", { p_user_id: user.id })
-          .eq("group_id", selectedGroupId)
-          .range(from, from + 999);
-
+  // ── Charge seulement les comptes par album ────────────────────────────
+  const fetchAlbumCounts = useCallback(
+    async (silent = false) => {
+      if (!user || !selectedGroupId) return;
+      silent ? setSilentRefreshing(true) : setLoading(true);
+      try {
+        const { data, error } = await supabase.rpc(
+          "get_missing_counts_by_album",
+          {
+            p_user_id: user.id,
+            p_group_id: selectedGroupId,
+            p_member_id: selectedMemberId ?? null,
+          },
+        );
         if (error) throw error;
-        if (!data?.length) break;
-
-        allCards = [...allCards, ...data.map(mapPhotocard)];
-        if (data.length < 1000) break;
-        from += 1000;
+        setAlbumInfos(
+          (data ?? []).map((d: any) => ({
+            albumId: d.album_id,
+            albumTitle: d.album_title,
+            albumCoverUrl: d.album_cover_url ?? undefined,
+            missingCount: d.missing_count,
+          })),
+        );
+      } catch (err: any) {
+        console.error("MissingCards:", err.message);
+      } finally {
+        silent ? setSilentRefreshing(false) : setLoading(false);
       }
-
-      setRawCards(allCards);
-    } catch (err: any) {
-      console.error("MissingCards:", err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, selectedGroupId]);
-
-  useEffect(() => {
-    fetchMissing();
-  }, [fetchMissing]);
-
-  // ── Enrichit depuis le store ──────────────────────────────────────────
-  const cards = useMemo(
-    () =>
-      rawCards
-        .filter((c) => !deletedIds.has(c.id) && !collectionIds.has(c.id))
-        .map((c) => ({
-          ...c,
-          isInCollection: false,
-          isFavorite: favoriteIds.has(c.id),
-          isWishlisted: wishlistIds.has(c.id),
-        })),
-    [rawCards, collectionIds, favoriteIds, wishlistIds, deletedIds],
+    },
+    [user, selectedGroupId, selectedMemberId],
   );
 
-  // ── Stats du groupe sélectionné ───────────────────────────────────────
+  useEffect(() => {
+    setAlbumInfos([]);
+    setSelectedMemberId(undefined);
+    fetchAlbumCounts(false);
+  }, [selectedGroupId, selectedMemberId]);
+
+  useEffect(() => {
+    if (!selectedGroupId) return;
+    fetchAlbumCounts(true);
+  }, [collectionIds]);
+
+  useEffect(() => {
+    fetchAlbumCounts(true);
+  }, [fetchAlbumCounts]);
+
   const selectedGroup = followedGroups.find((g) => g.id === selectedGroupId);
 
   return (
@@ -123,6 +130,20 @@ export default function MissingCardsScreen() {
         </View>
       )}
 
+      {/* ── Filtre membres ── */}
+      {membersWithStats.length > 1 && (
+        <View style={styles.memberFilterWrap}>
+          <MembersList
+            members={membersWithStats}
+            selectedId={selectedMemberId}
+            showStats={false}
+            onPressMember={(m) =>
+              setSelectedMemberId((prev) => (prev === m.id ? undefined : m.id))
+            }
+          />
+        </View>
+      )}
+
       {/* ── Grille de cartes ── */}
       {loading ? (
         <View style={styles.loadingWrap}>
@@ -130,16 +151,20 @@ export default function MissingCardsScreen() {
         </View>
       ) : (
         <PhotocardsByAlbum
-          cards={cards}
-          members={membersWithStats}
+          albumInfos={albumInfos}
+          userId={user?.id}
+          groupId={selectedGroupId ?? ""}
+          memberId={selectedMemberId}
+          fetchMode="missing"
           onPressCard={(card) => setModalCard(card)}
           defaultExpanded={false}
           ListHeaderComponent={
             <View style={styles.infoBar}>
               <Text style={styles.infoText}>
-                <Text style={styles.infoCount}>{cards.length}</Text> carte
-                {cards.length !== 1 ? "s" : ""} manquante
-                {cards.length !== 1 ? "s" : ""}
+                <Text style={styles.infoCount}>
+                  {albumInfos.reduce((acc, a) => acc + a.missingCount, 0)}
+                </Text>{" "}
+                cartes manquantes
               </Text>
             </View>
           }
@@ -187,14 +212,12 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginHorizontal: Theme.spacing.sm,
   },
-
   groupFilterWrap: {
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     backgroundColor: Colors.surface,
     padding: Theme.spacing.lg,
   },
-
   infoBar: {
     paddingHorizontal: Theme.spacing.lg,
     paddingVertical: Theme.spacing.sm,
@@ -209,5 +232,11 @@ const styles = StyleSheet.create({
   infoCount: {
     color: Colors.danger,
     fontWeight: Theme.fontWeight.semibold,
+  },
+  memberFilterWrap: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
+    paddingVertical: Theme.spacing.md,
   },
 });

@@ -2,7 +2,7 @@ import { collectionService } from "@/src/services/collectionService";
 import { useAuthStore } from "@/src/store/authStore";
 import { Group } from "@/src/types";
 import { useCallback, useState } from "react";
-import { useFetchOnFocus } from "./useFetchOnFocus";
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 export const useFollowedGroups = () => {
   const { user } = useAuthStore();

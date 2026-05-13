@@ -1,6 +1,7 @@
 // src/utils/pickCardImage.ts
 import { CardFormat } from "@/src/constants/options/cardFormatOptions";
 import { Image } from "react-native";
+import { optimizeImage } from "./optimizeImage";
 import { pickLocalImage } from "./pickLocalImage";
 
 interface PickCardImageOptions {
@@ -19,19 +20,22 @@ export const pickCardImage = async ({
 }: PickCardImageOptions): Promise<void> => {
   await pickLocalImage(
     async (uri) => {
+      const optimizedUri = await optimizeImage({ uri });
+
       if (aspectRatio === "custom") {
         const dimensions = await new Promise<{ width: number; height: number }>(
           (resolve) =>
-            Image.getSize(uri, (w, h) => resolve({ width: w, height: h })),
+            Image.getSize(optimizedUri, (w, h) =>
+              resolve({ width: w, height: h }),
+            ),
         );
-        onPicked(uri, dimensions);
+        onPicked(optimizedUri, dimensions);
       } else {
-        onPicked(uri);
+        onPicked(optimizedUri);
       }
     },
     {
       allowsEditing: true,
-      // ← pour custom : pas d'aspect du tout, peu importe currentRatio
       aspect:
         aspectRatio === "custom"
           ? undefined

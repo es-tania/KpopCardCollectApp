@@ -14,9 +14,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
 import { useGroups } from "@/src/hooks/group/useGroups";
-import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
-import { useRecentPhotocards } from "@/src/hooks/useRecentPhotocards";
+import { useRecentPhotocards } from "@/src/hooks/photocard/useRecentPhotocards";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { CollectionProgress } from "../../src/components/home/CollectionProgress";
 import { FollowedGroupsRow } from "../../src/components/home/FollowedGroupsRow";

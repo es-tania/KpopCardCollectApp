@@ -1,30 +1,30 @@
 import { GroupAlphaList } from "@/src/components/group";
-import { useTranslation } from "@/src/hooks/useTranslation";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import {
-  SearchAlbumResult,
-  SearchBar,
-  SearchGroupResult,
-  SearchMemberResult,
-  SearchPhotocardResult,
-  SearchSectionHeader,
+    SearchAlbumResult,
+    SearchBar,
+    SearchGroupResult,
+    SearchMemberResult,
+    SearchPhotocardResult,
+    SearchSectionHeader,
 } from "@/src/components/search";
 import { Theme } from "@/src/constants/theme";
+import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
 import { useGroups } from "@/src/hooks/group/useGroups";
 import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
-import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { useSearch } from "@/src/hooks/useSearch";
+import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";

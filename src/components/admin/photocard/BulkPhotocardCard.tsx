@@ -3,7 +3,7 @@ import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
 import { Colors } from "@/src/constants/colors";
 import { CardFormat } from "@/src/constants/options/cardFormatOptions";
 import { Theme } from "@/src/constants/theme";
-import { BulkPhotocard } from "@/src/hooks/useBulkAddPhotocards";
+import { BulkPhotocard } from "@/src/hooks/photocard/useBulkAddPhotocards";
 import { Member } from "@/src/types";
 import { pickCardImage } from "@/src/utils/pickCardImage";
 import { History, Trash2 } from "lucide-react-native";

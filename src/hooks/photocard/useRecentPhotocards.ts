@@ -2,7 +2,7 @@ import { photocardsService } from "@/src/services/photocardsService";
 import { useAuthStore } from "@/src/store/authStore";
 import { PhotocardWithDetails } from "@/src/types";
 import { useCallback, useState } from "react";
-import { useFetchOnFocus } from "./useFetchOnFocus";
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 export const useRecentPhotocards = (limit: number = 10) => {
   const { user } = useAuthStore();

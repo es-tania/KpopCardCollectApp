@@ -1,6 +1,6 @@
 import { GroupAlphaList } from "@/src/components/group";
+import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
 import { usePhotocards } from "@/src/hooks/photocard/usePhotocards";
-import { useFollowedGroups } from "@/src/hooks/useFollowedGroups";
 import { useCollectionStore } from "@/src/store/collectionStore";
 import { router } from "expo-router";
 import { ChevronLeft, Heart, Search } from "lucide-react-native";

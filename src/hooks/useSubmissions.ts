@@ -31,7 +31,8 @@ export const useSubmissions = (
       let query = supabase
         .from("photocards_with_details")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(50);
 
       if (statusFilter !== "all") {
         query = query.eq("status", statusFilter);

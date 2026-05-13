@@ -105,7 +105,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           setForm((prev) => ({
             ...prev,
             [field]: uri,
-            [removeField]: false,
+            [removeField]: true,
             ...(dimensions && {
               customWidth: dimensions.width,
               customHeight: dimensions.height,
@@ -206,7 +206,7 @@ export const EditForm: React.FC<EditFormProps> = ({
             }
             onImageResized={(uri) => {
               set("backImageUri")(uri);
-              setForm((prev) => ({ ...prev, removeBackImage: false }));
+              setForm((prev) => ({ ...prev, removeBackImage: true }));
             }}
           />
           {/* ← Bouton verso existant */}
@@ -305,7 +305,7 @@ export const EditForm: React.FC<EditFormProps> = ({
           setForm((prev) => ({
             ...prev,
             backImageUri: url,
-            removeBackImage: false,
+            removeBackImage: true,
           }))
         }
         groupId={card.groupId}

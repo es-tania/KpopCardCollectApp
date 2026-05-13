@@ -22,8 +22,7 @@ import {
   PhotocardTypeFilter,
   PhotocardWithDetails,
 } from "../../types";
-import { FilterToggle } from "../ui/FilterToggle";
-import { QuickFilterChips } from "../ui/QuickFilterChips";
+import { CardFiltersBar } from "../ui/CardFilterBar";
 import { SectionLabel } from "../ui/SectionLabel";
 import { PhotocardMini } from "./PhotocardMini";
 import { PhotocardModal } from "./PhotocardModal";
@@ -203,31 +202,26 @@ export const PhotocardMiniGrid = forwardRef<any, PhotocardMiniGridProps>(
       () => (
         <>
           {ListHeaderComponent}
-          {availableTypes.length > 1 && (
-            <QuickFilterChips
-              options={availableTypes}
-              selected={currentType}
-              onSelect={(k) => {
-                setCurrentType(k as PhotocardTypeFilter);
-                setVisibleCount(LOCAL_PAGE);
-                cooldown.current = false;
-              }}
-            />
-          )}
-
-          {/* ── Filtre shop — FilterToggle ── */}
-          {availableShops.length > 1 && (
-            <FilterToggle
-              options={availableShops}
-              selected={currentShop}
-              onSelect={(k: string) => {
-                setCurrentShop(k);
-                setVisibleCount(LOCAL_PAGE);
-                cooldown.current = false;
-              }}
-              label="Filtrer par shop"
-            />
-          )}
+          <CardFiltersBar
+            activeType={currentType}
+            onTypeChange={(k) => {
+              setCurrentType(k as PhotocardTypeFilter);
+              setVisibleCount(LOCAL_PAGE);
+              cooldown.current = false;
+            }}
+            availableTypes={availableTypes
+              .filter((o) => o.key !== "all")
+              .map((o) => o.key)}
+            activeShop={currentShop}
+            onShopChange={(k) => {
+              setCurrentShop(k);
+              setVisibleCount(LOCAL_PAGE);
+              cooldown.current = false;
+            }}
+            availableShops={availableShops
+              .filter((o) => o.key !== "all")
+              .map((o) => o.key)}
+          />
 
           <SectionLabel
             label={`${typeFilteredCards.length} photocard${typeFilteredCards.length !== 1 ? "s" : ""}`}

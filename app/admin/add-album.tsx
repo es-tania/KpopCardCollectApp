@@ -1,12 +1,12 @@
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
-  ALBUM_TYPE_OPTIONS,
-  CATEGORY_OPTIONS,
-  YES_NO_OPTIONS,
+    ALBUM_TYPE_OPTIONS,
+    CATEGORY_OPTIONS,
+    YES_NO_OPTIONS,
 } from "@/src/constants/options";
 import { useAddAlbum } from "@/src/hooks/album/useAddAlbum";
-import { useAccessibleGroups } from "@/src/hooks/useAccessibleGroups";
+import { useAccessibleGroups } from "@/src/hooks/group/useAccessibleGroups";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
@@ -14,14 +14,14 @@ import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../src/components/ui/FormField";

@@ -5,9 +5,7 @@ import {
 } from "@/src/services/photocardsService";
 import { PhotocardWithDetails } from "@/src/types";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFetchOnFocus } from "./useFetchOnFocus";
-
-const PAGE_SIZE = 10;
+import { useFetchOnFocus } from "../useFetchOnFocus";
 
 interface Filters {
   memberId?: string;

@@ -3,9 +3,9 @@ import {
   COLLECTION_FILTER_CHIPS,
   QuickFilterChips,
 } from "@/src/components/ui/QuickFilterChips";
+import { useAlbum } from "@/src/hooks/album/useAlbum";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
-import { useAlbum } from "@/src/hooks/useAlbum";
-import { usePaginatedPhotocards } from "@/src/hooks/usePaginatedPhotocards";
+import { usePaginatedPhotocards } from "@/src/hooks/photocard/usePaginatedPhotocards";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useUserStats } from "@/src/hooks/useUserStats";
