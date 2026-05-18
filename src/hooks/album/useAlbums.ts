@@ -1,7 +1,7 @@
 import { CACHE_TTL } from "@/src/constants/cacheTtl";
 import { albumsService } from "@/src/services/albumsService";
 import { Album } from "@/src/types";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useCache } from "../useCache";
 import { useFetchOnFocus } from "../useFetchOnFocus";
 
@@ -13,6 +13,8 @@ interface UseAlbumsResult {
 }
 
 export const useAlbums = (groupId?: string): UseAlbumsResult => {
+  console.log(groupId);
+
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +40,10 @@ export const useAlbums = (groupId?: string): UseAlbumsResult => {
       setLoading(false);
     }
   }, [groupId]);
+
+  useEffect(() => {
+    fetch();
+  }, [fetch]);
 
   useFetchOnFocus(fetch);
 

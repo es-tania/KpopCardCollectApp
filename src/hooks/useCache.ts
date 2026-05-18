@@ -6,6 +6,7 @@ export const useCache = () => {
 
   // Fetch avec cache — si les données sont en cache, les retourne
   // sinon fetch et met en cache
+
   const fetchWithCache = useCallback(
     async <T>(
       key: string,

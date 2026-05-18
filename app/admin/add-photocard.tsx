@@ -2,13 +2,13 @@ import { BackImagePickerModal } from "@/src/components/photocard/BackImagePicker
 import { MemberMultiSelect } from "@/src/components/ui/MemberMultiSelect";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
-    PHOTOCARD_TYPE_OPTIONS,
-    RARITY_OPTIONS,
+  PHOTOCARD_TYPE_OPTIONS,
+  RARITY_OPTIONS,
 } from "@/src/constants/options";
 import {
-    CARD_FORMAT_OPTIONS,
-    CardFormat,
-    getCardRatio,
+  CARD_FORMAT_OPTIONS,
+  CardFormat,
+  getCardRatio,
 } from "@/src/constants/options/cardFormatOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useAccessibleGroups } from "@/src/hooks/group/useAccessibleGroups";
@@ -24,14 +24,14 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, History } from "lucide-react-native";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../src/components/ui/FormField";
@@ -94,7 +94,6 @@ export default function AddPhotocardScreen() {
   const [errors, setErrors] = useState<
     Partial<Record<keyof PhotocardFormState, string>>
   >({});
-  const [aiDetecting, setAiDetecting] = useState(false);
 
   const { loading, progress, error, submit } = useAddPhotocard(() => {
     Alert.alert(t("success.cardAdded"), "", [
@@ -159,18 +158,6 @@ export default function AddPhotocardScreen() {
       memberId,
       memberName: member?.stageName ?? "",
     }));
-  };
-
-  // Simulation détection IA
-  const handleAiDetect = async () => {
-    if (!form.imageUri) {
-      Alert.alert("Image requise", "Ajoute d'abord une image.");
-      return;
-    }
-    setAiDetecting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setAiDetecting(false);
-    Alert.alert("✨ IA", "Détection simulée — à implémenter.");
   };
 
   const validate = (): boolean => {

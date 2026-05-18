@@ -31,7 +31,7 @@ export const useGroupMembers = (
 
   const fetch = useCallback(async () => {
     if (!groupId) {
-      /* ...inchangé... */ return;
+      return;
     }
     setLoading(true);
     setError(null);

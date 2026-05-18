@@ -20,7 +20,7 @@
 export const CACHE_TTL = {
   groups: 10 * 60 * 1000, // 10 min — change peu
   albums: 10 * 60 * 1000, // 10 min
-  members: 15 * 60 * 1000, // 10 min
+  members: 15 * 60 * 1000, // 15 min
   photocards: 0 * 60 * 1000, // 5 min
   profile: 0 * 60 * 1000, // 5 min
   collection: 0 * 60 * 1000, // 1 min — change souvent

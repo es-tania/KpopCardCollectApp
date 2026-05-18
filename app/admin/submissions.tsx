@@ -1,15 +1,16 @@
-import { useSubmissions } from "@/src/hooks/useSubmissions";
+import { AlbumSectionPagination } from "@/src/components/album/AlbumSectionPagination";
+import { SubmissionRow } from "@/src/components/submissions/SubmissionRow";
+import { useSubmissionsPaginated } from "@/src/hooks/useSubmissionsPaginated";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useAuthStore } from "@/src/store/authStore";
-import { useShopsStore } from "@/src/store/shopsStore";
+import { SubmissionStatus } from "@/src/types";
 import { router } from "expo-router";
-import { Check, ChevronLeft, Clock, Eye, X } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,200 +20,39 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { PhotocardModal } from "../../src/components/photocard/PhotocardModal";
 import { Colors } from "../../src/constants/colors";
 import { Theme } from "../../src/constants/theme";
-import { PhotocardWithDetails, SubmissionStatus } from "../../src/types";
-
-// TABS are built inside the component to use t()
-
-// ─── Composant ligne soumission ───────────────────────────────────────────────
-
-interface SubmissionRowProps {
-  card: PhotocardWithDetails;
-  onPreview: () => void;
-  onApprove: () => void;
-  onReject: () => void;
-  tab: SubmissionStatus;
-}
-
-const SubmissionRow: React.FC<SubmissionRowProps> = ({
-  card,
-  onPreview,
-  onApprove,
-  onReject,
-  tab,
-}) => {
-  const { getLabel } = useShopsStore();
-
-  return (
-    <View style={rowStyles.container}>
-      {/* Image */}
-      <TouchableOpacity onPress={onPreview} activeOpacity={0.8}>
-        <View style={rowStyles.imageWrap}>
-          {card.imageUrl ? (
-            <Image
-              source={card.imageUrl as any}
-              style={rowStyles.image}
-              resizeMode="cover"
-            />
-          ) : (
-            <Text style={rowStyles.imageFallback}>🧑‍🎤</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-
-      {/* Infos */}
-      <View style={rowStyles.info}>
-        <Text style={rowStyles.memberName}>{card.memberName}</Text>
-        <Text style={rowStyles.albumTitle} numberOfLines={1}>
-          {card.groupName} · {card.albumTitle}
-        </Text>
-        {card.version && <Text style={rowStyles.meta}>{card.version}</Text>}
-        {card.shopName && (
-          <Text style={rowStyles.meta}>{getLabel(card.shopName)}</Text>
-        )}
-        <Text style={rowStyles.date}>
-          {new Date(card.createdAt ?? "").toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          })}
-        </Text>
-      </View>
-
-      {/* Actions */}
-      <View style={rowStyles.actions}>
-        {/* Aperçu */}
-        <TouchableOpacity style={rowStyles.previewBtn} onPress={onPreview}>
-          <Eye size={15} color={Colors.textMuted} strokeWidth={1.6} />
-        </TouchableOpacity>
-
-        {/* Boutons selon le tab */}
-        {tab === "pending" && (
-          <>
-            <TouchableOpacity
-              style={[rowStyles.actionBtn, rowStyles.approveBtn]}
-              onPress={onApprove}
-            >
-              <Check size={15} color={Colors.bg} strokeWidth={2.5} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[rowStyles.actionBtn, rowStyles.rejectBtn]}
-              onPress={onReject}
-            >
-              <X size={15} color={Colors.bg} strokeWidth={2.5} />
-            </TouchableOpacity>
-          </>
-        )}
-        {tab === "approved" && (
-          <TouchableOpacity
-            style={[rowStyles.actionBtn, rowStyles.rejectBtn]}
-            onPress={onReject}
-          >
-            <X size={15} color={Colors.bg} strokeWidth={2.5} />
-          </TouchableOpacity>
-        )}
-        {tab === "rejected" && (
-          <TouchableOpacity
-            style={[rowStyles.actionBtn, rowStyles.approveBtn]}
-            onPress={onApprove}
-          >
-            <Check size={15} color={Colors.bg} strokeWidth={2.5} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
-};
-
-const rowStyles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Theme.spacing.md,
-    paddingHorizontal: Theme.spacing.lg,
-    paddingVertical: Theme.spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  imageWrap: {
-    width: 44,
-    height: 64,
-    borderRadius: Theme.borderRadius.sm,
-    backgroundColor: Colors.surface2,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  image: { width: "100%", height: "100%" },
-  imageFallback: { fontSize: 20 },
-  info: { flex: 1, gap: 2 },
-  memberName: {
-    fontSize: Theme.fontSize.base,
-    fontWeight: Theme.fontWeight.semibold,
-    color: Colors.text,
-  },
-  albumTitle: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.textMuted,
-  },
-  meta: {
-    fontSize: Theme.fontSize.xs + 1,
-    color: Colors.accent,
-  },
-  date: {
-    fontSize: Theme.fontSize.xs + 1,
-    color: Colors.textMuted,
-  },
-  actions: {
-    gap: 6,
-    alignItems: "center",
-  },
-  previewBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Theme.borderRadius.full,
-    backgroundColor: Colors.surface2,
-    borderWidth: 0.5,
-    borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: Theme.borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  approveBtn: {
-    backgroundColor: Colors.accent,
-  },
-  rejectBtn: {
-    backgroundColor: Colors.danger,
-  },
-});
-
-// ─── Page principale ──────────────────────────────────────────────────────────
+import { PhotocardWithDetails } from "../../src/types";
 
 export default function SubmissionsScreen() {
   const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
   const [activeTab, setActiveTab] = useState<SubmissionStatus>("pending");
+  const [previewCard, setPreviewCard] = useState<PhotocardWithDetails | null>(
+    null,
+  );
 
   const TABS: { key: SubmissionStatus; label: string }[] = [
     { key: "pending", label: t("submissions.status.pending") },
     { key: "approved", label: t("submissions.status.approved") },
     { key: "rejected", label: t("submissions.status.rejected") },
   ];
-  const [previewCard, setPreviewCard] = useState<PhotocardWithDetails | null>(
-    null,
-  );
 
-  const { submissions, loading, approve, reject, pendingCount } =
-    useSubmissions(activeTab);
+  const {
+    submissions,
+    totalCount,
+    totalPages,
+    page,
+    loading,
+    pageLoading,
+    handlePage,
+    approve,
+    reject,
+  } = useSubmissionsPaginated({ mode: "admin", status: activeTab });
 
-  // ── Handlers ──────────────────────────────────────────────────────────
+  // ── Filtre selon les droits ───────────────────────────────────────────
+  const accessibleSubmissions = useMemo(() => {
+    if (isAdmin) return submissions;
+    return submissions.filter((s) => groupAdminIds.includes(s.groupId));
+  }, [submissions, isAdmin, groupAdminIds]);
 
   const handleApprove = useCallback(
     (card: PhotocardWithDetails) => {
@@ -223,13 +63,10 @@ export default function SubmissionsScreen() {
           { text: t("common.cancel"), style: "cancel" },
           {
             text: t("admin.approve"),
-            onPress: async () => {
-              try {
-                await approve(card.id);
-              } catch (err: any) {
-                Alert.alert(t("common.error"), err.message);
-              }
-            },
+            onPress: () =>
+              approve(card.id).catch((e) =>
+                Alert.alert(t("common.error"), e.message),
+              ),
           },
         ],
       );
@@ -247,24 +84,16 @@ export default function SubmissionsScreen() {
           {
             text: t("admin.reject"),
             style: "destructive",
-            onPress: async () => {
-              try {
-                await reject(card.id);
-              } catch (err: any) {
-                Alert.alert(t("common.error"), err.message);
-              }
-            },
+            onPress: () =>
+              reject(card.id).catch((e) =>
+                Alert.alert(t("common.error"), e.message),
+              ),
           },
         ],
       );
     },
     [reject, t],
   );
-
-  const accessibleSubmissions = useMemo(() => {
-    if (isAdmin) return submissions;
-    return submissions.filter((s) => groupAdminIds.includes(s.groupId));
-  }, [submissions, isAdmin, groupAdminIds]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
@@ -293,21 +122,22 @@ export default function SubmissionsScreen() {
             >
               {tab.label}
             </Text>
-            {/* Badge pour les pending */}
-            {tab.key === "pending" && pendingCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{pendingCount}</Text>
-              </View>
-            )}
+            {tab.key === "pending" &&
+              totalCount > 0 &&
+              activeTab === "pending" && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{totalCount}</Text>
+                </View>
+              )}
           </TouchableOpacity>
         ))}
       </View>
 
       {/* ── Compteur ── */}
       <View style={styles.countBar}>
-        <Clock size={12} color={Colors.textMuted} strokeWidth={1.6} />
         <Text style={styles.countText}>
-          <Text style={styles.countNum}>{accessibleSubmissions.length}</Text>{" "}
+          <Text style={styles.countNum}>{accessibleSubmissions.length}</Text>
+          {totalPages > 1 && ` · page ${page + 1}/${totalPages}`}{" "}
           {t("admin.sections.submissions")}
         </Text>
       </View>
@@ -316,6 +146,10 @@ export default function SubmissionsScreen() {
       {loading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={Colors.accent} />
+        </View>
+      ) : pageLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={Colors.accent} size="small" />
         </View>
       ) : (
         <FlatList
@@ -331,6 +165,15 @@ export default function SubmissionsScreen() {
             />
           )}
           showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            totalPages > 1 ? (
+              <AlbumSectionPagination
+                page={page}
+                totalPages={totalPages}
+                onPage={handlePage}
+              />
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyEmoji}>
@@ -342,7 +185,6 @@ export default function SubmissionsScreen() {
         />
       )}
 
-      {/* ── Modal aperçu ── */}
       <PhotocardModal
         card={previewCard}
         visible={previewCard !== null}
@@ -352,10 +194,9 @@ export default function SubmissionsScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: Colors.bg },
+  loadingWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
   navbar: {
     flexDirection: "row",
     alignItems: "center",
@@ -399,17 +240,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
   },
-  tabActive: {
-    borderBottomColor: Colors.accent,
-  },
-  tabText: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.textMuted,
-  },
-  tabTextActive: {
-    color: Colors.accent,
-    fontWeight: Theme.fontWeight.medium,
-  },
+  tabActive: { borderBottomColor: Colors.accent },
+  tabText: { fontSize: Theme.fontSize.sm + 1, color: Colors.textMuted },
+  tabTextActive: { color: Colors.accent, fontWeight: Theme.fontWeight.medium },
   badge: {
     minWidth: 18,
     height: 18,
@@ -425,27 +258,13 @@ const styles = StyleSheet.create({
     fontWeight: Theme.fontWeight.bold,
   },
   countBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
     paddingHorizontal: Theme.spacing.lg,
     paddingVertical: Theme.spacing.sm,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
   },
-  countText: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.textMuted,
-  },
-  countNum: {
-    color: Colors.accent,
-    fontWeight: Theme.fontWeight.medium,
-  },
-  loadingWrap: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  countText: { fontSize: Theme.fontSize.sm + 1, color: Colors.textMuted },
+  countNum: { color: Colors.accent, fontWeight: Theme.fontWeight.medium },
   emptyState: {
     alignItems: "center",
     paddingVertical: 60,
