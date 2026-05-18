@@ -44,6 +44,13 @@
           "image": "./assets/images/icon.png",
           "imageWidth": 200
         }
+      ],
+      [
+        "expo-file-system",
+        {
+          "supportsOpeningDocumentsInPlace": true,
+          "enableFileSharing": true
+        }
       ]
     ],
     "experiments": {

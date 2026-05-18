@@ -1,7 +1,7 @@
+import { ImageCropperModal } from "@/src/components/ui/ImageCropperModal";
 import { Camera, Crop, Image as ImageIcon, X } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import ImageCropPicker from "react-native-image-crop-picker";
 import { Colors } from "../../constants/colors";
 import { Theme } from "../../constants/theme";
 
@@ -28,52 +28,33 @@ export const FormImagePicker: React.FC<FormImagePickerProps> = ({
   error,
   previewWidth = 140,
 }) => {
-  const handleResize = async () => {
-    if (!imageUri || !onImageResized) return;
-    try {
-      const image = await ImageCropPicker.openCropper({
-        path: imageUri,
-        mediaType: "photo",
-        width: Math.round(aspectRatio * 1000),
-        height: 1000,
-        cropping: true,
-        freeStyleCropEnabled: false,
-        compressImageQuality: 0.8,
-      });
-      onImageResized(image.path);
-    } catch {}
-  };
+  const [cropperOpen, setCropperOpen] = useState(false);
 
   return (
     <View style={styles.container}>
-      {/* Label */}
       <Text style={styles.label}>
         {label}
         {required && <Text style={styles.required}> *</Text>}
       </Text>
 
       {imageUri ? (
-        // ── Preview ──────────────────────────────────────────────────────
         <View style={[styles.card, { width: previewWidth }]}>
-          {/* Image */}
           <View style={styles.imgWrap}>
             <Image
               source={{ uri: imageUri }}
               style={[styles.img, { aspectRatio }]}
               resizeMode="cover"
             />
-            {/* Bouton suppression */}
             <TouchableOpacity style={styles.removeBtn} onPress={onRemove}>
               <X size={13} color={Colors.text} strokeWidth={2} />
             </TouchableOpacity>
           </View>
 
-          {/* Barre d'actions */}
           <View style={styles.actionBar}>
             {onImageResized && (
               <TouchableOpacity
                 style={[styles.actionBtn, styles.actionBtnLeft]}
-                onPress={handleResize}
+                onPress={() => setCropperOpen(true)}
                 activeOpacity={0.7}
               >
                 <Crop size={13} color={Colors.textMuted} strokeWidth={1.8} />
@@ -94,7 +75,6 @@ export const FormImagePicker: React.FC<FormImagePickerProps> = ({
           </View>
         </View>
       ) : (
-        // ── Zone vide ─────────────────────────────────────────────────────
         <TouchableOpacity
           style={[styles.emptyZone, error ? styles.emptyZoneError : {}]}
           onPress={onPick}
@@ -107,21 +87,32 @@ export const FormImagePicker: React.FC<FormImagePickerProps> = ({
       )}
 
       {error && <Text style={styles.error}>{error}</Text>}
+
+      {/* ── Cropper modal ── */}
+      {imageUri && onImageResized && (
+        <ImageCropperModal
+          visible={cropperOpen}
+          imageUri={imageUri}
+          aspectRatio={aspectRatio}
+          onCrop={(uri) => {
+            onImageResized(uri);
+            setCropperOpen(false);
+          }}
+          onClose={() => setCropperOpen(false)}
+        />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { gap: 8 },
-
   label: {
     fontSize: Theme.fontSize.sm + 1,
     fontWeight: Theme.fontWeight.medium,
     color: Colors.text,
   },
   required: { color: Colors.danger },
-
-  // ── Zone vide
   emptyZone: {
     borderWidth: 1.5,
     borderColor: Colors.border,
@@ -134,17 +125,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
   },
   emptyZoneError: { borderColor: Colors.danger },
-  emptyTitle: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.textMuted,
-  },
+  emptyTitle: { fontSize: Theme.fontSize.sm + 1, color: Colors.textMuted },
   emptySub: {
     fontSize: Theme.fontSize.xs + 1,
     color: Colors.textMuted,
     opacity: 0.6,
   },
-
-  // ── Card preview
   card: {
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 0.5,
@@ -152,12 +138,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     overflow: "hidden",
   },
-  imgWrap: {
-    position: "relative",
-  },
-  img: {
-    width: "100%",
-  },
+  imgWrap: { position: "relative" },
+  img: { width: "100%" },
   removeBtn: {
     position: "absolute",
     top: 8,
@@ -171,8 +153,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
-  // ── Barre d'actions
   actionBar: {
     flexDirection: "row",
     borderTopWidth: 0.5,
@@ -187,19 +167,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     backgroundColor: Colors.surface,
   },
-  actionBtnLeft: {
-    borderRightWidth: 0.5,
-    borderRightColor: Colors.border,
-  },
+  actionBtnLeft: { borderRightWidth: 0.5, borderRightColor: Colors.border },
   actionBtnRight: {},
   actionBtnFull: {},
-  actionBtnText: {
-    fontSize: Theme.fontSize.xs + 1,
-    color: Colors.textMuted,
-  },
-
-  error: {
-    fontSize: Theme.fontSize.sm + 1,
-    color: Colors.danger,
-  },
+  actionBtnText: { fontSize: Theme.fontSize.xs + 1, color: Colors.textMuted },
+  error: { fontSize: Theme.fontSize.sm + 1, color: Colors.danger },
 });

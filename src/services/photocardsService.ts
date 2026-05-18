@@ -37,7 +37,7 @@ const PHOTOCARD_COLUMNS = [
 ].join(", ");
 
 const RECENT_COLUMNS =
-  "id, image_url, back_image_url, type, version, member_name, album_title, group_name, aspect_ratio, card_members, is_limited, shop_name, rarity, album_cover_url";
+  "id, group_id, album_id, image_url, back_image_url, type, version, member_name, album_title, group_name, aspect_ratio, card_members, is_limited, shop_name, rarity, album_cover_url";
 
 export const photocardsService = {
   getAll: async (): Promise<PhotocardWithDetails[]> => {
