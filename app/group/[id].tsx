@@ -1,5 +1,6 @@
 import { AlbumCard } from "@/src/components/album/AlbumCard";
 import { MembersGrid } from "@/src/components/member/MembersGrid";
+import { PageActionsMenu } from "@/src/components/ui/PageActionsMenu";
 import { SectionLabel } from "@/src/components/ui/SectionLabel";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
 import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
@@ -8,16 +9,16 @@ import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserStats } from "@/src/hooks/useUserStats";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Download, Heart } from "lucide-react-native";
-import React, { useCallback, useMemo, useRef } from "react";
+import { ChevronLeft, Heart, MoreHorizontal } from "lucide-react-native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    NativeScrollEvent,
-    NativeSyntheticEvent,
-    StyleSheet,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GroupHeader } from "../../src/components/group/GroupHeader";
@@ -37,10 +38,11 @@ export default function GroupScreen() {
   const { followedIds, toggleFollow } = useFollowedGroups();
   const groupStats = useUserStats({ groupId });
 
+  const [menuVisible, setMenuVisible] = useState(false);
+
   const isMounted = useRef(false);
   const savedScrollY = useRef(0);
   const isSavingScroll = useRef(true);
-
   const isFollowing = group ? followedIds.has(group.id) : false;
 
   const handleScroll = useCallback(
@@ -172,7 +174,7 @@ export default function GroupScreen() {
   if (!group) return null;
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* Navbar absolue par-dessus */}
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.backBtn} onPress={handlePressBack}>
@@ -190,8 +192,11 @@ export default function GroupScreen() {
               strokeWidth={1.6}
             />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.backBtn} onPress={() => {}}>
-            <Download size={18} color={Colors.text} strokeWidth={1.6} />
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => setMenuVisible(true)}
+          >
+            <MoreHorizontal size={18} color={Colors.text} strokeWidth={1.6} />
           </TouchableOpacity>
         </View>
       </View>
@@ -215,6 +220,14 @@ export default function GroupScreen() {
           offset: 160 * index,
           index,
         })}
+      />
+      <PageActionsMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        shareUrl={`kcardcollect://group/${groupId}`}
+        shareTitle={group.name}
+        onAddCard={() => router.push(`/admin/add-photocard?groupId=${groupId}`)}
+        onAddAlbum={() => router.push(`/admin/add-album?groupId=${groupId}`)}
       />
     </SafeAreaView>
   );

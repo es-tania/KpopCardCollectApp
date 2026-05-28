@@ -1,6 +1,7 @@
 import { AlbumCard } from "@/src/components/album/AlbumCard";
 import { MemberHeader } from "@/src/components/member/MemberHeader";
 import { PhotocardMiniGrid, PhotocardModal } from "@/src/components/photocard";
+import { PageActionsMenu } from "@/src/components/ui/PageActionsMenu";
 import {
   COLLECTION_FILTER_CHIPS,
   QuickFilterChips,
@@ -15,7 +16,7 @@ import { useUserStats } from "@/src/hooks/useUserStats";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { useNavigationStateStore } from "@/src/store/navigationStateStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Share2 } from "lucide-react-native";
+import { ChevronLeft, MoreHorizontal } from "lucide-react-native";
 import React, {
   useCallback,
   useEffect,
@@ -61,6 +62,7 @@ export default function MemberScreen() {
   const [modalCard, setModalCard] = useState<PhotocardWithDetails | null>(null);
   const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
   const [activeShop, setActiveShop] = useState<string>("all");
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const memberStats = useUserStats({ memberId: activeMemberId });
   const albumFlatListRef = useRef<FlatList>(null);
@@ -382,8 +384,11 @@ export default function MemberScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={handlePressBack}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navBtn} onPress={handleExport}>
-          <Share2 size={18} color={Colors.text} strokeWidth={1.6} />
+        <TouchableOpacity
+          style={styles.navBtn}
+          onPress={() => setMenuVisible(true)}
+        >
+          <MoreHorizontal size={18} color={Colors.text} strokeWidth={1.6} />
         </TouchableOpacity>
       </View>
 
@@ -461,6 +466,19 @@ export default function MemberScreen() {
         visible={modalCard !== null}
         onClose={handleCloseModal}
         onCardUpdated={handleCardUpdated}
+      />
+
+      <PageActionsMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        shareUrl={`kcardcollect://member/${activeMemberId}`}
+        shareTitle={activeMember?.stageName}
+        onAddCard={() =>
+          router.push(
+            `/admin/add-photocard?memberId=${activeMemberId}&groupId=${groupId}&albumId=${selectedAlbum?.id}`,
+          )
+        }
+        onAddAlbum={() => router.push(`/admin/add-album?groupId=${groupId}`)}
       />
     </SafeAreaView>
   );

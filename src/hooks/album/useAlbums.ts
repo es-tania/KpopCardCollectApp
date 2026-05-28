@@ -47,5 +47,11 @@ export const useAlbums = (groupId?: string): UseAlbumsResult => {
 
   useFetchOnFocus(fetch);
 
-  return { albums, loading, error, refetch: fetch };
+  const refetch = useCallback(async () => {
+    const cacheKey = `albums:${groupId}`;
+    invalidate(cacheKey);
+    await fetch();
+  }, [groupId, fetch, invalidate]);
+
+  return { albums, loading, error, refetch };
 };

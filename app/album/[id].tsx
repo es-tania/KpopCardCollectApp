@@ -1,4 +1,5 @@
 import { PhotocardMiniGrid, PhotocardModal } from "@/src/components/photocard";
+import { PageActionsMenu } from "@/src/components/ui/PageActionsMenu";
 import {
   COLLECTION_FILTER_CHIPS,
   QuickFilterChips,
@@ -12,7 +13,7 @@ import { useUserStats } from "@/src/hooks/useUserStats";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { useNavigationStateStore } from "@/src/store/navigationStateStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Download } from "lucide-react-native";
+import { ChevronLeft, MoreHorizontal } from "lucide-react-native";
 import React, {
   useCallback,
   useEffect,
@@ -54,6 +55,7 @@ export default function AlbumScreen() {
   const [modalCard, setModalCard] = useState<PhotocardWithDetails | null>(null);
   const [activeType, setActiveType] = useState<PhotocardTypeFilter>("all");
   const [activeShop, setActiveShop] = useState<string>("all");
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const gridRef = useRef<any>(null);
   const currentScrollOffset = useRef(0);
@@ -236,8 +238,11 @@ export default function AlbumScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={handlePressBack}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navBtn} onPress={handleExport}>
-          <Download size={18} color={Colors.text} strokeWidth={1.6} />
+        <TouchableOpacity
+          style={styles.navBtn}
+          onPress={() => setMenuVisible(true)}
+        >
+          <MoreHorizontal size={18} color={Colors.text} strokeWidth={1.6} />
         </TouchableOpacity>
       </View>
 
@@ -281,6 +286,23 @@ export default function AlbumScreen() {
         visible={modalCard !== null}
         onClose={() => setModalCard(null)}
         onCardUpdated={handleCardUpdated}
+      />
+
+      <PageActionsMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        shareUrl={`kcardcollect://album/${id}`}
+        shareTitle={album?.title}
+        onAddCard={() => {
+          handleCardUpdated;
+          router.push(
+            `/admin/add-photocard?albumId=${id}&groupId=${groupId}&memberId=${selectedMemberId}`,
+          );
+        }}
+        onAddAlbum={() => {
+          handleCardUpdated;
+          router.push(`/admin/add-album?groupId=${groupId}`);
+        }}
       />
     </SafeAreaView>
   );

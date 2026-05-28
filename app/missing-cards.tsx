@@ -88,7 +88,7 @@ export default function MissingCardsScreen() {
     setAlbumInfos([]);
     setSelectedMemberId(undefined);
     fetchAlbumCounts(false);
-  }, [selectedGroupId, selectedMemberId]);
+  }, [selectedGroupId]);
 
   useEffect(() => {
     if (!selectedGroupId) return;

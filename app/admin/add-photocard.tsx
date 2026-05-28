@@ -68,9 +68,14 @@ const INITIAL_FORM: PhotocardFormState = {
 export default function AddPhotocardScreen() {
   const { t } = useTranslation();
   const { isAdmin, groupAdminIds } = useAuthStore();
-  const { groupId: preGroupId, memberId: preMemberId } = useLocalSearchParams<{
+  const {
+    groupId: preGroupId,
+    memberId: preMemberId,
+    albumId: preAlbumId,
+  } = useLocalSearchParams<{
     groupId?: string;
     memberId?: string;
+    albumId?: string;
   }>();
   const { groups } = useAccessibleGroups();
   const { userSubmission } = useLocalSearchParams<{
@@ -79,10 +84,14 @@ export default function AddPhotocardScreen() {
   const { shopOptions, loading: shopsLoading } = useShops();
   const isUserSubmission = userSubmission === "true";
 
+  console.log(preAlbumId);
+
   const [form, setForm] = useState<PhotocardFormState>({
     ...INITIAL_FORM,
     groupId: preGroupId ?? "",
     memberId: preMemberId ?? "",
+    memberIds: preMemberId ? [preMemberId] : [],
+    albumId: preAlbumId ?? "",
     aspectRatio: "photocard" as CardFormat,
     customWidth: undefined as number | undefined,
     customHeight: undefined as number | undefined,

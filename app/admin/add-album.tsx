@@ -1,27 +1,27 @@
 import { FormDatePicker } from "@/src/components/ui/FormDatePicker";
 import { ProgressIndicator } from "@/src/components/ui/ProgressIndicator";
 import {
-    ALBUM_TYPE_OPTIONS,
-    CATEGORY_OPTIONS,
-    YES_NO_OPTIONS,
+  ALBUM_TYPE_OPTIONS,
+  CATEGORY_OPTIONS,
+  YES_NO_OPTIONS,
 } from "@/src/constants/options";
 import { useAddAlbum } from "@/src/hooks/album/useAddAlbum";
 import { useAccessibleGroups } from "@/src/hooks/group/useAccessibleGroups";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormField } from "../../src/components/ui/FormField";
@@ -34,6 +34,7 @@ import { Theme } from "../../src/constants/theme";
 export default function AddAlbumScreen() {
   const { t } = useTranslation();
   const { groups } = useAccessibleGroups();
+  const { groupId: preGroupId } = useLocalSearchParams<{ groupId?: string }>();
 
   const groupOptions: SelectOption[] = groups.map((g) => ({
     key: g.id,
@@ -41,8 +42,8 @@ export default function AddAlbumScreen() {
   }));
 
   const [form, setForm] = useState<AlbumFormState>({
-    groupId: "",
-    groupName: "",
+    groupId: preGroupId ?? "",
+    groupName: groups.find((g) => g.id === preGroupId)?.name ?? "",
     title: "",
     koreanTitle: "",
     type: "",
