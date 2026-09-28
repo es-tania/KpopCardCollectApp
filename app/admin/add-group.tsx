@@ -14,7 +14,7 @@ import {
   MemberFormState,
 } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Plus, UserPlus } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -56,6 +56,10 @@ const INITIAL_GROUP: GroupFormState = {
 
 export default function AddGroupScreen() {
   const { t } = useTranslation();
+  const { userSubmission } = useLocalSearchParams<{
+    userSubmission?: string;
+  }>();
+  const isUserSubmission = userSubmission === "true";
   const [form, setForm] = useState<GroupFormState>(INITIAL_GROUP);
   const [errors, setErrors] = useState<
     Partial<Record<keyof GroupFormState, string>>
@@ -66,11 +70,13 @@ export default function AddGroupScreen() {
   >({});
   const { loading, progress, error, submit } = useAddGroup(() => {
     Alert.alert(
-      "✅ Succès",
-      `Groupe "${form.name}" ajouté avec ${members.length} membre${members.length > 1 ? "s" : ""} !`,
+      isUserSubmission ? "✅ Soumission envoyée" : "✅ Succès",
+      isUserSubmission
+        ? "Le groupe sera examiné par les admins."
+        : `Groupe "${form.name}" ajouté avec ${members.length} membre${members.length > 1 ? "s" : ""} !`,
       [{ text: "OK", onPress: () => router.back() }],
     );
-  });
+  }, isUserSubmission);
 
   const setField = (key: keyof GroupFormState) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -166,7 +172,9 @@ export default function AddGroupScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Ajouter un groupe</Text>
+        <Text style={styles.navTitle}>
+          {isUserSubmission ? "Proposer un groupe" : "Ajouter un groupe"}
+        </Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -182,6 +190,13 @@ export default function AddGroupScreen() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
+          {isUserSubmission && (
+            <Text style={styles.hint}>
+              Propose un groupe manquant. Les admins le vérifieront avant de
+              l'ajouter.
+            </Text>
+          )}
+
           {/* ── Médias ── */}
           <View style={styles.section}>
             <FormField
@@ -425,5 +440,14 @@ const styles = StyleSheet.create({
   addMemberRowText: {
     fontSize: Theme.fontSize.base,
     color: Colors.accent,
+  },
+  hint: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.textMuted,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
 });

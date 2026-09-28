@@ -48,10 +48,11 @@ export const SearchBar = forwardRef<TextInput, SearchBarProps>(
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: Theme.spacing.sm,
-    margin: Theme.spacing.lg,
+    marginVertical: Theme.spacing.lg,
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm + 2,
     backgroundColor: Colors.surface,

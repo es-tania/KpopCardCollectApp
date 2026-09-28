@@ -34,6 +34,7 @@ export const useSubmissionsPaginated = ({
       if (mode === "mine") {
         const { data } = await supabase.rpc("get_my_submissions_count", {
           p_user_id: user.id,
+          p_status: status ?? null,
         });
         setTotalCount(Number(data ?? 0));
       } else {
@@ -62,6 +63,7 @@ export const useSubmissionsPaginated = ({
             p_user_id: user.id,
             p_limit: PAGE_SIZE,
             p_offset: p * PAGE_SIZE,
+            p_status: status ?? null,
           });
           if (error) throw error;
           mapped = (data ?? []).map(mapPhotocard);

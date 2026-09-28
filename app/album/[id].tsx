@@ -10,6 +10,7 @@ import { usePaginatedPhotocards } from "@/src/hooks/photocard/usePaginatedPhotoc
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useUserStats } from "@/src/hooks/useUserStats";
+import { useAuthStore } from "@/src/store/authStore";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { useNavigationStateStore } from "@/src/store/navigationStateStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -44,6 +45,8 @@ import {
 } from "../../src/types";
 
 export default function AlbumScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
+  const canAdmin = isAdmin || (groupAdminIds?.length ?? 0) > 0;
   const { t } = useTranslation();
   const { id, groupId } = useLocalSearchParams<{
     id: string;
@@ -296,13 +299,18 @@ export default function AlbumScreen() {
         onAddCard={() => {
           handleCardUpdated;
           router.push(
-            `/admin/add-photocard?albumId=${id}&groupId=${groupId}&memberId=${selectedMemberId}`,
+            `/admin/add-photocard?${
+              canAdmin ? "" : "userSubmission=true&"
+            }albumId=${id}&groupId=${groupId}&memberId=${selectedMemberId}`,
           );
         }}
-        onAddAlbum={() => {
-          handleCardUpdated;
-          router.push(`/admin/add-album?groupId=${groupId}`);
-        }}
+        onAddAlbum={() =>
+          router.push(
+            canAdmin
+              ? `/admin/add-album?groupId=${groupId}`
+              : `/admin/add-album?userSubmission=true&groupId=${groupId}`,
+          )
+        }
       />
     </SafeAreaView>
   );

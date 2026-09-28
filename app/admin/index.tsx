@@ -126,7 +126,7 @@ export default function AdminScreen() {
         <AdminActionRow
           icon={<Check size={17} color="#DAA520" strokeWidth={1.6} />}
           label={t("common.seeAll")}
-          onPress={() => router.push("/admin/submissions")}
+          onPress={() => router.push("/admin/admin-submissions-full")}
         />
 
         {/* ── Ajouter ── */}

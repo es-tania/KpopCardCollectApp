@@ -73,14 +73,10 @@ export default function SettingsScreen() {
         text: `🇫🇷 ${t("settings.language.fr")}`,
         onPress: () => setLocale("fr" as SupportedLocale),
       },
-      {
-        text: `🇬🇧 ${t("settings.language.en")}`,
-        onPress: () => setLocale("en" as SupportedLocale),
-      },
-      {
-        text: `🇰🇷 ${t("settings.language.ko")}`,
-        onPress: () => setLocale("ko" as SupportedLocale),
-      },
+      // {
+      //   text: `🇬🇧 ${t("settings.language.en")}`,
+      //   onPress: () => setLocale("en" as SupportedLocale),
+      // },
       { text: t("common.cancel"), style: "cancel" },
     ]);
   }, [t, setLocale]);

@@ -2,6 +2,7 @@ import { Colors } from "@/src/constants/colors";
 import { useAuth } from "@/src/hooks/useAuth";
 import { useCollectionStore } from "@/src/store/collectionStore";
 import { useLanguageStore } from "@/src/store/languageStore";
+import { useNotificationsStore } from "@/src/store/notificationsStore";
 import { useShopsStore } from "@/src/store/shopsStore";
 import { router, Stack } from "expo-router";
 import React, { useEffect } from "react";
@@ -19,7 +20,12 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (user) initStore(user.id);
+    if (user) {
+      initStore(user.id);
+      useNotificationsStore.getState().fetch(); // ← ici
+    } else {
+      useNotificationsStore.getState().reset(); // ← reset au logout
+    }
   }, [user]);
 
   useEffect(() => {

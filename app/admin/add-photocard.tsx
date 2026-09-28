@@ -11,8 +11,8 @@ import {
   getCardRatio,
 } from "@/src/constants/options/cardFormatOptions";
 import { useAlbums } from "@/src/hooks/album/useAlbums";
-import { useAccessibleGroups } from "@/src/hooks/group/useAccessibleGroups";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { useAddPhotocard } from "@/src/hooks/photocard/useAddPhotocard";
 import { useGroupShops } from "@/src/hooks/shops/useGroupShops";
 import { useShops } from "@/src/hooks/shops/useShops";
@@ -77,14 +77,11 @@ export default function AddPhotocardScreen() {
     memberId?: string;
     albumId?: string;
   }>();
-  const { groups } = useAccessibleGroups();
+  const { groups } = useGroups();
   const { userSubmission } = useLocalSearchParams<{
     userSubmission?: string;
   }>();
   const { shopOptions, loading: shopsLoading } = useShops();
-  const isUserSubmission = userSubmission === "true";
-
-  console.log(preAlbumId);
 
   const [form, setForm] = useState<PhotocardFormState>({
     ...INITIAL_FORM,
@@ -97,6 +94,13 @@ export default function AddPhotocardScreen() {
     customHeight: undefined as number | undefined,
   });
 
+  const isUserSubmission = useMemo(() => {
+    if (userSubmission !== "true") return false;
+    if (isAdmin) return false;
+    if (!form.groupId) return true;
+    return !groupAdminIds.includes(form.groupId);
+  }, [userSubmission, isAdmin, groupAdminIds, form.groupId]);
+
   const { sortedOptions } = useGroupShops(form.groupId, shopOptions);
 
   const [showBackPicker, setShowBackPicker] = useState(false);
@@ -104,7 +108,7 @@ export default function AddPhotocardScreen() {
     Partial<Record<keyof PhotocardFormState, string>>
   >({});
 
-  const { loading, progress, error, submit } = useAddPhotocard(() => {
+  const { loading, progress, error, submit } = useAddPhotocard(async () => {
     Alert.alert(t("success.cardAdded"), "", [
       { text: "OK", onPress: () => router.back() },
     ]);
@@ -195,10 +199,6 @@ export default function AddPhotocardScreen() {
     }));
   };
 
-  const screenTitle = isUserSubmission
-    ? t("admin.sections.addPhotocard")
-    : t("admin.sections.addPhotocard");
-
   const pickImage = useCallback(
     (field: "imageUri" | "backImageUri") => {
       pickCardImage({
@@ -219,6 +219,13 @@ export default function AddPhotocardScreen() {
     [form.aspectRatio, currentRatio],
   );
 
+  const navTitle = useMemo(() => {
+    if (userSubmission !== "true") return "Ajouter une photocard";
+    return isUserSubmission
+      ? "Proposer une photocard"
+      : "Ajouter une photocard";
+  }, [isUserSubmission, userSubmission]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       {/* Navbar */}
@@ -226,7 +233,7 @@ export default function AddPhotocardScreen() {
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>{screenTitle}</Text>
+        <Text style={styles.navTitle}>{navTitle}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -242,6 +249,12 @@ export default function AddPhotocardScreen() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
+          {isUserSubmission && (
+            <Text style={styles.hint}>
+              Propose une photocard manquante. Les admins la vérifieront avant
+              de l'ajouter.
+            </Text>
+          )}
           {/* ── Identification ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t("fields.group")}</Text>
@@ -491,5 +504,14 @@ const styles = StyleSheet.create({
     fontSize: Theme.fontSize.sm + 1,
     color: Colors.accent,
     fontWeight: Theme.fontWeight.medium,
+  },
+  hint: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.textMuted,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
 });

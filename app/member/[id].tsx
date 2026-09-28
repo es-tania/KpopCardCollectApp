@@ -13,6 +13,7 @@ import { usePaginatedPhotocards } from "@/src/hooks/photocard/usePaginatedPhotoc
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useUserStats } from "@/src/hooks/useUserStats";
+import { useAuthStore } from "@/src/store/authStore";
 import { useDeletedCardsStore } from "@/src/store/deletedCardsStore";
 import { useNavigationStateStore } from "@/src/store/navigationStateStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
@@ -48,6 +49,8 @@ import {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MemberScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
+  const canAdmin = isAdmin || (groupAdminIds?.length ?? 0) > 0;
   const { t } = useTranslation();
   const { id, groupId } = useLocalSearchParams<{
     id: string;
@@ -473,12 +476,20 @@ export default function MemberScreen() {
         onClose={() => setMenuVisible(false)}
         shareUrl={`kcardcollect://member/${activeMemberId}`}
         shareTitle={activeMember?.stageName}
-        onAddCard={() =>
+        onAddCard={() => {
           router.push(
-            `/admin/add-photocard?memberId=${activeMemberId}&groupId=${groupId}&albumId=${selectedAlbum?.id}`,
+            `/admin/add-photocard?${
+              canAdmin ? "" : "userSubmission=true&"
+            }memberId=${activeMemberId}&groupId=${groupId}&albumId=${selectedAlbum?.id}`,
+          );
+        }}
+        onAddAlbum={() =>
+          router.push(
+            canAdmin
+              ? `/admin/add-album?groupId=${groupId}`
+              : `/admin/add-album?userSubmission=true&groupId=${groupId}`,
           )
         }
-        onAddAlbum={() => router.push(`/admin/add-album?groupId=${groupId}`)}
       />
     </SafeAreaView>
   );

@@ -6,13 +6,14 @@ import {
   YES_NO_OPTIONS,
 } from "@/src/constants/options";
 import { useAddAlbum } from "@/src/hooks/album/useAddAlbum";
-import { useAccessibleGroups } from "@/src/hooks/group/useAccessibleGroups";
+import { useGroups } from "@/src/hooks/group/useGroups";
 import { useTranslation } from "@/src/hooks/useTranslation";
+import { useAuthStore } from "@/src/store/authStore";
 import { AlbumFormErrors, AlbumFormState, SelectOption } from "@/src/types";
 import { pickLocalImage } from "@/src/utils/pickLocalImage";
 import { router, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -33,13 +34,13 @@ import { Theme } from "../../src/constants/theme";
 
 export default function AddAlbumScreen() {
   const { t } = useTranslation();
-  const { groups } = useAccessibleGroups();
-  const { groupId: preGroupId } = useLocalSearchParams<{ groupId?: string }>();
+  const { groups } = useGroups();
+  const { isAdmin, groupAdminIds } = useAuthStore();
 
-  const groupOptions: SelectOption[] = groups.map((g) => ({
-    key: g.id,
-    label: g.name,
-  }));
+  const { groupId: preGroupId, userSubmission } = useLocalSearchParams<{
+    groupId?: string;
+    userSubmission?: string;
+  }>();
 
   const [form, setForm] = useState<AlbumFormState>({
     groupId: preGroupId ?? "",
@@ -59,14 +60,30 @@ export default function AddAlbumScreen() {
     tags: "",
     removeCore: false,
   });
-  console.log(form);
+
+  const isUserSubmission = useMemo(() => {
+    if (userSubmission !== "true") return false;
+    if (isAdmin) return false;
+    if (!form.groupId) return true;
+    return !groupAdminIds.includes(form.groupId);
+  }, [userSubmission, isAdmin, groupAdminIds, form.groupId]);
+
+  const groupOptions: SelectOption[] = groups.map((g) => ({
+    key: g.id,
+    label: g.name,
+  }));
+
   const [errors, setErrors] = useState<AlbumFormErrors>({});
 
   const { loading, progress, error, submit } = useAddAlbum(() => {
-    Alert.alert("✅ Succès", `Album "${form.title}" ajouté !`, [
-      { text: "OK", onPress: () => router.back() },
-    ]);
-  });
+    Alert.alert(
+      isUserSubmission ? "✅ Soumission envoyée" : "✅ Succès",
+      isUserSubmission
+        ? "Ton album sera examiné par les admins."
+        : `Album "${form.title}" ajouté !`,
+      [{ text: "OK", onPress: () => router.back() }],
+    );
+  }, isUserSubmission);
 
   React.useEffect(() => {
     if (error) Alert.alert("Erreur", error);
@@ -100,13 +117,18 @@ export default function AddAlbumScreen() {
     await submit(form);
   };
 
+  const navTitle = useMemo(() => {
+    if (userSubmission !== "true") return "Ajouter un album";
+    return isUserSubmission ? "Proposer un album" : "Ajouter un album";
+  }, [isUserSubmission, userSubmission]);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.navBtn} onPress={() => router.back()}>
           <ChevronLeft size={22} color={Colors.text} strokeWidth={1.8} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Ajouter un album</Text>
+        <Text style={styles.navTitle}>{navTitle}</Text>
         <View style={styles.navBtn} />
       </View>
 
@@ -122,6 +144,12 @@ export default function AddAlbumScreen() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
+          {isUserSubmission && (
+            <Text style={styles.hint}>
+              Propose un album manquant. Les admins le vérifieront avant de
+              l'ajouter.
+            </Text>
+          )}
           {/* ── Cover ── */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Couverture</Text>
@@ -301,5 +329,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border,
     paddingBottom: Theme.spacing.sm,
+  },
+  hint: {
+    fontSize: Theme.fontSize.sm + 1,
+    color: Colors.textMuted,
+    backgroundColor: Colors.surface,
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.md,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
   },
 });

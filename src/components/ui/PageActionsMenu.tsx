@@ -1,17 +1,17 @@
 import { Colors } from "@/src/constants/colors";
 import { Theme } from "@/src/constants/theme";
 import { useAuthStore } from "@/src/store/authStore";
-import { Album, BookPlus, X } from "lucide-react-native";
+import { Album, BookPlus, Users, X } from "lucide-react-native";
 import React, { useEffect, useRef } from "react";
 import {
-    Animated,
-    Modal,
-    Share,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Animated,
+  Modal,
+  Share,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -19,11 +19,11 @@ import {
 interface PageActionsMenuProps {
   visible: boolean;
   onClose: () => void;
-  // ── Actions disponibles (optionnelles selon le contexte) ──────────────
-  shareUrl?: string; // ← URL à partager
-  shareTitle?: string; // ← Titre du partage
-  onAddCard?: () => void; // ← Ajouter une carte
-  onAddAlbum?: () => void; // ← Ajouter un album
+  shareUrl?: string;
+  shareTitle?: string;
+  onAddCard?: () => void;
+  onAddAlbum?: () => void;
+  onAddGroup?: () => void;
 }
 
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -35,6 +35,7 @@ export const PageActionsMenu: React.FC<PageActionsMenuProps> = ({
   shareTitle,
   onAddCard,
   onAddAlbum,
+  onAddGroup,
 }) => {
   const { isAdmin, groupAdminIds } = useAuthStore();
   const canAdmin = isAdmin || (groupAdminIds?.length ?? 0) > 0;
@@ -125,7 +126,7 @@ export const PageActionsMenu: React.FC<PageActionsMenuProps> = ({
         )}
 
         {/* ── Ajouter un album (admin seulement) ── */}
-        {canAdmin && onAddAlbum && (
+        {onAddAlbum && (
           <TouchableOpacity
             style={styles.item}
             onPress={() => handleAction(onAddAlbum)}
@@ -136,8 +137,24 @@ export const PageActionsMenu: React.FC<PageActionsMenuProps> = ({
             </View>
             <View style={styles.itemText}>
               <Text style={styles.itemTitle}>Ajouter un album</Text>
+              <Text style={styles.itemSub}>Soumettre un nouvel album</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {onAddGroup && (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => handleAction(onAddGroup)}
+            activeOpacity={0.75}
+          >
+            <View style={[styles.iconWrap, { backgroundColor: "#E8845B" }]}>
+              <Users size={18} color="#fff" strokeWidth={1.8} />
+            </View>
+            <View style={styles.itemText}>
+              <Text style={styles.itemTitle}>Ajouter un groupe</Text>
               <Text style={styles.itemSub}>
-                Créer un nouvel album pour ce groupe
+                Soumettre un nouveau groupe de K-pop
               </Text>
             </View>
           </TouchableOpacity>

@@ -8,6 +8,7 @@ import { useGroup } from "@/src/hooks/group/useGroup";
 import { useGroupMembers } from "@/src/hooks/group/useGroupMembers";
 import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserStats } from "@/src/hooks/useUserStats";
+import { useAuthStore } from "@/src/store/authStore";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { ChevronLeft, Heart, MoreHorizontal } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -27,6 +28,8 @@ import { Theme } from "../../src/constants/theme";
 import { Album, Member } from "../../src/types";
 
 export default function GroupScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
+  const canAdmin = isAdmin || (groupAdminIds?.length ?? 0) > 0;
   const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
   const { id: groupId } = useLocalSearchParams<{ id: string }>();
@@ -226,8 +229,20 @@ export default function GroupScreen() {
         onClose={() => setMenuVisible(false)}
         shareUrl={`kcardcollect://group/${groupId}`}
         shareTitle={group.name}
-        onAddCard={() => router.push(`/admin/add-photocard?groupId=${groupId}`)}
-        onAddAlbum={() => router.push(`/admin/add-album?groupId=${groupId}`)}
+        onAddCard={() =>
+          router.push(
+            `/admin/add-photocard?${
+              canAdmin ? "" : "userSubmission=true&"
+            }groupId=${groupId}`,
+          )
+        }
+        onAddAlbum={() =>
+          router.push(
+            canAdmin
+              ? `/admin/add-album?groupId=${groupId}`
+              : `/admin/add-album?userSubmission=true&groupId=${groupId}`,
+          )
+        }
       />
     </SafeAreaView>
   );

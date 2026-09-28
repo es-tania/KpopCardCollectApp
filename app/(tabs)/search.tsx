@@ -1,13 +1,14 @@
 import { GroupAlphaList } from "@/src/components/group";
 import { PhotocardModal } from "@/src/components/photocard/PhotocardModal";
 import {
-    SearchAlbumResult,
-    SearchBar,
-    SearchGroupResult,
-    SearchMemberResult,
-    SearchPhotocardResult,
-    SearchSectionHeader,
+  SearchAlbumResult,
+  SearchBar,
+  SearchGroupResult,
+  SearchMemberResult,
+  SearchPhotocardResult,
+  SearchSectionHeader,
 } from "@/src/components/search";
+import { PageActionsMenu } from "@/src/components/ui/PageActionsMenu";
 import { Theme } from "@/src/constants/theme";
 import { useFollowedGroups } from "@/src/hooks/group/useFollowedGroups";
 import { useGroups } from "@/src/hooks/group/useGroups";
@@ -17,20 +18,24 @@ import { useTranslation } from "@/src/hooks/useTranslation";
 import { useUserCollection } from "@/src/hooks/useUserCollection";
 import { useAuthStore } from "@/src/store/authStore";
 import { router } from "expo-router";
+import { Plus } from "lucide-react-native";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../src/constants/colors";
 import { PhotocardWithDetails } from "../../src/types";
 
 export default function SearchScreen() {
+  const { isAdmin, groupAdminIds } = useAuthStore();
+  const canAdmin = isAdmin || (groupAdminIds?.length ?? 0) > 0;
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const inputRef = useRef<TextInput>(null);
@@ -40,6 +45,8 @@ export default function SearchScreen() {
   const { followedIds, toggleFollow } = useFollowedGroups();
   const { collectionIds, favoriteIds, wishlistIds } = useUserCollection();
   const { photocards: allPhotocards } = usePhotocards({});
+
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const [selectedCard, setSelectedCard] = useState<PhotocardWithDetails | null>(
     null,
@@ -106,12 +113,20 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <SearchBar
-        ref={inputRef}
-        value={inputValue}
-        onChangeText={handleChangeText}
-        onClear={handleClear}
-      />
+      <View style={styles.topBar}>
+        <SearchBar
+          ref={inputRef}
+          value={inputValue}
+          onChangeText={handleChangeText}
+          onClear={handleClear}
+        />
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => setMenuVisible(true)}
+        >
+          <Plus size={20} color={Colors.text} strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
         <View style={styles.loadingWrap}>
@@ -217,6 +232,31 @@ export default function SearchScreen() {
         visible={selectedCard !== null}
         onClose={() => setSelectedCard(null)}
       />
+
+      <PageActionsMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onAddCard={() =>
+          router.push(
+            `/admin/add-photocard?${canAdmin ? "" : "userSubmission=true&"}`,
+          )
+        }
+        onAddAlbum={() =>
+          router.push(
+            canAdmin
+              ? `/admin/add-album`
+              : `/admin/add-album?userSubmission=true`,
+          )
+        }
+        shareUrl={undefined}
+        onAddGroup={() =>
+          router.push(
+            canAdmin
+              ? `/admin/add-group`
+              : `/admin/add-group?userSubmission=true`,
+          )
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -247,5 +287,22 @@ const styles = StyleSheet.create({
   },
   loadingCenter: {
     paddingVertical: Theme.spacing.xl,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Theme.spacing.sm,
+    gap: Theme.spacing.sm,
+  },
+  addBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: Theme.borderRadius.full,
+    backgroundColor: Colors.surface,
+    borderWidth: 0.5,
+    borderColor: Colors.border,
+    flexShrink: 0,
   },
 });

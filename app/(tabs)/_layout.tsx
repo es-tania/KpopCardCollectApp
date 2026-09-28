@@ -1,6 +1,8 @@
+import { NotificationBadge } from "@/src/components/ui/NotificationBadge";
 import { useTranslation } from "@/src/hooks/useTranslation";
+import { useNotificationsStore } from "@/src/store/notificationsStore";
 import { Tabs } from "expo-router";
-import { Home, ScanLine, Search, User } from "lucide-react-native";
+import { Bell, Home, ScanLine, Search, User } from "lucide-react-native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Colors } from "../../src/constants/colors";
@@ -25,6 +27,8 @@ const TabIcon: React.FC<TabIconProps> = ({ icon, label, focused }) => (
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const { unreadCount } = useNotificationsStore();
+
   return (
     <Tabs
       screenOptions={{
@@ -99,6 +103,27 @@ export default function TabLayout() {
                 strokeWidth={2}
               />
             </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              label="Notifs"
+              focused={focused}
+              icon={
+                <View>
+                  <Bell
+                    size={20}
+                    strokeWidth={focused ? 2.2 : 1.6}
+                    color={focused ? Colors.accent : Colors.textMuted}
+                  />
+                  <NotificationBadge count={unreadCount} size="sm" />
+                </View>
+              }
+            />
           ),
         }}
       />
